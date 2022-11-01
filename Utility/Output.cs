@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace IceBreaker.Utility;
+namespace IceBloc.Utility;
 
 public class Output
 {
@@ -73,7 +73,7 @@ public class Output
         string path = AppDomain.CurrentDomain.BaseDirectory + "\\Output.log";
         using (StreamWriter writer = new(path, true))
         {
-            writer.WriteLine("[{0}] {1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), $"Exception caught in IceBreaker {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
+            writer.WriteLine("[{0}] {1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), $"Exception caught in IceBloc {System.Reflection.Assembly.GetExecutingAssembly().GetName().Version}");
             writer.WriteLine("[{0}] {1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), $"[Error]: {e.Message}");
             writer.WriteLine("[{0}] {1}", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), "\n" + e.StackTrace);
         }

@@ -1,12 +1,27 @@
-﻿<Window x:Class="IceBreaker.MainWindow"
+﻿<Window x:Class="IceBloc.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:IceBreaker"
+        xmlns:local="clr-namespace:IceBloc"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-
-    </Grid>
+        Title="IceBloc" Height="450" Width="800">
+    <TabControl>
+        <TabItem Header="Asset List">
+            <Grid Background="#FFE5E5E5">
+                <DataGrid x:Name="AssetGrid" d:ItemsSource="{d:SampleData ItemCount=30}" SelectionChanged="DataGrid_SelectionChanged" VerticalAlignment="Top" Margin="0,0,0,30" IsReadOnly="True"/>
+                <Button x:Name="LoadInstall" Content="Load Game" HorizontalAlignment="Right" Margin="0,0,10,2" VerticalAlignment="Bottom" Click="LoadInstall_Click" Height="25"/>
+                <Button x:Name="LoadSingle" Content="Load Single File" HorizontalAlignment="Right" Margin="0,0,80,2" VerticalAlignment="Bottom" Click="LoadSingle_Click" Height="25"/>
+                <Button x:Name="ExportAsset" Content="Export Selection" HorizontalAlignment="Right" Margin="0,0,175,2" VerticalAlignment="Bottom" Height="25" Click="ExportAsset_Click"/>
+                <Label x:Name="LoadedAssets" Content="Assets Loaded: 0" HorizontalAlignment="Left" Margin="310,0,0,0" VerticalAlignment="Bottom" FontWeight="Normal"/>
+                <TextBox x:Name="SearchBox" HorizontalAlignment="Left" Margin="10,0,0,5" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="300" ToolTip="Find an asset."/>
+            </Grid>
+        </TabItem>
+        <TabItem Header="Settings">
+            <Grid Background="#FFE5E5E5"/>
+        </TabItem>
+        <TabItem Header="Output">
+            <Grid Background="#FFE5E5E5"/>
+        </TabItem>
+    </TabControl>
 </Window>
