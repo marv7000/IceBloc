@@ -6,22 +6,10 @@
 public static class Settings
 {
     public static Game CurrentGame = Game.Battlefield3;
-    public static bool Debug;
-
+    public static bool Debug = false;
     public static string GamePath = "";
-
-    // Export settings.
-
-    // Models.
-    public static bool ExportModelOBJ;
-    public static bool ExportModelGLTF;
-    public static bool ExportModelSMD;
-    public static bool ExportModelXMODEL;
-    public static bool ExportModelSEMODEL;
-
-    public static bool ExportRaw;
-    public static bool ExportConverted;
-
+    public static bool ExportRaw = true;
+    public static bool ExportConverted = false;
 }
 
 public enum Game

@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using System.Text;
 
-namespace IceBloc.Frostbite.Texture;
+namespace IceBloc.Frostbite2;
 
 public class DxTexture
 {
@@ -50,14 +50,9 @@ public class DxTexture
             MipmapSizes[i] = reader.ReadUInt32();
         MipmapChainSize = reader.ReadUInt32();
         ResourceNameHash = reader.ReadUInt32();
-        TextureGroup = Encoding.ASCII.GetString(reader.ReadBytes(16)).Replace((char)0x00, ' ');
+        TextureGroup = Encoding.ASCII.GetString(reader.ReadBytes(16)).Replace("\0", "");
 
         PixelData = IO.GetAssetFromGuid(StreamingChunkId);
-    }
-
-    public DxTexture()
-    {
-
     }
 
     public bool GetFlag(TextureHeaderFlags flag)
@@ -75,7 +70,7 @@ public enum TextureType
     TypeCube = 0x1,
     Type3D = 0x2,
 };
-    
+
 public enum TextureFormat : ushort
 {
     DXT1 = 0x0,

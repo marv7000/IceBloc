@@ -14,7 +14,7 @@
                 <Button x:Name="LoadSingle" Content="Load Single File" HorizontalAlignment="Right" Margin="0,0,80,2" VerticalAlignment="Bottom" Click="LoadSingle_Click" Height="25"/>
                 <Button x:Name="ExportAsset" Content="Export Selection" HorizontalAlignment="Right" Margin="0,0,175,2" VerticalAlignment="Bottom" Height="25" Click="ExportAsset_Click"/>
                 <Label x:Name="LoadedAssets" Content="Assets Loaded: 0" HorizontalAlignment="Left" Margin="310,0,0,0" VerticalAlignment="Bottom" FontWeight="Normal"/>
-                <TextBox x:Name="SearchBox" HorizontalAlignment="Left" Margin="10,0,0,5" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="300" ToolTip="Find an asset."/>
+                <TextBox x:Name="SearchBox" HorizontalAlignment="Left" Margin="10,0,0,5" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="300" ToolTip="Find an asset." TextChanged="SearchBox_TextChanged"/>
             </Grid>
         </TabItem>
         <TabItem Header="Settings">

@@ -1,16 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace IceBloc.Frostbite;
-
-public enum FrostbiteVersion
-{
-    Battlefield3,
-    Battlefield4,
-};
+﻿namespace IceBloc.Frostbite2;
 
 public enum DbObjectType : byte
 {

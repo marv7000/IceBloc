@@ -1,7 +1,6 @@
 ﻿using System.Numerics;
-using IceBloc.Frostbite.Packed;
 
-namespace IceBloc.Frostbite.Mesh;
+namespace IceBloc.Frostbite2;
 
 public unsafe struct MeshSet
 {

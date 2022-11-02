@@ -1,9 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-
-using IceBloc.Frostbite;
-using IceBloc.Frostbite.Packed;
 
 namespace IceBloc.Utility;
 
@@ -15,16 +12,16 @@ public class AssetListItem
     public ExportStatus Status { get; set; }
     public string Remarks { get; set; }
 
-    public byte[] CatalogEntrySHA;
+    public List<MetaDataObject> MetaData;
 
-    public AssetListItem(string name, AssetType type, long size, ExportStatus status, string remarks, byte[] sha)
+    public AssetListItem(string name, AssetType type, long size, ExportStatus status, string remarks, List<MetaDataObject> mdo)
     {
         Name = name;
         Type = type;
         Size = size;
         Status = status;
         Remarks = remarks;
-        CatalogEntrySHA = sha;
+        MetaData = mdo;
     }
 
     public void Export()
@@ -35,9 +32,13 @@ public class AssetListItem
             {
                 case AssetType.Unknown:
                 case AssetType.Chunk:
-                    var entry = MainWindow.ActiveCatalog.GetEntry(CatalogEntrySHA);
-                    Directory.CreateDirectory("Output");
-                    File.WriteAllBytes($"Output\\{Name}.bin", MainWindow.ActiveCatalog.Extract(entry.SHA, true));
+                    foreach (var meta in MetaData)
+                    {
+                        string path = $"Output\\{Name}";
+                        Directory.CreateDirectory(path);
+                        var entry = MainWindow.ActiveCatalog.GetEntry(meta.SHA);
+                        File.WriteAllBytes($"{path}\\{meta.GUID}.chunk", MainWindow.ActiveCatalog.Extract(meta.SHA, true));
+                    }
                     break;
             }
             Status = ExportStatus.Exported;
@@ -47,6 +48,20 @@ public class AssetListItem
             Status = ExportStatus.Error;
             Remarks = ex.Message;
         }
+    }
+}
+
+public class MetaDataObject
+{
+    public byte[] SHA;
+    public Guid GUID;
+    public long Size;
+
+    public MetaDataObject(byte[] sHA, Guid gUID, long size)
+    {
+        SHA = sHA;
+        GUID = gUID;
+        Size = size;
     }
 }
 

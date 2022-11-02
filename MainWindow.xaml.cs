@@ -1,25 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 using IceBloc.Utility;
-using IceBloc.Frostbite.Texture;
-using IceBloc.Frostbite.Mesh;
-using IceBloc.Frostbite.Packed;
+using IceBloc.Frostbite2;
 
 namespace IceBloc;
 
@@ -29,34 +17,33 @@ namespace IceBloc;
 public partial class MainWindow : Window
 {
     public static List<AssetListItem>? Selection = new();
-    public static DbObject? ActiveDbo;
+    public static DbObject? ActiveDataBaseObject;
     public static Catalog? ActiveCatalog;
-    public static DbMetaData? MetaData;
+    public static DbMetaData MetaData;
     public static List<AssetListItem> Assets = new();
     public static Game ActiveGame;
 
     public MainWindow()
     {
         /*
-        using var reader = new BinaryReader(File.OpenRead(@"D:\Tools\Dumps\BF3\chunks\e713f92f-d49e-f0e7-87fa-57a356ce7f11.chunk"));
-        using var reader2 = new BinaryReader(File.OpenRead(@"D:\indices.dat"));
+        using var reader = new BinaryReader(File.OpenRead(@"D:\repos\IceBloc\bin\Debug\net6.0-windows10.0.22621.0\Output\win32\weapons\ump45\ump45_soldierweaponbundle\d4f58568-f1dc-2d74-6f52-5e817688104b.chunk"));
         using var writer = new StreamWriter(File.OpenWrite(@"D:\test.obj"));
         writer.WriteLine("o test");
-        while (reader.BaseStream.Position < 289536L)
+        while (reader.BaseStream.Position < 1344)
         {
             writer.WriteLine($"v {reader.ReadHalf()} {reader.ReadHalf()} {reader.ReadHalf()}");
             reader.BaseStream.Position += 10;
             writer.WriteLine($"vn {reader.ReadHalf()} {reader.ReadHalf()} {reader.ReadHalf()}");
             reader.BaseStream.Position += 10;
-            writer.WriteLine($"vt {reader.ReadHalf()} {reader.ReadHalf()}");
+            writer.WriteLine($"vt {reader.ReadHalf()} {1f - (float)reader.ReadHalf()}");
             reader.BaseStream.Position += 12;
         }
-
-        while (reader2.BaseStream.Position < reader2.BaseStream.Length)
+        reader.BaseStream.Position = 1344;
+        while (reader.BaseStream.Position < reader.BaseStream.Length)
         {
-            var face1 = reader2.ReadUInt16();
-            var face2 = reader2.ReadUInt16();
-            var face3 = reader2.ReadUInt16();
+            var face1 = reader.ReadUInt16();
+            var face2 = reader.ReadUInt16();
+            var face3 = reader.ReadUInt16();
             writer.WriteLine($"f {face1 + 1}/{face1 + 1}/{face1 + 1} {face2 + 1}/{face2 + 1}/{face2 + 1} {face3 + 1}/{face3 + 1}/{face3 + 1}");
         }
         */
@@ -72,39 +59,59 @@ public partial class MainWindow : Window
 
     public void LoadAssets(bool isFolder)
     {
-        ActiveDbo = null;
+        // Clear existing DbObject selection.
+        ActiveDataBaseObject = null;
+
         if (Settings.GamePath != "")
         {
-            if(isFolder)
+            if (isFolder)
             {
-                // We probably want to read all files.
-                using (var reader = new BinaryReader(File.OpenRead(Settings.GamePath + "\\Data\\cas.cat")))
-                    ActiveCatalog = new Catalog(reader);
+                ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
                 Assets = new();
             }
             else
             {
                 // Read single toc file.
-                ActiveDbo = DbObject.UnpackDbObject(Settings.GamePath);
+                ActiveDataBaseObject = DbObject.UnpackDbObject(Settings.GamePath);
                 Assets = new();
-                foreach (var element in ActiveDbo.Data as List<DbObject>)
+                foreach (var element in ActiveDataBaseObject.Data as List<DbObject>)
                 {
                     if (element.Name == "chunks" || element.Name == "bundles")
                     {
                         foreach (var asset in element.Data as List<DbObject>)
                         {
-                            string idString = asset.GetField("id").Data.ToString();
+                            string idString = asset.GetField("path").Data as string;
                             AssetType type = (element.Name == "chunks") ? AssetType.Chunk : AssetType.Unknown;
-                            object data = asset.GetField("size").Data;
+                            object data = asset.GetField("totalSize").Data;
 
                             long size = 0;
 
+                            // Check if we need to cast the read size to a long.
                             if (data is int var)
-                                size = (long)(int)data;
+                                size = (int)data;
                             else if (data is long var1)
                                 size = (long)data;
 
-                            Assets.Add(new AssetListItem(idString, type, size, ExportStatus.Ready, asset.ObjectType.ToString(), null));
+                            var chunks = asset.GetField("chunks").Data as List<DbObject>;
+                            List<MetaDataObject> metaDataObjects = new();
+
+                            for (int i = 0; i < chunks.Count; i++)
+                            {
+                                var  chunkSha = (asset.GetField("chunks").Data as List<DbObject>)[i].GetField("sha1").Data as byte[];
+                                Guid chunkGuid = (Guid)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("id").Data;
+                                long chunkSize = (long)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("size").Data;
+                                metaDataObjects.Add(new MetaDataObject(chunkSha, chunkGuid, chunkSize));
+                            }
+
+                            Assets.Add(
+                                new AssetListItem(
+                                    idString is null ? "" : idString, // Name
+                                    type, // AssetType
+                                    size, // Size
+                                    ExportStatus.Ready, // ExportStatus
+                                    asset.ObjectType.ToString(), // Remarks
+                                    metaDataObjects
+                                    ));
                         }
                     }
                 }
@@ -151,5 +158,20 @@ public partial class MainWindow : Window
         }
 
         UpdateItems();
+    }
+
+    private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        var assets = Assets;
+        var output = new List<AssetListItem>();
+
+        foreach(var asset in assets)
+        {
+            if (asset.Name.Contains(SearchBox.Text))
+            {
+                output.Add(asset);
+            }
+        }
+        AssetGrid.ItemsSource = output;
     }
 }

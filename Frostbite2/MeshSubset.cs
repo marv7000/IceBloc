@@ -2,7 +2,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite.Mesh;
+namespace IceBloc.Frostbite2;
 
 [StructLayout(LayoutKind.Sequential, Size = 0x94)]
 public unsafe struct MeshSubset

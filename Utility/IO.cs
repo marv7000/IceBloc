@@ -2,9 +2,8 @@
 using System.IO;
 using System.Xml.Serialization;
 using System.Xml;
-
-using IceBloc.Frostbite.Texture;
-using IceBloc.Frostbite.Mesh;
+using IceBloc.Frostbite2;
+using System.Linq;
 
 namespace IceBloc.Utility;
 
@@ -45,6 +44,43 @@ public class IO
         using (var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true, IndentChars = "    ", OmitXmlDeclaration = true }))
         {
             serializer.Serialize(xmlWriter, obj);
+        }
+    }
+
+    /// <summary>
+    /// Opens a Frostbite database file, try to decrypt it and save it to the cache.
+    /// </summary>
+    public static void DecryptAndCache(string path)
+    {
+        using (var r = new BinaryReader(File.OpenRead(path)))
+        {
+            byte[] magic = r.ReadBytes(4);
+            byte[] data;
+
+            // Is XOR encrypted.
+            if (magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x00 }) || magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x01 }))
+            {
+                r.BaseStream.Position += 296; // Skip the signature.
+                var key = r.ReadBytes(260);
+                for (int i = 0; i < key.Length; i++)
+                {
+                    key[i] ^= 0x7B; // XOR with 0x7B (Bytes 257, 258 and 259 are unused).
+                }
+                byte[] encryptedData = r.ReadUntilStreamEnd();
+                data = new byte[encryptedData.Length];
+                for (int i = 0; i < encryptedData.Length; i++)
+                    data[i] = (byte)(key[i % 257] ^ encryptedData[i]);
+            }
+            // Is not XOR encrypted.
+            else
+            {
+                r.BaseStream.Position = 0; // Go back to the start of the file;
+                data = r.ReadUntilStreamEnd(); // Read data.
+            }
+
+            // Write the Catalog to file to cache it.
+            Directory.CreateDirectory($"Cache\\{Settings.CurrentGame}");
+            File.WriteAllBytes($"Cache\\{Settings.CurrentGame}\\{Path.GetFileName(path)}", data);
         }
     }
 

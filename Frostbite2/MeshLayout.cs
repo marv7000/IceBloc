@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite.Mesh;
+namespace IceBloc.Frostbite2;
 
 [StructLayout(LayoutKind.Sequential, Size = 0xB0)]
 public struct MeshLayout

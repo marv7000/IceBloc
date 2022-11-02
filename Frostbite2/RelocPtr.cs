@@ -1,4 +1,4 @@
-﻿namespace IceBloc.Frostbite;
+﻿namespace IceBloc.Frostbite2;
 
 /// <summary>
 /// A <see cref="RelocPtr"/> is a simple pointer that stores a reference to a <typeparamref name="T"/> struct with additional padding;

@@ -1,10 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using IceBloc.Frostbite2;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Numerics;
+using System.Windows.Input;
 
 namespace IceBloc.Utility;
 
 public static class BinaryReaderExtensions
 {
+
+
     /// <summary>
     /// Reads a 7-bit encoded LEB128 integer.
     /// </summary>
@@ -20,6 +27,35 @@ public static class BinaryReaderExtensions
                 return result;
             shift += 7;
         }
+    }
+
+    public static CatalogEntry ReadCatalogEntry(this BinaryReader reader)
+    {
+        CatalogEntry entry = new();
+        entry.SHA = reader.ReadBytes(20);
+        entry.Offset = reader.ReadUInt32();
+        entry.DataSize = reader.ReadInt32();
+        entry.CasFileIndex = reader.ReadInt32();
+
+        return entry;
+    }
+
+    public static Matrix4x4 ReadMatrix4x4(this BinaryReader reader)
+    {
+        return new Matrix4x4(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                             reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                             reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
+                             reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+    }
+
+    public static TimeSpan ReadDBTimeSpan(this BinaryReader reader)
+    {
+        var val = (ulong)reader.ReadLEB128();
+        ulong lower = val & 0x00000000FFFFFFFF;
+        var upper = (val & 0xFFFFFFFF00000000) >> 32;
+        var flag = lower & 1;
+        var span = lower >> 1 ^ flag | (upper >> 1 ^ flag) << 32;
+        return new TimeSpan((long)span);
     }
 
     /// <summary>
