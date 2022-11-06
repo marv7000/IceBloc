@@ -1,65 +1,64 @@
-﻿namespace IceBloc.Frostbite2;
+﻿using IceBloc.Utility;
+using System;
+using System.IO;
+using System.Text;
 
-public enum DbObjectType : byte
-{
-    Eoo = 0x0,
-    Array = 0x1,
-    Object = 0x2,
-    HomoArray = 0x3,
-    Null = 0x4,
-    ObjectId = 0x5,
-    Bool = 0x6,
-    String = 0x7,
-    Integer = 0x8,
-    Long = 0x9,
-    VarInt = 0xA,
-    Float = 0xB,
-    Double = 0xC,
-    Timestamp = 0xD,
-    RecordId = 0xE,
-    Guid = 0xF,
-    SHA1 = 0x10,
-    Matrix44 = 0x11,
-    Vector4 = 0x12,
-    Blob = 0x13,
-    Attachment = 0x14,
-    Timespan = 0x15,
-    StringAtom = 0x16,
-    TypedBlob = 0x17,
-    Environment = 0x18,
-    InternalMin = 0x0,
-    InternalMax = 0x1F,
-    Mask = 0x1F,
-    TaggedField = 0x40,
-    Anonymous = 0x80,
-};
+namespace IceBloc.Frostbite3;
 
-public enum FieldType : byte
+public class DxTexture
 {
-    Void = 0x0,
-    DbObject = 0x1,
-    ValueType = 0x2,
-    Class = 0x3,
-    Array = 0x4,
-    FixedArray = 0x5,
-    String = 0x6,
-    CString = 0x7,
-    Enum = 0x8,
-    FileRef = 0x9,
-    Boolean = 0xA,
-    Int8 = 0xB,
-    UInt8 = 0xC,
-    Int16 = 0xD,
-    UInt16 = 0xE,
-    Int32 = 0xF,
-    UInt32 = 0x10,
-    Int64 = 0x11,
-    UInt64 = 0x12,
-    Float32 = 0x13,
-    Float64 = 0x14,
-    GUID = 0x15,
-    SHA1 = 0x16,
-    ResourceRef = 0x17,
+    public uint[] MipOffsets = new uint[2];
+    public TextureType Ttype;
+    public TextureFormat Format;
+    public uint Flags;
+    public ushort Width;
+    public ushort Height;
+    public ushort Depth;
+    public ushort SliceCount;
+    public byte MipmapCount;
+    public byte MipmapBaseIndex;
+    public Guid StreamingChunkId;
+    public uint[] MipmapSizes = new uint[15];
+    public uint MipmapChainSize;
+    public uint ResourceNameHash;
+    public string TextureGroup;
+
+    public byte[] PixelData;
+
+    /// <summary>
+    /// Deserializes a DxTexture asset.
+    /// </summary>
+    /// <param name="texture"><see cref="DxTexture"/> asset to deserialize.</param>
+    public DxTexture(byte[] texture)
+    {
+        using var stream = new MemoryStream(texture);
+        using var reader = new BinaryReader(stream);
+
+        MipOffsets[0] = reader.ReadUInt32();
+        MipOffsets[1] = reader.ReadUInt32();
+        Ttype = (TextureType)reader.ReadInt32();
+        Format = (TextureFormat)reader.ReadUInt16();
+        Flags = reader.ReadUInt32();
+        Width = reader.ReadUInt16();
+        Height = reader.ReadUInt16();
+        Depth = reader.ReadUInt16();
+        SliceCount = reader.ReadUInt16();
+        MipmapCount = reader.ReadByte();
+        MipmapBaseIndex = reader.ReadByte();
+        StreamingChunkId = new Guid(reader.ReadBytes(16));
+        for (int i = 0; i < 15; i++)
+            MipmapSizes[i] = reader.ReadUInt32();
+        MipmapChainSize = reader.ReadUInt32();
+        ResourceNameHash = reader.ReadUInt32();
+        TextureGroup = Encoding.ASCII.GetString(reader.ReadBytes(16)).Replace("\0", "");
+
+        PixelData = IO.GetAssetFromGuid(StreamingChunkId);
+    }
+
+    public bool GetFlag(TextureHeaderFlags flag)
+    {
+        return (Flags & (uint)flag) != 0;
+    }
 }
 
 public enum TextureType
@@ -222,3 +221,4 @@ public enum DdsFormat
     BC7_UNORM = 0x62,
     BC7_UNORM_SRGB = 0x63
 };
+

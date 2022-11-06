@@ -123,15 +123,13 @@ public class DbObject
         {
             foreach (var element in Data as List<DbObject>)
             {
-                if (element.Name == name)
-                {
-                    return element;
-                }
+                if (element.Name == name) return element;
             }
             return null;
         }
         catch
         {
+            Output.WriteLine(1);
             return null;
         }
     }

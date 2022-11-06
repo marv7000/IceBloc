@@ -4,6 +4,8 @@ using System.Xml.Serialization;
 using System.Xml;
 using IceBloc.Frostbite2;
 using System.Linq;
+using IceBloc.Frostbite3;
+using IceBloc.InternalFormats;
 
 namespace IceBloc.Utility;
 
@@ -88,8 +90,8 @@ public class IO
     {
         switch (obj)
         {
-            case DxTexture:
-                ExportTextureAsDDS(obj as DxTexture, filePath);
+            case InternalTexture:
+                Settings.CurrentTextureFormat.Export(obj as InternalTexture, filePath);
                 break;
             default:
                 break;
@@ -98,31 +100,6 @@ public class IO
 
     #region Textures
 
-    private static void ExportTextureAsDDS(DxTexture texture, string filePath)
-    {
-        using var stream = new FileStream(filePath, FileMode.Create);
-        using var writer = new BinaryWriter(stream);
-        {
-            // DDS Header
-            writer.Write(new char[] { 'D', 'D', 'S', ' ' });
-            writer.Write(124U);
-            writer.Write(0x07100AU); // Flags
-            writer.Write((uint)texture.Height);
-            writer.Write((uint)texture.Width);
-            writer.Write((uint)Math.Pow(texture.Width * texture.Height >> 1, 2));
-            writer.Write((uint)texture.Depth);
-            writer.Write((uint)texture.MipmapCount);
-            writer.Write(new byte[44]);
-            writer.Write(32U);
-            writer.Write(0x00U);
-            writer.Write(texture.Format.ToString().ToCharArray());
-            writer.Write(new byte[5 * 4]);
-            writer.Write(new byte[16 * 4]);
-            writer.Write(0U);
-            // Pixel data
-            writer.Write(texture.PixelData);
-        }
-    }
 
     #endregion
 }

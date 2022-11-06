@@ -13,11 +13,11 @@ public unsafe struct MeshSet
     public int MeshCount;
     public Vector4 BoundBoxMin;
     public Vector4 BoundBoxMax;
-    public RelocPtr<MeshLayout> LOD0;
-    public RelocPtr<MeshLayout> LOD1;
-    public RelocPtr<MeshLayout> LOD2;
-    public RelocPtr<MeshLayout> LOD3;
-    public RelocPtr<MeshLayout> LOD4;
+    //public RelocPtr<MeshLayout> LOD0;
+    //public RelocPtr<MeshLayout> LOD1;
+    //public RelocPtr<MeshLayout> LOD2;
+    //public RelocPtr<MeshLayout> LOD3;
+    //public RelocPtr<MeshLayout> LOD4;
     public RelocPtrStr Name;
     public RelocPtrStr ShortName;
 }

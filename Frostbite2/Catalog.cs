@@ -4,7 +4,6 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Text;
 
 namespace IceBloc.Frostbite2;
@@ -52,8 +51,8 @@ public class Catalog : IDisposable
     public byte[] Extract(byte[] sha, bool compressed)
     {
         // Throw an exception if we can't find a chunk with the given SHA.
-        if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry)) throw new KeyNotFoundException($"Could not get a value for {Encoding.ASCII.GetString(sha)}!");
-
+        if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry)) 
+            throw new KeyNotFoundException($"Could not get a value for {Encoding.ASCII.GetString(sha)}!");
 
         BinaryReader r = CasStreams[entry.CasFileIndex];
         r.BaseStream.Position = entry.Offset;
@@ -79,13 +78,12 @@ public class Catalog : IDisposable
                 {
                     memory.Position += 2;
 
-                    using (var deflator = new DeflateStream(memory, CompressionMode.Decompress))
+                    using (var deflator = new ZLibStream(memory, CompressionMode.Decompress))
                     {
                         deflator.CopyTo(output);
                     }
                 }
             }
-
             return output.ToArray();
         }
 

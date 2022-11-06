@@ -6,6 +6,9 @@ namespace IceBloc.Utility;
 
 public class AssetListItem
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public string Name { get; set; }
     public AssetType Type { get; set; }
     public long Size { get; set; }
@@ -32,6 +35,7 @@ public class AssetListItem
             {
                 case AssetType.Unknown:
                 case AssetType.Chunk:
+                    Console.WriteLine("Exporting Unknown");
                     foreach (var meta in MetaData)
                     {
                         string path = $"Output\\{Name}";

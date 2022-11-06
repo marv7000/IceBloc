@@ -1,7 +1,7 @@
 ﻿namespace IceBloc.Frostbite2;
 
 /// <summary>
-/// A <see cref="RelocPtr"/> is a simple pointer that stores a reference to a <typeparamref name="T"/> struct with additional padding;
+/// A <see cref="RelocPtr{T}"/> is a simple pointer that stores a reference to a <typeparamref name="T"/> struct with additional padding;
 /// </summary>
 public unsafe struct RelocPtr<T> where T : unmanaged
 {
@@ -14,14 +14,16 @@ public unsafe struct RelocPtr<T> where T : unmanaged
 /// </summary>
 public unsafe struct RelocPtrStr
 {
-
+    // Note: This is a byte* and not char*, because in C# a char has a 2-byte character width.
+    //public byte* Ptr;
+    //public byte Pad;
 }
 
 /// <summary>
 /// A collection of <see cref="RelocPtr{T}"/>, prefixed by an array size.
 /// </summary>
-/// <typeparam name="T"></typeparam>
 public unsafe struct RelocArray<T> where T : unmanaged
 {
-
+    public uint Size;
+    public T*[] Ptr;
 }
