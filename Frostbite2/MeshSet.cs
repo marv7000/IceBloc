@@ -6,13 +6,14 @@ namespace IceBloc.Frostbite2;
 public class MeshSet
 {
     public MeshSetLayout SetLayout;
-    public MeshLayout Layout;
-    public MeshSubset[] Subsets;
+    public MeshLayout[] Layout;
+    public MeshSubset[][] Subsets;
 
     public MeshSet(Stream stream)
     {
         using var r = new BinaryReader(stream);
 
+        // Parse MeshSetLayout.
         MeshSetLayout msl = new MeshSetLayout();
         msl.MeshType = (MeshType)r.ReadUInt32();
         msl.Flags = r.ReadUInt32();
@@ -30,53 +31,65 @@ public class MeshSet
         msl.NameHash = r.ReadInt32();
         r.ReadInt32(); // Pad
 
-        MeshLayout ml = new MeshLayout();
-        ml.Type = (MeshType)r.ReadUInt32();
-        ml.SubCount = r.ReadInt32();
-        ml.SubSets = r.ReadRelocPtr();
-        ml.CategorySubsetIndices0 = r.ReadRelocArray();
-        ml.CategorySubsetIndices1 = r.ReadRelocArray();
-        ml.CategorySubsetIndices2 = r.ReadRelocArray();
-        ml.CategorySubsetIndices3 = r.ReadRelocArray();
-        ml.Flags = (MeshLayoutFlags)r.ReadUInt32();
-        ml.IndexBufferFormat = (IndexBufferFormat)r.ReadInt32();
-        ml.IndexDataSize = r.ReadInt32();
-        ml.VertexDataSize = r.ReadInt32();
-        ml.EdgeDataSize = r.ReadInt32();
-        ml.DataChunkID = new System.Guid(r.ReadBytes(16));
-        ml.AuxVertexIndexDataOffset = r.ReadInt32();
-        ml.EmbeddedEdgeData = r.ReadRelocPtr();
-        ml.ShaderDebugName = r.ReadRelocPtr();
-        ml.Name = r.ReadRelocPtr();
-        ml.ShortName = r.ReadRelocPtr();
-        ml.NameHash = r.ReadInt32();
-        ml.Data = r.ReadRelocPtr();
-        ml.u17 = r.ReadInt32();
-        ml.u18 = r.ReadInt64();
-        ml.u19 = r.ReadInt64();
-        ml.SubsetPartIndices = r.ReadRelocPtr();
-
-        Subsets = new MeshSubset[ml.SubCount];
-        for (int i = 0; i < ml.SubCount; i++)
+        // Parse MeshLayout for each LOD.
+        MeshLayout[] ml = new MeshLayout[msl.LodCount];
+        for (int i = 0; i < msl.LodCount; i++)
         {
-            Subsets[i] = new MeshSubset();
-            Subsets[i].GeometryDeclarations = r.ReadRelocPtr(); // int
-            Subsets[i].MaterialName = r.ReadRelocPtr(); // string
-            Subsets[i].MaterialIndex = r.ReadInt32();
-            Subsets[i].PrimitiveCount = r.ReadInt32();
-            Subsets[i].StartIndex = r.ReadInt32();
-            Subsets[i].VertexOffset = r.ReadInt32();
-            Subsets[i].VertexCount = r.ReadInt32();
-            Subsets[i].VertexStride = r.ReadByte();
-            Subsets[i].PrimitiveType = r.ReadByte();
-            Subsets[i].BonesPerVertex = r.ReadByte();
-            Subsets[i].BoneCount = r.ReadByte();
-            Subsets[i].BoneIndices = r.ReadRelocPtr(); // short
-            Subsets[i].GeoDecls = r.ReadGeometryDeclarationDesc();
-            for (int j = 0; j < 6; j++)
+            ml[i] = new();
+            ml[i].Type = (MeshType)r.ReadUInt32();
+            ml[i].SubCount = r.ReadInt32();
+            ml[i].SubSets = r.ReadRelocPtr();
+            ml[i].CategorySubsetIndices0 = r.ReadRelocArray();
+            ml[i].CategorySubsetIndices1 = r.ReadRelocArray();
+            ml[i].CategorySubsetIndices2 = r.ReadRelocArray();
+            ml[i].CategorySubsetIndices3 = r.ReadRelocArray();
+            ml[i].Flags = (MeshLayoutFlags)r.ReadUInt32();
+            ml[i].IndexBufferFormat = (IndexBufferFormat)r.ReadInt32();
+            ml[i].IndexDataSize = r.ReadInt32();
+            ml[i].VertexDataSize = r.ReadInt32();
+            ml[i].EdgeDataSize = r.ReadInt32();
+            ml[i].DataChunkID = new System.Guid(r.ReadBytes(16));
+            ml[i].AuxVertexIndexDataOffset = r.ReadInt32();
+            ml[i].EmbeddedEdgeData = r.ReadRelocPtr();
+            ml[i].ShaderDebugName = r.ReadRelocPtr();
+            ml[i].Name = r.ReadRelocPtr();
+            ml[i].ShortName = r.ReadRelocPtr();
+            ml[i].NameHash = r.ReadInt32();
+            ml[i].Data = r.ReadRelocPtr();
+            ml[i].u17 = r.ReadInt32();
+            ml[i].u18 = r.ReadInt64();
+            ml[i].u19 = r.ReadInt64();
+            ml[i].SubsetPartIndices = r.ReadRelocPtr();
+        }
+
+        // Parse each subset for each LOD. This 2D array maps X to the LOD and Y to the MeshSubset.
+        Subsets = new MeshSubset[msl.LodCount][];
+
+        for (int i = 0; i < msl.LodCount; i++)
+        {
+            Subsets[i] = new MeshSubset[ml[i].SubCount];
+            for (int j = 0; j < ml[i].SubCount; j++)
             {
-                Subsets[i].TexCoordRatios[j] = r.ReadSingle();
+                Subsets[i][j] = new MeshSubset();
+                Subsets[i][j].GeometryDeclarations = r.ReadRelocPtr(); // int
+                Subsets[i][j].MaterialName = r.ReadRelocPtr(); // string
+                Subsets[i][j].MaterialIndex = r.ReadInt32();
+                Subsets[i][j].PrimitiveCount = r.ReadInt32();
+                Subsets[i][j].StartIndex = r.ReadInt32();
+                Subsets[i][j].VertexOffset = r.ReadInt32();
+                Subsets[i][j].VertexCount = r.ReadInt32();
+                Subsets[i][j].VertexStride = r.ReadByte();
+                Subsets[i][j].PrimitiveType = r.ReadByte();
+                Subsets[i][j].BonesPerVertex = r.ReadByte();
+                Subsets[i][j].BoneCount = r.ReadByte();
+                Subsets[i][j].BoneIndices = r.ReadRelocPtr(); // short
+                Subsets[i][j].GeoDecls = r.ReadGeometryDeclarationDesc();
+                for (int k = 0; k < 6; k++)
+                {
+                    Subsets[i][j].TexCoordRatios[k] = r.ReadSingle();
+                }
             }
+            r.BaseStream.Position += 8;
         }
 
         // Finalize
