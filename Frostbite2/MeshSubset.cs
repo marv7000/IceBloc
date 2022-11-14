@@ -7,26 +7,30 @@ namespace IceBloc.Frostbite2;
 [StructLayout(LayoutKind.Sequential, Size = 0x94)]
 public unsafe struct MeshSubset
 {
-    public RelocPtr<int> GeometryDeclarations;
-    public RelocPtrStr MaterialName;
-    public int MaterialIndex;
-    public int PrimitiveCount;
-    public int StartIndex;
-    public int VertexOffset;
-    public int VertexCount;
-    public byte VertexStride;
-    public byte PrimitiveType;
-    public byte BonesPerVertex;
-    public byte BoneCount;
-    public RelocPtr<short> BoneIndices;
-    public GeometryDeclarationDesc GeoDecls;
-    public fixed float TexCoordRatios[6];
+    public RelocPtr GeometryDeclarations = new(); // int
+    public RelocPtr MaterialName = new(); // string
+    public int MaterialIndex = 0;
+    public int PrimitiveCount = 0;
+    public int StartIndex = 0;
+    public int VertexOffset = 0;
+    public int VertexCount = 0;
+    public byte VertexStride = 0;
+    public byte PrimitiveType = 0;
+    public byte BonesPerVertex = 0;
+    public byte BoneCount = 0;
+    public RelocPtr BoneIndices = new(); // short
+    public GeometryDeclarationDesc GeoDecls = new();
+    public float[] TexCoordRatios = new float[6];
 
-    public int GetGeoDesc(int type)
+    public MeshSubset()
+    {
+    }
+
+    public int GetGeoDesc(VertexElementFormat type)
     {
         for (int i = 0; i < 16; i++)
         {
-            var elemType = GeoDecls.Element[i * 4];
+            var elemType = GeoDecls.Elements[i].Format;
 
             if (elemType == type)
             {

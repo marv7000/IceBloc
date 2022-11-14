@@ -2,16 +2,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Numerics;
-using System.Windows.Input;
+using System.Runtime.InteropServices;
 
 namespace IceBloc.Utility;
 
 public static class BinaryReaderExtensions
 {
-
-
     /// <summary>
     /// Reads a 7-bit encoded LEB128 integer.
     /// </summary>
@@ -46,6 +43,11 @@ public static class BinaryReaderExtensions
                              reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
                              reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(),
                              reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+    }
+
+    public static Vector4 ReadVector4(this BinaryReader reader)
+    {
+        return new(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
     }
 
     public static TimeSpan ReadDBTimeSpan(this BinaryReader reader)
@@ -83,5 +85,64 @@ public static class BinaryReaderExtensions
             else
                 return new string(chars.ToArray());
         }
+    }
+
+    public static T ReadStruct<T>(this BinaryReader reader)
+    {
+        var byteLength = Marshal.SizeOf(typeof(T));
+        var bytes = reader.ReadBytes(byteLength);
+        var pinned = GCHandle.Alloc(bytes, GCHandleType.Pinned);
+        T stt = (T)Marshal.PtrToStructure(pinned.AddrOfPinnedObject(), typeof(T));
+        pinned.Free();
+        return stt;
+    }
+
+    public static void WriteStruct<T>(this BinaryWriter writer, T t)
+    {
+        var sizeOfT = Marshal.SizeOf(typeof(T));
+        var ptr = Marshal.AllocHGlobal(sizeOfT);
+        Marshal.StructureToPtr(t, ptr, false);
+        var bytes = new byte[sizeOfT];
+        Marshal.Copy(ptr, bytes, 0, bytes.Length);
+        Marshal.FreeHGlobal(ptr);
+        writer.Write(bytes);
+    }
+
+    public static RelocPtr ReadRelocPtr(this BinaryReader reader)
+    {
+        RelocPtr ptr;
+        ptr.Ptr = reader.ReadInt32();
+        ptr.Pad = reader.ReadInt32(); // Should always be 0, but just read it for consistency.
+        return ptr;
+    }
+
+    public static RelocArray ReadRelocArray(this BinaryReader reader)
+    {
+        RelocArray arr;
+        arr.Size = reader.ReadUInt32();
+        arr.BaseAddress = reader.ReadRelocPtr();
+        return arr;
+    }
+
+    public static GeometryDeclarationDesc ReadGeometryDeclarationDesc(this BinaryReader reader)
+    {
+        GeometryDeclarationDesc desc = new();
+        for (int i = 0; i < 16; i++)
+        {
+            desc.Elements[i].Usage = (VertexElementUsage)reader.ReadByte(); 
+            desc.Elements[i].Format = (VertexElementFormat)reader.ReadByte(); 
+            desc.Elements[i].Offset = reader.ReadByte(); 
+            desc.Elements[i].StreamIndex = reader.ReadByte(); 
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            desc.Streams[i].Stride = reader.ReadByte();
+            desc.Streams[i].Classification = (VertexElementClassification)reader.ReadByte();
+        }
+        desc.ElementCount = reader.ReadByte();
+        desc.StreamCount = reader.ReadByte();
+        reader.ReadBytes(2);
+
+        return desc;
     }
 }

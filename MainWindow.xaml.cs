@@ -25,28 +25,6 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
-        /*
-        using var reader = new BinaryReader(File.OpenRead(@"D:\repos\IceBloc\bin\Debug\net6.0-windows10.0.22621.0\Output\win32\weapons\ump45\ump45_soldierweaponbundle\d4f58568-f1dc-2d74-6f52-5e817688104b.chunk"));
-        using var writer = new StreamWriter(File.OpenWrite(@"D:\test.obj"));
-        writer.WriteLine("o test");
-        while (reader.BaseStream.Position < 1344)
-        {
-            writer.WriteLine($"v {reader.ReadHalf()} {reader.ReadHalf()} {reader.ReadHalf()}");
-            reader.BaseStream.Position += 10;
-            writer.WriteLine($"vn {reader.ReadHalf()} {reader.ReadHalf()} {reader.ReadHalf()}");
-            reader.BaseStream.Position += 10;
-            writer.WriteLine($"vt {reader.ReadHalf()} {1f - (float)reader.ReadHalf()}");
-            reader.BaseStream.Position += 12;
-        }
-        reader.BaseStream.Position = 1344;
-        while (reader.BaseStream.Position < reader.BaseStream.Length)
-        {
-            var face1 = reader.ReadUInt16();
-            var face2 = reader.ReadUInt16();
-            var face3 = reader.ReadUInt16();
-            writer.WriteLine($"f {face1 + 1}/{face1 + 1}/{face1 + 1} {face2 + 1}/{face2 + 1}/{face2 + 1} {face3 + 1}/{face3 + 1}/{face3 + 1}");
-        }
-        */
         InitializeComponent();
     }
 

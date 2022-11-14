@@ -1,29 +1,27 @@
-﻿namespace IceBloc.Frostbite2;
+﻿using System.Runtime.InteropServices;
+
+namespace IceBloc.Frostbite2;
 
 /// <summary>
-/// A <see cref="RelocPtr{T}"/> is a simple pointer that stores a reference to a <typeparamref name="T"/> struct with additional padding;
+/// A <see cref="RelocPtr"/> is a simple pointer that stores a reference with additional padding;
 /// </summary>
-public unsafe struct RelocPtr<T> where T : unmanaged
+[StructLayout(LayoutKind.Sequential, Size = 0x08)]
+public unsafe struct RelocPtr
 {
-    public T* Ptr;
-    public int Pad;
+    public int Ptr = 0;
+    public int Pad = 0;
+
+    public RelocPtr()
+    {
+    }
 }
 
 /// <summary>
-/// Like <see cref="RelocPtr{T}"/>, but for NUL-terminated C strings.
+/// An array of <see cref="RelocPtr"/>s, prefixed by an array size.
 /// </summary>
-public unsafe struct RelocPtrStr
-{
-    // Note: This is a byte* and not char*, because in C# a char has a 2-byte character width.
-    //public byte* Ptr;
-    //public byte Pad;
-}
-
-/// <summary>
-/// A collection of <see cref="RelocPtr{T}"/>, prefixed by an array size.
-/// </summary>
-public unsafe struct RelocArray<T> where T : unmanaged
+[StructLayout(LayoutKind.Sequential, Size = 0x0C)]
+public unsafe struct RelocArray
 {
     public uint Size;
-    public T*[] Ptr;
+    public RelocPtr BaseAddress;
 }
