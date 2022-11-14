@@ -3,27 +3,24 @@ using System.Runtime.InteropServices;
 
 namespace IceBloc.Frostbite2;
 
-[StructLayout(LayoutKind.Sequential)]
-public unsafe struct MeshSetLayout
+public struct MeshSetLayout
 {
     public const int MaxLodCount = 5;
     public const int LodStride = 8;
 
-    public MeshType MeshType;
-    public uint Flags;
-    public int LodCount;
-    public int MeshCount;
-    public int TotalSubsetCount;
-    public Vector4 BoundBoxMin;
-    public Vector4 BoundBoxMax;
-    public RelocPtr LOD0;
-    public RelocPtr LOD1;
-    public RelocPtr LOD2;
-    public RelocPtr LOD3;
-    public RelocPtr LOD4;
-    public RelocPtr Name;
-    public RelocPtr ShortName;
-    public int NameHash;
+    public MeshType MeshType = 0;
+    public uint Flags = 0;
+    public int LodCount = 0;
+    public int MeshCount = 0;
+    public int TotalSubsetCount = 0;
+    public Vector4 BoundBoxMin = new();
+    public Vector4 BoundBoxMax = new();
+    public RelocPtr<MeshLayout>[] LOD = new RelocPtr<MeshLayout>[5];
+    public RelocPtr<string> Name = new();
+    public RelocPtr<string> ShortName = new();
+    public int NameHash = 0;
+
+    public MeshSetLayout() { }
 }
 
 public enum MeshType : uint

@@ -18,7 +18,7 @@ public class ModelExporterOBJ : IModelExporter
         w.WriteLine($"o {mesh.Name}");
 
         // Loop through each vertex.
-        for (int i = 0; i < mesh.Vertices.Length; i++)
+        for (int i = 0; i < mesh.Vertices.Count; i++)
         {
             // Write the position data.
             w.WriteLine($"v {mesh.Vertices[i].PositionX} {mesh.Vertices[i].PositionY} {mesh.Vertices[i].PositionZ}");
@@ -28,12 +28,12 @@ public class ModelExporterOBJ : IModelExporter
             w.WriteLine($"vt {mesh.Vertices[i].TexCoordX} {mesh.Vertices[i].TexCoordY}");
         }
         // Loop through each face index.
-        for (int i = 0; i < mesh.Faces.Length; i++)
+        for (int i = 0; i < mesh.Faces.Count; i++)
         {
             // Get the current face (for readability).
             var f = mesh.Faces[i];
             // Write three face indices (Format: pos/norm/uv).
-            w.WriteLine($"f {f.A}/{f.A}/{f.A} {f.B}/{f.B}/{f.B} {f.C}/{f.C}/{f.C}/");
+            w.WriteLine($"f {f.A + 1}/{f.A + 1}/{f.A + 1} {f.B + 1}/{f.B + 1}/{f.B + 1} {f.C + 1}/{f.C + 1}/{f.C + 1}");
         }
     }
 }

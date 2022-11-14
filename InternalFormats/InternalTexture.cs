@@ -4,7 +4,6 @@ namespace IceBloc.InternalFormats;
 
 public sealed class InternalTexture
 {
-    public string Name = "";
     public int Width;
     public int Height;
     public int Depth;
@@ -15,8 +14,9 @@ public sealed class InternalTexture
 
 public enum InternalTextureFormat
 {
-    Grey,
-    RGB,
+    UNKNOWN = -1,
+    GREY,
+    RGB0,
     RGBA,
     DXT1,
     DXT3,

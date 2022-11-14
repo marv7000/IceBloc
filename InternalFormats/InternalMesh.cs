@@ -1,4 +1,6 @@
-﻿namespace IceBloc.InternalFormats;
+﻿using System.Collections.Generic;
+
+namespace IceBloc.InternalFormats;
 
 /// <summary>
 /// This class holds mesh data being read in and is stored in our own format so we can streamline the exporting process.
@@ -7,8 +9,10 @@ public sealed class InternalMesh
 {
     public string Name = "";
     public bool IsSkinned;
-    public Vertex[] Vertices;
-    public (int A, int B, int C)[] Faces;
+    public List<Vertex> Vertices = new();
+    public List<(int A, int B, int C)> Faces = new();
+
+    public InternalMesh() { }
 }
 
 /// <summary>

@@ -1,27 +1,32 @@
-﻿using System.Runtime.InteropServices;
-
-namespace IceBloc.Frostbite2;
+﻿namespace IceBloc.Frostbite2;
 
 /// <summary>
 /// A <see cref="RelocPtr"/> is a simple pointer that stores a reference with additional padding;
 /// </summary>
-[StructLayout(LayoutKind.Sequential, Size = 0x08)]
-public unsafe struct RelocPtr
+public struct RelocPtr<T>
 {
     public int Ptr = 0;
     public int Pad = 0;
+    public T Value = default(T);
 
-    public RelocPtr()
+    public RelocPtr() { }
+
+    public override string ToString()
     {
+        return $"RelocPtr({Ptr}), {Value}";
     }
 }
 
 /// <summary>
 /// An array of <see cref="RelocPtr"/>s, prefixed by an array size.
 /// </summary>
-[StructLayout(LayoutKind.Sequential, Size = 0x0C)]
-public unsafe struct RelocArray
+public struct RelocArray<T>
 {
     public uint Size;
-    public RelocPtr BaseAddress;
+    public RelocPtr<T> BaseAddress; 
+
+    public override string ToString()
+    {
+        return $"RelocArray({BaseAddress.Ptr}), {Size}";
+    }
 }

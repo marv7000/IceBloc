@@ -1,11 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Numerics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace IceBloc.Frostbite2;
 
-[StructLayout(LayoutKind.Sequential, Size = 0x4C)]
-public unsafe struct GeometryDeclarationDesc
+public struct GeometryDeclarationDesc
 {
     public Element[] Elements = new Element[16]; // 16 Elements
     public Stream[] Streams = new Stream[4]; // 4 Streams
@@ -14,53 +15,75 @@ public unsafe struct GeometryDeclarationDesc
     public byte Padding0 = 0;
     public byte Padding1 = 0;
 
-    public GeometryDeclarationDesc()
+    public GeometryDeclarationDesc() { }
+
+    public Element GetByUsage(VertexElementUsage usage)
     {
-    }
-
-    public Vector4 Read(ReadOnlySpan<byte> buffer, int index)
-    {
-        var data = buffer[Elements[index].Offset..];
-
-        var result = Vector4.Zero;
-
-        switch (Elements[index].Format)
+        for (int i = 0; i < ElementCount; i++)
         {
-            case VertexElementFormat.Half3:
-                {
-                    var casted = MemoryMarshal.Cast<byte, Half>(data);
-                    return new((float)casted[0], (float)casted[1], (float)casted[2], 0.0f);
-                }
-            case VertexElementFormat.Half4:
-                {
-                    var casted = MemoryMarshal.Cast<byte, Half>(data);
-                    return new((float)casted[0], (float)casted[1], (float)casted[2], (float)casted[3]);
-                }
-            case VertexElementFormat.Byte4:
-                {
-                    var casted = MemoryMarshal.Cast<byte, byte>(data);
-                    return new(casted[0], casted[1], casted[2], casted[3]);
-                }
-            case VertexElementFormat.Byte4N:
-                {
-                    var casted = MemoryMarshal.Cast<byte, byte>(data);
-                    return new(casted[0] / 255.0f, casted[1] / 255.0f, casted[2] / 255.0f, casted[3] / 255.0f);
-                }
+            if (Elements[i].Usage == usage)
+                return Elements[i];
         }
-
-        return result;
+        return default(Element);
     }
 
-    [StructLayout(LayoutKind.Sequential, Size = 0x04)]
-    public unsafe struct Element
+    public struct Element
     {
-        public VertexElementUsage Usage;
-        public VertexElementFormat Format;
-        public byte Offset;
-        public byte StreamIndex;
+        public VertexElementUsage Usage = 0;
+        public VertexElementFormat Format = 0;
+        public byte Offset = 0;
+        public byte StreamIndex = 0;
+
+        public Element() { }
+
+        public Vector4 Read(BinaryReader r, int vertexStride)
+        {
+            long currentPosition = r.BaseStream.Position;
+
+            var buffer = r.ReadBytes(vertexStride);
+            var data = buffer[Offset..];
+
+            var result = Vector4.Zero;
+
+            switch (Format)
+            {
+                case VertexElementFormat.Half2:
+                    {
+                        var casted = MemoryMarshal.Cast<byte, Half>(data);
+                        r.BaseStream.Position = currentPosition;
+                        return new((float)casted[0], (float)casted[1], 0.0f, 0.0f);
+                    }
+                case VertexElementFormat.Half3:
+                    {
+                        var casted = MemoryMarshal.Cast<byte, Half>(data);
+                        r.BaseStream.Position = currentPosition;
+                        return new((float)casted[0], (float)casted[1], (float)casted[2], 0.0f);
+                    }
+                case VertexElementFormat.Half4:
+                    {
+                        var casted = MemoryMarshal.Cast<byte, Half>(data);
+                        r.BaseStream.Position = currentPosition;
+                        return new((float)casted[0], (float)casted[1], (float)casted[2], (float)casted[3]);
+                    }
+                case VertexElementFormat.Byte4:
+                    {
+                        var casted = MemoryMarshal.Cast<byte, byte>(data);
+                        r.BaseStream.Position = currentPosition;
+                        return new(casted[0], casted[1], casted[2], casted[3]);
+                    }
+                case VertexElementFormat.Byte4N:
+                    {
+                        var casted = MemoryMarshal.Cast<byte, byte>(data);
+                        r.BaseStream.Position = currentPosition;
+                        return new(casted[0] / 255.0f, casted[1] / 255.0f, casted[2] / 255.0f, casted[3] / 255.0f);
+                    }
+            }
+            r.BaseStream.Position = currentPosition;
+            return result;
+        }
     }
 
-    public unsafe struct Stream
+    public struct Stream
     {
         public byte Stride;
         public VertexElementClassification Classification;

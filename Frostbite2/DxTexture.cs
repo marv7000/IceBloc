@@ -1,8 +1,7 @@
-﻿using IceBloc.Utility;
+﻿using IceBloc.InternalFormats;
 using System;
 using System.IO;
 using System.Text;
-
 namespace IceBloc.Frostbite2;
 
 public class DxTexture
@@ -23,35 +22,46 @@ public class DxTexture
     public uint MipmapChainSize;
     public uint ResourceNameHash;
     public string TextureGroup;
-    public byte[] PixelData;
 
-    /// <summary>
-    /// Deserializes a DxTexture asset.
-    /// </summary>
-    public DxTexture(Stream dxTextureStream)
+    public DxTexture() { }
+
+    public static InternalTexture ConvertToInternal(Stream res, Stream chunk)
     {
-        using var reader = new BinaryReader(dxTextureStream);
+        using var rr = new BinaryReader(res);
+        using var cr = new BinaryReader(chunk);
 
-        Version             = reader.ReadUInt32();
-        TexType             = (TextureType)reader.ReadInt32();
-        TexFormat           = (TextureFormat)reader.ReadUInt16();
-        Flags               = reader.ReadUInt32();
-        Width               = reader.ReadUInt16();
-        Height              = reader.ReadUInt16();
-        Depth               = reader.ReadUInt16();
-        SliceCount          = reader.ReadUInt16();
-        _Pad0               = reader.ReadUInt16();
-        MipmapCount         = reader.ReadByte();
-        MipmapBaseIndex     = reader.ReadByte();
-        StreamingChunkId    = new Guid(reader.ReadBytes(16));
-        // Mipmaps.
-        for (int i = 0; i < 15; i++) MipmapSizes[i] = reader.ReadUInt32();
-        MipmapChainSize     = reader.ReadUInt32();
-        ResourceNameHash    = reader.ReadUInt32();
-        // A TextureGroup is always 16 chars long, we will reinterpret as string for ease of use.
-        TextureGroup        = Encoding.ASCII.GetString(reader.ReadBytes(16)).Replace("\0", "");
-        // Finally, load the chunk containing the image data.
-        PixelData           = IO.GetAssetFromGuid(StreamingChunkId);
+        InternalTexture internalTex = new();
+        var tex = rr.ReadDxTexture();
+        // Load the chunk containing the image data.
+        byte[] data = cr.ReadBytes((int)cr.BaseStream.Length);
+
+        // Start converting to InternalTexture.
+        internalTex.Width = tex.Width;
+        internalTex.Height = tex.Height;
+        internalTex.Depth = tex.Depth;
+        internalTex.MipmapCount = tex.MipmapCount;
+        internalTex.Format = GetInternalTextureFormat(tex.TexFormat);
+        internalTex.Data = data;
+
+        return internalTex;
+    }
+
+    private static InternalTextureFormat GetInternalTextureFormat(TextureFormat texFormat)
+    {
+        switch(texFormat)
+        {
+            case TextureFormat.DXT1:
+                return InternalTextureFormat.DXT1;
+            case TextureFormat.DXT3:
+                return InternalTextureFormat.DXT3;
+            case TextureFormat.DXT5:
+                return InternalTextureFormat.DXT5;
+            case TextureFormat.RGB888:
+                return InternalTextureFormat.RGB0;
+            case TextureFormat.ARGB8888:
+                return InternalTextureFormat.RGBA;
+        }
+        return InternalTextureFormat.UNKNOWN;
     }
 
     public bool GetFlag(TextureHeaderFlags flag)
