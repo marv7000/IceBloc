@@ -48,46 +48,44 @@ public class Catalog : IDisposable
         return entry;
     }
 
-    public byte[] Extract(byte[] sha, bool compressed)
+    public byte[] Extract(byte[] sha)
     {
         // Throw an exception if we can't find a chunk with the given SHA.
         if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry)) 
             throw new KeyNotFoundException($"Could not get a value for {Encoding.ASCII.GetString(sha)}!");
 
-        BinaryReader r = CasStreams[entry.CasFileIndex];
+        using BinaryReader r = CasStreams[entry.CasFileIndex];
         r.BaseStream.Position = entry.Offset;
 
-        if (!compressed)
-        {
+        using MemoryStream output = new(entry.DataSize);
 
-        }
-        else
-        {
-            MemoryStream output = new(entry.DataSize);
-            long end = r.BaseStream.Position + entry.DataSize;
+        long end = r.BaseStream.Position + entry.DataSize;
 
-            while (r.BaseStream.Position < end)
+        while (r.BaseStream.Position < end)
+        {
+            int uSize = r.ReadInt32();
+            int cSize = r.ReadInt32();
+
+            uSize = BinaryPrimitives.ReverseEndianness(uSize);
+            cSize = BinaryPrimitives.ReverseEndianness(cSize);
+
+            using (var memory = new MemoryStream(r.ReadBytes(cSize)))
             {
-                int uSize = r.ReadInt32();
-                int cSize = r.ReadInt32();
-
-                uSize = BinaryPrimitives.ReverseEndianness(uSize);
-                cSize = BinaryPrimitives.ReverseEndianness(cSize);
-
-                using (var memory = new MemoryStream(r.ReadBytes(cSize)))
+                //memory.Position += 2;
+                try
                 {
-                    memory.Position += 2;
-
                     using (var deflator = new ZLibStream(memory, CompressionMode.Decompress))
                     {
                         deflator.CopyTo(output);
                     }
                 }
+                catch
+                {
+                    memory.CopyTo(output);
+                }
             }
-            return output.ToArray();
         }
-
-        return null;
+        return output.ToArray();
     }
 
     protected virtual void Dispose(bool disposing)

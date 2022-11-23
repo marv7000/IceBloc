@@ -8,6 +8,8 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 
 using IceBloc.Utility;
 using IceBloc.Frostbite2;
+using IceBloc.Export;
+using IceBloc.InternalFormats;
 
 namespace IceBloc;
 
@@ -16,9 +18,9 @@ namespace IceBloc;
 /// </summary>
 public partial class MainWindow : Window
 {
-    public static List<AssetListItem>? Selection = new();
-    public static DbObject? ActiveDataBaseObject;
-    public static Catalog? ActiveCatalog;
+    public static List<AssetListItem> Selection = new();
+    public static DbObject ActiveDataBaseObject;
+    public static Catalog ActiveCatalog;
     public static DbMetaData MetaData;
     public static List<AssetListItem> Assets = new();
     public static Game ActiveGame;

@@ -41,7 +41,7 @@ public class AssetListItem
                         string path = $"Output\\{Name}";
                         Directory.CreateDirectory(path);
                         var entry = MainWindow.ActiveCatalog.GetEntry(meta.SHA);
-                        File.WriteAllBytes($"{path}\\{meta.GUID}.chunk", MainWindow.ActiveCatalog.Extract(meta.SHA, true));
+                        File.WriteAllBytes($"{path}\\{meta.GUID}.chunk", MainWindow.ActiveCatalog.Extract(meta.SHA));
                     }
                     break;
             }
