@@ -10,7 +10,7 @@ namespace IceBloc.Frostbite2;
 
 public class DbObject
 {
-    public string Name = "Unnamed";
+    public string Name = "";
     public DbObjectType ObjectType;
     public object Data;
 

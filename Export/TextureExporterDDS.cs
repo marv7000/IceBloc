@@ -9,7 +9,7 @@ public class TextureExporterDDS : ITextureExporter
 {
     public void Export(InternalTexture texture, string path)
     {
-        using var w = new BinaryWriter(File.Create(path));
+        using var w = new BinaryWriter(File.Create(path + ".dds"));
 
         var metadata = DirectXTexUtility.GenerateMataData(texture.Width, texture.Height, texture.MipmapCount, texture.Format
         switch
@@ -19,6 +19,7 @@ public class TextureExporterDDS : ITextureExporter
             InternalTextureFormat.DXT5 => DirectXTexUtility.DXGIFormat.BC3UNORM,
             InternalTextureFormat.RGBA => DirectXTexUtility.DXGIFormat.R8G8B8A8UNORM,
             InternalTextureFormat.RGB0 => DirectXTexUtility.DXGIFormat.R8G8B8A8UNORM,
+            InternalTextureFormat.DXN => DirectXTexUtility.DXGIFormat.BC5UNORM,
             _=>0
         }, false);
 

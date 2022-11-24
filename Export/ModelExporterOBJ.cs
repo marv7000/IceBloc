@@ -12,7 +12,7 @@ public class ModelExporterOBJ : IModelExporter
     public void Export(InternalMesh mesh, string path)
     {
         // Start writing to disk.
-        using var w = new StreamWriter(File.OpenWrite(path));
+        using var w = new StreamWriter(File.OpenWrite(path + ".obj"));
 
         // Write object name.
         w.WriteLine($"o {mesh.Name}");

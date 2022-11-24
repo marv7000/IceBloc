@@ -20,5 +20,6 @@ public enum InternalTextureFormat
     RGBA,
     DXT1,
     DXT3,
-    DXT5
+    DXT5,
+    DXN
 }

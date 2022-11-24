@@ -8,12 +8,12 @@ namespace IceBloc.Utility;
 public static class Settings
 {
     public static Game CurrentGame = Game.Battlefield3;
-    public static IModelExporter CurrentModelFormat = new ModelExporterOBJ();
-    public static ITextureExporter CurrentTextureFormat = new TextureExporterDDS();
+    public static IModelExporter CurrentModelExporter = new ModelExporterOBJ();
+    public static ITextureExporter CurrentTextureExporter = new TextureExporterDDS();
     public static bool Debug = false;
     public static string GamePath = "";
-    public static bool ExportRaw = true;
-    public static bool ExportConverted = false;
+    public static bool ExportRaw = false;
+    public static bool ExportConverted = true;
 }
 
 public enum Game

@@ -2,10 +2,9 @@
 using System.IO;
 using System.Xml.Serialization;
 using System.Xml;
-using IceBloc.Frostbite2;
 using System.Linq;
-using IceBloc.Frostbite3;
 using IceBloc.InternalFormats;
+using IceBloc.Frostbite2;
 
 namespace IceBloc.Utility;
 
@@ -15,30 +14,11 @@ namespace IceBloc.Utility;
 public class IO
 {
     /// <summary>
-    /// Gets the asset data of an <see cref="FrostbiteAsset"/>.
-    /// </summary>
-    /// <returns>A stream containing the requested asset.</returns>
-    public static byte[] GetAssetFromGuid(Guid guid)
-    {
-        try
-        {
-            string path = Settings.GamePath + guid.ToString() + ".chunk";
-
-            return File.ReadAllBytes(path);
-        }
-        catch
-        {
-            // If we encounter a failure as big as Harry.
-            throw new FileNotFoundException("Chunk was not found in the specified dump! Make sure the game has been dumped correctly.");
-        }
-    }
-
-    /// <summary>
     /// Serializes an object to XML and saves it at the specified path.
     /// </summary>
     /// <param name="obj">Object to serialize.</param>
     /// <param name="filePath">Path to save the XML at.</param>
-    public static void Save<T>(T obj, string filePath)
+    public static void SaveXML<T>(T obj, string filePath)
     {
         var serializer = new XmlSerializer(obj.GetType());
 
@@ -47,6 +27,15 @@ public class IO
         {
             serializer.Serialize(xmlWriter, obj);
         }
+    }
+
+    /// <summary>
+    /// Finds the given chunk and gets its contents.
+    /// </summary>
+    public static byte[] GetChunk(Guid streamingChunkId)
+    {
+        var sha = MainWindow.ChunkTranslations[streamingChunkId];
+        return MainWindow.ActiveCatalog.Extract(sha);
     }
 
     /// <summary>
@@ -83,18 +72,6 @@ public class IO
             // Write the Catalog to file to cache it.
             Directory.CreateDirectory($"Cache\\{Settings.CurrentGame}");
             File.WriteAllBytes($"Cache\\{Settings.CurrentGame}\\{Path.GetFileName(path)}", data);
-        }
-    }
-
-    public static void Export<T>(T obj, string filePath)
-    {
-        switch (obj)
-        {
-            case InternalTexture:
-                Settings.CurrentTextureFormat.Export(obj as InternalTexture, filePath);
-                break;
-            default:
-                break;
         }
     }
 

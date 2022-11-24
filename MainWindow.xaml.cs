@@ -8,6 +8,8 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 
 using IceBloc.Utility;
 using IceBloc.Frostbite2;
+using System.Threading;
+using System.Windows.Threading;
 
 namespace IceBloc;
 
@@ -22,57 +24,97 @@ public partial class MainWindow : Window
     public static DbMetaData MetaData;
     public static List<AssetListItem> Assets = new();
     public static Game ActiveGame;
+    public static Dictionary<Guid, byte[]> ChunkTranslations = new();
+
+    public static MainWindow Instance; // We need the instance to statically output messages.
 
     public MainWindow()
     {
+        Instance = this;
         InitializeComponent();
     }
 
-    // UI
-
-    private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        Selection = AssetGrid.SelectedItems as List<AssetListItem>;
-    }
-
-    public void LoadAssets(bool isFolder)
+    public static void LoadAssets()
     {
         // Clear existing DbObject selection.
         ActiveDataBaseObject = null;
 
-        if (isFolder)
+        // We just want to load the game folder.
+        ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
+        Assets = new();
+
+        string[] sbFiles = Directory.GetFiles(Settings.GamePath + "\\Data\\Win32\\", "*", SearchOption.AllDirectories);
+        for (int i = 0; i < sbFiles.Length; i++)
         {
-            // We just want to load the game folder.
-            ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
-            Assets = new();
-        }
-        if (!isFolder && Settings.GamePath != string.Empty)
-        {
-            ActiveDataBaseObject = DbObject.UnpackDbObject(Settings.GamePath);
-            Assets = new();
-            foreach (var element in ActiveDataBaseObject.Data as List<DbObject>)
-            {
-                if (element.Name == "chunks" || element.Name == "bundles")
-                {
-                    foreach (DbObject asset in element.Data as List<DbObject>)
-                    {
-                        LoadDbObject(asset);
-                    }
-                }
-            }
-            LoadedAssets.Content = "Loaded Assets: " + Assets.Count;
-            AssetGrid.ItemsSource = Assets;
+            if (!(sbFiles[i].Contains("en.toc") || sbFiles[i].Contains("en.sb")))
+                LoadSbFile(sbFiles[i]);
+
+            Instance.Dispatcher.Invoke(() => {
+                Instance.ProgressBar.Value = ((double)i / (double)sbFiles.Length) * 100.0;
+                UpdateItems();
+            });
         }
     }
 
-    public void LoadDbObject(DbObject asset)
+    public static void LoadSbFile(string path)
     {
-        // If this DbObject doesn't contain any RES information, it's useless to us.
-        if (asset.GetField("res") == null)
-            return;
-        if ((asset.GetField("res").Data as List<DbObject>).Count == 0)
-            return;
+        ActiveDataBaseObject = DbObject.UnpackDbObject(path);
+        foreach (var element in ActiveDataBaseObject.Data as List<DbObject>)
+        {
+            if (element.Name == "bundles")
+            {
+                foreach (DbObject asset in element.Data as List<DbObject>)
+                {
+                    LoadDbObject(asset, false);
+                }
+            }
+            // If we have pure chunks.
+            else if (element.Name == "chunks")
+            {
+                LoadDbObject(element, true);
+            }
+        }
+        Instance.Dispatcher.Invoke(() =>
+        {
+            Instance.LoadedAssets.Content = "Loaded Assets: " + Assets.Count;
+            Instance.AssetGrid.ItemsSource = Assets;
+        });
+    }
 
+    public static void LoadDbObject(DbObject asset, bool isChunks)
+    {
+        if (!isChunks)
+        {
+            // If we have RES information, use it.
+            if (!(asset.GetField("res") == null || (asset.GetField("res").Data as List<DbObject>).Count == 0))
+            {
+                HandleResData(asset);
+            }
+            // If we have EBX information, use it.
+            if (!(asset.GetField("ebx") == null || (asset.GetField("ebx").Data as List<DbObject>).Count == 0))
+            {
+                HandleEbxData(asset);
+            }
+            // If we have ChunkBundle information, use it.
+            if (!(asset.GetField("chunks") == null || (asset.GetField("chunks").Data as List<DbObject>).Count == 0))
+            {
+                HandleChunkData(asset.GetField("chunks"));
+            }
+        }
+
+        else
+        {
+            HandleChunkData(asset);
+        }
+    }
+
+    public static void HandleEbxData(DbObject asset)
+    {
+        //TODO
+    }
+
+    public static void HandleResData(DbObject asset)
+    {
         List<DbObject> resData = asset.GetField("res").Data as List<DbObject>;
 
         for (int i = 0; i < resData.Count; i++)
@@ -90,37 +132,51 @@ public partial class MainWindow : Window
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
-            List<DbObject> chunkData = new();
-
-            Assets.Add(new AssetListItem(
+            var item = new AssetListItem(
                 idString is null ? "" : idString, // Name
                 type, // AssetType
                 size, // Size
                 ExportStatus.Ready, // ExportStatus
-                sha
-                ));
+                sha);
+            Assets.Add(item);
         }
     }
 
-    public List<MetaDataObject> HandleData(DbObject asset, List<DbObject> chunks)
+    public static void HandleChunkData(DbObject asset)
     {
-        List<MetaDataObject> metaDataObjects = new();
-
+        var chunks = asset.Data as List<DbObject>;
         for (int i = 0; i < chunks.Count; i++)
         {
-            var chunkSha = (asset.GetField("chunks").Data as List<DbObject>)[i].GetField("sha1").Data as byte[];
-            Guid chunkGuid = (Guid)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("id").Data;
-            long chunkSize = (long)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("size").Data;
-            metaDataObjects.Add(new MetaDataObject(chunkSha, chunkGuid, chunkSize));
-        }
+            try
+            {
+                var chunkSha = chunks[i].GetField("sha1").Data as byte[];
+                Guid chunkGuid = (Guid)chunks[i].GetField("id").Data;
 
-        return metaDataObjects;
+                // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
+                // In this case, check if the new one is larger. If yes, replace it.
+                if(!ChunkTranslations.TryAdd(chunkGuid, chunkSha))
+                {
+
+                }
+            }
+            catch(Exception e)
+            {
+                WriteUIOutputLine(e.Message);
+            }
+        }
     }
 
-    public void UpdateItems()
+    #region UI
+
+    public static void UpdateItems()
     {
-        AssetGrid.ItemsSource = null;
-        AssetGrid.ItemsSource = Assets;
+        Instance.AssetGrid.ItemsSource = null;
+        Instance.AssetGrid.ItemsSource = Assets;
+    }
+
+    private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        Selection = AssetGrid.SelectedItems as List<AssetListItem>;
     }
 
     private void LoadInstall_Click(object sender, RoutedEventArgs e)
@@ -132,18 +188,8 @@ public partial class MainWindow : Window
         {
             Settings.GamePath = dialog.FileName;
         }
-        LoadAssets(true);
-    }
-
-    private void LoadSingle_Click(object sender, RoutedEventArgs e)
-    {
-        OpenFileDialog dialog = new OpenFileDialog();
-        dialog.InitialDirectory = "C:\\Users";
-        if (dialog.ShowDialog() == true)
-        {
-            Settings.GamePath = dialog.FileName;
-        }
-        LoadAssets(false);
+        Thread thr = new Thread(LoadAssets);
+        thr.Start();
     }
 
     private void ExportAsset_Click(object sender, RoutedEventArgs e)
@@ -152,8 +198,15 @@ public partial class MainWindow : Window
         {
             selected.Export();
         }
+    }
 
-        UpdateItems();
+    public static void WriteUIOutput(string message)
+    {
+        Instance.ConsoleOutput.Text += message;
+    }
+    public static void WriteUIOutputLine(string message)
+    {
+        WriteUIOutput("\n" + message);
     }
 
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
@@ -170,4 +223,24 @@ public partial class MainWindow : Window
         }
         AssetGrid.ItemsSource = output;
     }
+    #endregion
+
+    #region Settings
+    private void ExportConvertedBox_Checked(object sender, RoutedEventArgs e)
+    {
+        Settings.ExportConverted = true;
+    }
+    private void ExportConvertedBox_UnChecked(object sender, RoutedEventArgs e)
+    {
+        Settings.ExportConverted = false;
+    }
+    private void ExportRawBox_Checked(object sender, RoutedEventArgs e)
+    {
+        Settings.ExportRaw = true;
+    }
+    private void ExportRawBox_UnChecked(object sender, RoutedEventArgs e)
+    {
+        Settings.ExportRaw = false;
+    }
+    #endregion
 }

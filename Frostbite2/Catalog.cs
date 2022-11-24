@@ -17,6 +17,7 @@ public class Catalog : IDisposable
     public Catalog(string path)
     {
         IO.DecryptAndCache(path);
+
         // Use the cached file for further operations.
         using var r = new BinaryReader(File.OpenRead($"Cache\\{Settings.CurrentGame}\\{Path.GetFileName(path)}"));
         switch (Settings.CurrentGame)
@@ -33,7 +34,7 @@ public class Catalog : IDisposable
                     // Get the index number of the cas archive by removing "cas_" and the file extension.
                     int index = int.Parse(Path.GetFileNameWithoutExtension(file).Replace("cas_", ""));
                     // Open the file corresponding to the cas archive index.
-                    CasStreams.Add(index, new(File.OpenRead(file)));
+                    CasStreams.Add(index, new(File.OpenRead(file), Encoding.ASCII, true));
                 }
                 break;
             default:
@@ -54,7 +55,7 @@ public class Catalog : IDisposable
         if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry)) 
             throw new KeyNotFoundException($"Could not get a value for {Encoding.ASCII.GetString(sha)}!");
 
-        using BinaryReader r = CasStreams[entry.CasFileIndex];
+        BinaryReader r = CasStreams[entry.CasFileIndex];
         r.BaseStream.Position = entry.Offset;
 
         using MemoryStream output = new(entry.DataSize);

@@ -1,4 +1,5 @@
 ﻿using IceBloc.InternalFormats;
+using IceBloc.Utility;
 using System;
 using System.IO;
 using System.Text;
@@ -14,7 +15,6 @@ public class DxTexture
     public ushort Height;
     public ushort Depth;
     public ushort SliceCount;
-    private readonly ushort _Pad0;
     public byte MipmapCount;
     public byte MipmapBaseIndex;
     public Guid StreamingChunkId;
@@ -25,6 +25,28 @@ public class DxTexture
 
     public DxTexture() { }
 
+    public static InternalTexture ConvertToInternal(Stream res)
+    {
+        using var rr = new BinaryReader(res);
+
+        InternalTexture internalTex = new();
+        var tex = rr.ReadDxTexture();
+
+        using var mem = new MemoryStream(IO.GetChunk(tex.StreamingChunkId));
+        using var cr = new BinaryReader(mem);
+        // Load the chunk containing the image data.
+        byte[] data = cr.ReadBytes((int)cr.BaseStream.Length);
+
+        // Start converting to InternalTexture.
+        internalTex.Width = tex.Width;
+        internalTex.Height = tex.Height;
+        internalTex.Depth = tex.Depth;
+        internalTex.MipmapCount = tex.MipmapCount;
+        internalTex.Format = GetInternalTextureFormat(tex.TexFormat);
+        internalTex.Data = data;
+
+        return internalTex;
+    }
     public static InternalTexture ConvertToInternal(Stream res, Stream chunk)
     {
         using var rr = new BinaryReader(res);
@@ -60,6 +82,12 @@ public class DxTexture
                 return InternalTextureFormat.RGB0;
             case TextureFormat.ARGB8888:
                 return InternalTextureFormat.RGBA;
+            case TextureFormat.NormalDXN:
+                return InternalTextureFormat.DXN;
+            case TextureFormat.NormalDXT1:
+                return InternalTextureFormat.DXT1;
+            case TextureFormat.NormalDXT5:
+                return InternalTextureFormat.DXT5;
         }
         return InternalTextureFormat.UNKNOWN;
     }

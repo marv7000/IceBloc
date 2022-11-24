@@ -11,17 +11,23 @@
             <Grid Background="#FFE5E5E5">
                 <DataGrid x:Name="AssetGrid" d:ItemsSource="{d:SampleData ItemCount=30}" SelectionChanged="DataGrid_SelectionChanged" VerticalAlignment="Top" Margin="0,0,0,30" IsReadOnly="True"/>
                 <Button x:Name="LoadInstall" Content="Load Game" HorizontalAlignment="Right" Margin="0,0,10,2" VerticalAlignment="Bottom" Click="LoadInstall_Click" Height="25"/>
-                <Button x:Name="LoadSingle" Content="Load Single File" HorizontalAlignment="Right" Margin="0,0,80,2" VerticalAlignment="Bottom" Click="LoadSingle_Click" Height="25"/>
-                <Button x:Name="ExportAsset" Content="Export Selection" HorizontalAlignment="Right" Margin="0,0,175,2" VerticalAlignment="Bottom" Height="25" Click="ExportAsset_Click"/>
+                <Button x:Name="ExportAsset" Content="Export Selection" HorizontalAlignment="Right" Margin="0,0,79,2" VerticalAlignment="Bottom" Height="25" Click="ExportAsset_Click"/>
                 <Label x:Name="LoadedAssets" Content="Assets Loaded: 0" HorizontalAlignment="Left" Margin="310,0,0,0" VerticalAlignment="Bottom" FontWeight="Normal"/>
                 <TextBox x:Name="SearchBox" HorizontalAlignment="Left" Margin="10,0,0,5" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="300" ToolTip="Find an asset." TextChanged="SearchBox_TextChanged"/>
+                <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Right" Height="10" Margin="0,0,180,10" VerticalAlignment="Bottom" Width="100"/>
             </Grid>
         </TabItem>
         <TabItem Header="Settings">
-            <Grid Background="#FFE5E5E5"/>
+            <Grid Background="#FFE5E5E5">
+                <CheckBox x:Name="ExportRawBox" Content="Export Raw Files" HorizontalAlignment="Left" Margin="10,30,0,0" VerticalAlignment="Top" Checked="ExportRawBox_Checked" Unchecked="ExportRawBox_UnChecked"/>
+                <CheckBox x:Name="ExportConvertedBox" Content="Export Converted Files" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Checked="ExportConvertedBox_Checked" Unchecked="ExportConvertedBox_UnChecked" IsChecked="True"/>
+
+            </Grid>
         </TabItem>
         <TabItem Header="Output">
-            <Grid Background="#FFE5E5E5"/>
+            <Grid Background="#FF303030">
+                <TextBlock x:Name="ConsoleOutput" TextWrapping="NoWrap" Text="================================================" Margin="5,5,5,5" FontFamily="Cascadia Code" Foreground="White"/>
+            </Grid>
         </TabItem>
     </TabControl>
 </Window>

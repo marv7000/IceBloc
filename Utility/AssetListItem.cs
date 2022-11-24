@@ -1,15 +1,14 @@
 ﻿using IceBloc.Frostbite2;
+using IceBloc.InternalFormats;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime;
 
 namespace IceBloc.Utility;
 
 public class AssetListItem
 {
-    /// <summary>
-    /// 
-    /// </summary>
     public string Name { get; set; }
     public ResType Type { get; set; }
     public long Size { get; set; }
@@ -26,31 +25,61 @@ public class AssetListItem
         MetaData = sha;
     }
 
-
     public void Export()
     {
-        Console.WriteLine($"Exporting {Name}!");
 
-        string path = $"Output\\{Name}.{Type}";
+        string path = $"Output\\{Name}";
         Directory.CreateDirectory(Path.GetDirectoryName(path)); // Make sure the output directory exists.
-        var entry = MainWindow.ActiveCatalog.GetEntry(MetaData);
-        File.WriteAllBytes(path, MainWindow.ActiveCatalog.Extract(MetaData));
+        byte[] data = MainWindow.ActiveCatalog.Extract(MetaData);
 
+        // If the user wants to export the raw RES.
+        if (Settings.ExportRaw)
+        {
+            File.WriteAllBytes(path + "." + Type, data);
+        }
+        if (Settings.ExportConverted)
+        {
+            switch (this.Type)
+            {
+                case ResType.DxTexture:
+                    {
+                        using var stream = new MemoryStream(data);
+                        InternalTexture output = DxTexture.ConvertToInternal(stream);
+                        Settings.CurrentTextureExporter.Export(output, path);
+                        break;
+                    }
+                case ResType.MeshSet:
+                    {
+                        using var stream = new MemoryStream(data);
+                        List<InternalMesh> output = MeshSet.ConvertToInternal(stream);
+                        for (int i = 0; i < output.Count; i++)
+                        {
+                            Settings.CurrentModelExporter.Export(output[i], path + i.ToString());
+                        }
+                        break;
+                    }
+                default:
+                    break;
+            }
+        }
+
+        MainWindow.WriteUIOutputLine($"Exported {Name}...");
         Status = ExportStatus.Exported;
     }
 }
 
-public class MetaDataObject
+/// <summary>
+/// Provides a mechanism to connect Guid and SHA values.
+/// </summary>
+public struct MetaDataObject
 {
     public byte[] SHA;
     public Guid GUID;
-    public long Size;
 
-    public MetaDataObject(byte[] sHA, Guid gUID, long size)
+    public MetaDataObject(byte[] sha, Guid guid)
     {
-        SHA = sHA;
-        GUID = gUID;
-        Size = size;
+        SHA = sha;
+        GUID = guid;
     }
 }
 

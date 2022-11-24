@@ -13,41 +13,41 @@ public class Output
         {
             case MessageType.Error:
                 Console.BackgroundColor = ConsoleColor.DarkRed;
-                Console.Write("[ERROR]     ");
+                MainWindow.WriteUIOutput("[ERROR]     ");
                 Console.BackgroundColor = ConsoleColor.Black;
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine(" " + message);
+                MainWindow.WriteUIOutput(" " + message);
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.Warning:
                 Console.BackgroundColor = ConsoleColor.DarkYellow;
-                Console.Write("[WARN]      ");
+                MainWindow.WriteUIOutput("[WARN]      ");
                 Console.BackgroundColor = ConsoleColor.Black;
-                Console.WriteLine(" " + message);
+                MainWindow.WriteUIOutput(" " + message);
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.Info:
                 Console.BackgroundColor = ConsoleColor.DarkBlue;
-                Console.Write("[INFO]      ");
+                MainWindow.WriteUIOutput("[INFO]      ");
                 Console.BackgroundColor = ConsoleColor.Black;
-                Console.WriteLine(" " + message);
+                MainWindow.WriteUIOutput(" " + message);
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.Debug:
                 if (Settings.Debug)
                 {
                     Console.BackgroundColor = ConsoleColor.DarkMagenta;
-                    Console.Write("[DEBUG]     ");
+                    MainWindow.WriteUIOutput("[DEBUG]     ");
                     Console.BackgroundColor = ConsoleColor.Black;
-                    Console.WriteLine(" " + message);
+                    MainWindow.WriteUIOutput(" " + message);
                     Console.ForegroundColor = ConsoleColor.White;
                 }
                 break;
             case MessageType.Success:
                 Console.BackgroundColor = ConsoleColor.Green;
-                Console.Write("[SUCCESS]   ");
+                MainWindow.WriteUIOutput("[SUCCESS]   ");
                 Console.BackgroundColor = ConsoleColor.Black;
-                Console.WriteLine(" " + message);
+                MainWindow.WriteUIOutput(" " + message);
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.ErrorQuit:
@@ -58,37 +58,12 @@ public class Output
                 Console.ReadLine();
                 Environment.Exit(1);
                 break;
-            case MessageType:
-                Console.BackgroundColor = ConsoleColor.DarkCyan;
-                Console.Write("[STACKTRACE]");
-                Console.BackgroundColor = ConsoleColor.Black;
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine(" " + message);
-                Console.ForegroundColor = ConsoleColor.White;
-                break;
-            default:
-                WriteLine("Something tried to create an error message without a valid error type!", MessageType.Error);
-                break;
         }
     }
 
     public static void WriteLine(string message)
     {
         WriteLine(message, MessageType.Info);
-    }
-
-    public static void WriteLine(int errorCode)
-    {
-        var trace = new System.Diagnostics.StackTrace();
-        WriteLine($"StarkEngine threw an error @ {trace.GetFrame(1).GetMethod().Name}", MessageType.Error);
-        WriteLine(Error.KeyValuePairs[errorCode], MessageType.Error);
-        var frames = trace.GetFrames();
-        for (int i = 1; i < 6; i++)
-        {
-            WriteLine($"Ln {frames[i].GetFileLineNumber()}:Ch {frames[i].GetFileColumnNumber()}", MessageType.StackTrace);
-            WriteLine($"\t{frames[i].GetMethod().Name}", MessageType.StackTrace);
-        }
-        WriteLine("Error was not caught, StarkEngine must halt.", MessageType.ErrorQuit);
     }
 
     /// <summary>
@@ -124,7 +99,6 @@ public class Output
         Info,
         Debug,
         Success,
-        ErrorQuit,
-        StackTrace
+        ErrorQuit
     }
 }
