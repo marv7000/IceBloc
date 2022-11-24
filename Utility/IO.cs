@@ -50,7 +50,7 @@ public class IO
     }
 
     /// <summary>
-    /// Opens a Frostbite database file, try to decrypt it and save it to the cache.
+    /// Opens a Frostbite database file, tries to decrypt it and saves it to the cache.
     /// </summary>
     public static void DecryptAndCache(string path)
     {
@@ -62,7 +62,7 @@ public class IO
             // Is XOR encrypted.
             if (magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x00 }) || magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x01 }))
             {
-                r.BaseStream.Position += 296; // Skip the signature.
+                r.BaseStream.Position = 296; // Skip the signature.
                 var key = r.ReadBytes(260);
                 for (int i = 0; i < key.Length; i++)
                 {

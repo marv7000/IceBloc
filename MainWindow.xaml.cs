@@ -8,8 +8,6 @@ using Microsoft.WindowsAPICodePack.Dialogs;
 
 using IceBloc.Utility;
 using IceBloc.Frostbite2;
-using IceBloc.Export;
-using IceBloc.InternalFormats;
 
 namespace IceBloc;
 
@@ -42,63 +40,79 @@ public partial class MainWindow : Window
         // Clear existing DbObject selection.
         ActiveDataBaseObject = null;
 
-        if (Settings.GamePath != "")
+        if (isFolder)
         {
-            if (isFolder)
+            // We just want to load the game folder.
+            ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
+            Assets = new();
+        }
+        if (!isFolder && Settings.GamePath != string.Empty)
+        {
+            ActiveDataBaseObject = DbObject.UnpackDbObject(Settings.GamePath);
+            Assets = new();
+            foreach (var element in ActiveDataBaseObject.Data as List<DbObject>)
             {
-                ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
-                Assets = new();
-            }
-            else
-            {
-                // Read single toc file.
-                ActiveDataBaseObject = DbObject.UnpackDbObject(Settings.GamePath);
-                Assets = new();
-                foreach (var element in ActiveDataBaseObject.Data as List<DbObject>)
+                if (element.Name == "chunks" || element.Name == "bundles")
                 {
-                    if (element.Name == "chunks" || element.Name == "bundles")
+                    foreach (DbObject asset in element.Data as List<DbObject>)
                     {
-                        foreach (var asset in element.Data as List<DbObject>)
-                        {
-                            string idString = asset.GetField("path").Data as string;
-                            AssetType type = (element.Name == "chunks") ? AssetType.Chunk : AssetType.Unknown;
-                            object data = asset.GetField("totalSize").Data;
-
-                            long size = 0;
-
-                            // Check if we need to cast the read size to a long.
-                            if (data is int var)
-                                size = (int)data;
-                            else if (data is long var1)
-                                size = (long)data;
-
-                            var chunks = asset.GetField("chunks").Data as List<DbObject>;
-                            List<MetaDataObject> metaDataObjects = new();
-
-                            for (int i = 0; i < chunks.Count; i++)
-                            {
-                                var  chunkSha = (asset.GetField("chunks").Data as List<DbObject>)[i].GetField("sha1").Data as byte[];
-                                Guid chunkGuid = (Guid)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("id").Data;
-                                long chunkSize = (long)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("size").Data;
-                                metaDataObjects.Add(new MetaDataObject(chunkSha, chunkGuid, chunkSize));
-                            }
-
-                            Assets.Add(
-                                new AssetListItem(
-                                    idString is null ? "" : idString, // Name
-                                    type, // AssetType
-                                    size, // Size
-                                    ExportStatus.Ready, // ExportStatus
-                                    asset.ObjectType.ToString(), // Remarks
-                                    metaDataObjects
-                                    ));
-                        }
+                        LoadDbObject(asset);
                     }
                 }
             }
             LoadedAssets.Content = "Loaded Assets: " + Assets.Count;
             AssetGrid.ItemsSource = Assets;
         }
+    }
+
+    public void LoadDbObject(DbObject asset)
+    {
+        // If this DbObject doesn't contain any RES information, it's useless to us.
+        if (asset.GetField("res") == null)
+            return;
+        if ((asset.GetField("res").Data as List<DbObject>).Count == 0)
+            return;
+
+        List<DbObject> resData = asset.GetField("res").Data as List<DbObject>;
+
+        for (int i = 0; i < resData.Count; i++)
+        {
+            string idString = resData[i].GetField("name").Data as string;
+
+            ResType type = (ResType)(int)resData[i].GetField("resType").Data;
+            object data = resData[i].GetField("size").Data;
+
+            long size = 0;
+
+            // Check if we need to cast the read size to a long.
+            if (data is int var) size = (int)data;
+            else if (data is long var1) size = (long)data;
+
+            List<DbObject> chunkData = new();
+
+            Assets.Add(new AssetListItem(
+                idString is null ? "" : idString, // Name
+                type, // AssetType
+                size, // Size
+                ExportStatus.Ready, // ExportStatus
+                HandleData(asset, chunkData)
+                ));
+        }
+    }
+
+    public List<MetaDataObject> HandleData(DbObject asset, List<DbObject> chunks)
+    {
+        List<MetaDataObject> metaDataObjects = new();
+
+        for (int i = 0; i < chunks.Count; i++)
+        {
+            var chunkSha = (asset.GetField("chunks").Data as List<DbObject>)[i].GetField("sha1").Data as byte[];
+            Guid chunkGuid = (Guid)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("id").Data;
+            long chunkSize = (long)(asset.GetField("chunks").Data as List<DbObject>)[i].GetField("size").Data;
+            metaDataObjects.Add(new MetaDataObject(chunkSha, chunkGuid, chunkSize));
+        }
+
+        return metaDataObjects;
     }
 
     public void UpdateItems()

@@ -129,7 +129,7 @@ public class DbObject
         }
         catch
         {
-            Output.WriteLine(1);
+            Output.WriteLine($"Couldn't find the requested field {name} in the DbObject!");
             return null;
         }
     }
@@ -137,11 +137,11 @@ public class DbObject
     public override string ToString()
     {
         if (ObjectType == DbObjectType.Array)
-            return $"<{Name} {ObjectType}, Size = {(Data as List<DbObject>).Count}>";
+            return $"<{Name}, {ObjectType}, Size = {(Data as List<DbObject>).Count}>";
         else if (ObjectType == DbObjectType.Object)
-            return $"<{Name} {ObjectType}, Entries = {(Data as List<DbObject>).Count}>";
+            return $"<{Name}, {ObjectType}, Entries = {(Data as List<DbObject>).Count}>";
         else
-            return $"<{Name} {ObjectType}, {Data}>";
+            return $"<{Name}, {ObjectType}, {Data}>";
     }
 }
 

@@ -22,7 +22,7 @@ public class Catalog : IDisposable
         switch (Settings.CurrentGame)
         {
             case Game.Battlefield3:
-                r.BaseStream.Position += 12;
+                r.BaseStream.Position += 16;
                 while (r.BaseStream.Position < r.BaseStream.Length)
                 {
                     CatalogEntry catEntry = r.ReadCatalogEntry();

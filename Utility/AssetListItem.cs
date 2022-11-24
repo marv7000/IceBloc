@@ -1,4 +1,5 @@
-﻿using System;
+﻿using IceBloc.Frostbite2;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -10,20 +11,18 @@ public class AssetListItem
     /// 
     /// </summary>
     public string Name { get; set; }
-    public AssetType Type { get; set; }
+    public ResType Type { get; set; }
     public long Size { get; set; }
     public ExportStatus Status { get; set; }
-    public string Remarks { get; set; }
 
     public List<MetaDataObject> MetaData;
 
-    public AssetListItem(string name, AssetType type, long size, ExportStatus status, string remarks, List<MetaDataObject> mdo)
+    public AssetListItem(string name, ResType type, long size, ExportStatus status, List<MetaDataObject> mdo)
     {
         Name = name;
         Type = type;
         Size = size;
         Status = status;
-        Remarks = remarks;
         MetaData = mdo;
     }
 
@@ -31,26 +30,19 @@ public class AssetListItem
     {
         try
         {
-            switch (Type)
+            Console.WriteLine("Exporting Unknown");
+            foreach (var meta in MetaData)
             {
-                case AssetType.Unknown:
-                case AssetType.Chunk:
-                    Console.WriteLine("Exporting Unknown");
-                    foreach (var meta in MetaData)
-                    {
-                        string path = $"Output\\{Name}";
-                        Directory.CreateDirectory(path);
-                        var entry = MainWindow.ActiveCatalog.GetEntry(meta.SHA);
-                        File.WriteAllBytes($"{path}\\{meta.GUID}.chunk", MainWindow.ActiveCatalog.Extract(meta.SHA));
-                    }
-                    break;
+                string path = $"Output\\{Name}";
+                Directory.CreateDirectory(path);
+                var entry = MainWindow.ActiveCatalog.GetEntry(meta.SHA);
+                File.WriteAllBytes($"{path}\\{meta.GUID}.{Type}", MainWindow.ActiveCatalog.Extract(meta.SHA));
             }
             Status = ExportStatus.Exported;
         }
-        catch(Exception ex)
+        catch
         {
             Status = ExportStatus.Error;
-            Remarks = ex.Message;
         }
     }
 }
