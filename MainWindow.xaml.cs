@@ -82,9 +82,11 @@ public partial class MainWindow : Window
             ResType type = (ResType)(int)resData[i].GetField("resType").Data;
             object data = resData[i].GetField("size").Data;
 
-            long size = 0;
+            List<MetaDataObject> metaDataObjects = new();
+            byte[] sha = resData[i].GetField("sha1").Data as byte[];
 
             // Check if we need to cast the read size to a long.
+            long size = 0;
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
@@ -95,7 +97,7 @@ public partial class MainWindow : Window
                 type, // AssetType
                 size, // Size
                 ExportStatus.Ready, // ExportStatus
-                HandleData(asset, chunkData)
+                sha
                 ));
         }
     }

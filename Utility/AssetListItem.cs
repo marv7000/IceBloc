@@ -15,35 +15,28 @@ public class AssetListItem
     public long Size { get; set; }
     public ExportStatus Status { get; set; }
 
-    public List<MetaDataObject> MetaData;
+    public byte[] MetaData;
 
-    public AssetListItem(string name, ResType type, long size, ExportStatus status, List<MetaDataObject> mdo)
+    public AssetListItem(string name, ResType type, long size, ExportStatus status, byte[] sha)
     {
         Name = name;
         Type = type;
         Size = size;
         Status = status;
-        MetaData = mdo;
+        MetaData = sha;
     }
+
 
     public void Export()
     {
-        try
-        {
-            Console.WriteLine("Exporting Unknown");
-            foreach (var meta in MetaData)
-            {
-                string path = $"Output\\{Name}";
-                Directory.CreateDirectory(path);
-                var entry = MainWindow.ActiveCatalog.GetEntry(meta.SHA);
-                File.WriteAllBytes($"{path}\\{meta.GUID}.{Type}", MainWindow.ActiveCatalog.Extract(meta.SHA));
-            }
-            Status = ExportStatus.Exported;
-        }
-        catch
-        {
-            Status = ExportStatus.Error;
-        }
+        Console.WriteLine($"Exporting {Name}!");
+
+        string path = $"Output\\{Name}.{Type}";
+        Directory.CreateDirectory(Path.GetDirectoryName(path)); // Make sure the output directory exists.
+        var entry = MainWindow.ActiveCatalog.GetEntry(MetaData);
+        File.WriteAllBytes(path, MainWindow.ActiveCatalog.Extract(MetaData));
+
+        Status = ExportStatus.Exported;
     }
 }
 
