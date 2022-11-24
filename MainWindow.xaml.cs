@@ -51,9 +51,12 @@ public partial class MainWindow : Window
 
             Instance.Dispatcher.Invoke(() => {
                 Instance.ProgressBar.Value = ((double)i / (double)sbFiles.Length) * 100.0;
-                UpdateItems();
             });
         }
+        Instance.Dispatcher.Invoke(() =>
+        {
+            UpdateItems();
+        });
     }
 
     public static void LoadSbFile(string path)
