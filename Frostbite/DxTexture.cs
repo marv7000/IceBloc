@@ -3,7 +3,7 @@ using IceBloc.Utility;
 using System;
 using System.IO;
 using System.Text;
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public class DxTexture
 {

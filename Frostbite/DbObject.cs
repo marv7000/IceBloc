@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using IceBloc.Utility;
 
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public class DbObject
 {

@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public struct GeometryDeclarationDesc
 {

@@ -3,7 +3,7 @@ using IceBloc.Utility;
 using System.Collections.Generic;
 using System.IO;
 
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public class MeshSet
 {

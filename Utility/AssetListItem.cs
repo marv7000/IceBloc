@@ -1,9 +1,8 @@
-﻿using IceBloc.Frostbite2;
+﻿using IceBloc.Frostbite;
 using IceBloc.InternalFormats;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime;
 
 namespace IceBloc.Utility;
 
@@ -62,7 +61,6 @@ public class AssetListItem
                     break;
             }
         }
-
         MainWindow.WriteUIOutputLine($"Exported {Name}...");
         Status = ExportStatus.Exported;
     }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public struct MeshLayout
 {

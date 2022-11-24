@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public class MeshAsset
 {

@@ -3,32 +3,12 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Xml;
 using System.Linq;
-using IceBloc.InternalFormats;
-using IceBloc.Frostbite2;
+using IceBloc.Utility;
 
-namespace IceBloc.Utility;
+namespace IceBloc.Frostbite;
 
-/// <summary>
-/// Handles in- and output for all assets.
-/// </summary>
 public class IO
 {
-    /// <summary>
-    /// Serializes an object to XML and saves it at the specified path.
-    /// </summary>
-    /// <param name="obj">Object to serialize.</param>
-    /// <param name="filePath">Path to save the XML at.</param>
-    public static void SaveXML<T>(T obj, string filePath)
-    {
-        var serializer = new XmlSerializer(obj.GetType());
-
-        using (var writer = new StreamWriter(filePath))
-        using (var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true, IndentChars = "    ", OmitXmlDeclaration = true }))
-        {
-            serializer.Serialize(xmlWriter, obj);
-        }
-    }
-
     /// <summary>
     /// Finds the given chunk and gets its contents.
     /// </summary>
@@ -49,7 +29,8 @@ public class IO
             byte[] data;
 
             // Is XOR encrypted.
-            if (magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x00 }) || magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x01 }))
+            if (magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x00 }) || 
+                magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x01 }))
             {
                 r.BaseStream.Position = 296; // Skip the signature.
                 var key = r.ReadBytes(260);
@@ -63,6 +44,12 @@ public class IO
                     data[i] = (byte)(key[i % 257] ^ encryptedData[i]);
             }
             // Is not XOR encrypted.
+            else if (magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x03 }))
+            {
+                r.BaseStream.Position = 296; // Skip the signature.
+                r.ReadBytes(260); // Empty key.
+                data = r.ReadUntilStreamEnd();
+            }
             else
             {
                 r.BaseStream.Position = 0; // Go back to the start of the file;
@@ -74,9 +61,4 @@ public class IO
             File.WriteAllBytes($"Cache\\{Settings.CurrentGame}\\{Path.GetFileName(path)}", data);
         }
     }
-
-    #region Textures
-
-
-    #endregion
 }

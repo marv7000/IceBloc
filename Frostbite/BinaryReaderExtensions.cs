@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public static class BinaryReaderExtensions
 {

@@ -1,4 +1,4 @@
-﻿namespace IceBloc.Frostbite2;
+﻿namespace IceBloc.Frostbite;
 
 public enum DbObjectType : byte
 {

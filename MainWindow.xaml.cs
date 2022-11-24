@@ -7,9 +7,10 @@ using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 using IceBloc.Utility;
-using IceBloc.Frostbite2;
+using IceBloc.Frostbite;
 using System.Threading;
 using System.Windows.Threading;
+using System.Windows.Shapes;
 
 namespace IceBloc;
 
@@ -77,11 +78,7 @@ public partial class MainWindow : Window
                 LoadDbObject(element, true);
             }
         }
-        Instance.Dispatcher.Invoke(() =>
-        {
-            Instance.LoadedAssets.Content = "Loaded Assets: " + Assets.Count;
-            Instance.AssetGrid.ItemsSource = Assets;
-        });
+        UpdateItems();
     }
 
     public static void LoadDbObject(DbObject asset, bool isChunks)
@@ -126,8 +123,6 @@ public partial class MainWindow : Window
 
             ResType type = (ResType)(int)resData[i].GetField("resType").Data;
             object data = resData[i].GetField("size").Data;
-
-            List<MetaDataObject> metaDataObjects = new();
             byte[] sha = resData[i].GetField("sha1").Data as byte[];
 
             // Check if we need to cast the read size to a long.
@@ -135,13 +130,12 @@ public partial class MainWindow : Window
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
-            var item = new AssetListItem(
-                idString is null ? "" : idString, // Name
-                type, // AssetType
-                size, // Size
-                ExportStatus.Ready, // ExportStatus
-                sha);
-            Assets.Add(item);
+            var item = new AssetListItem(idString, type, size, ExportStatus.Ready, sha);
+
+            // Check if we already have an asset with that name (Some RES are defined multiple times).
+            item.GetHashCode();
+            if ((Assets.Find(x => x.Name == idString) == null))
+                Assets.Add(item);
         }
     }
 
@@ -173,8 +167,13 @@ public partial class MainWindow : Window
 
     public static void UpdateItems()
     {
-        Instance.AssetGrid.ItemsSource = null;
-        Instance.AssetGrid.ItemsSource = Assets;
+        Instance.Dispatcher.Invoke(() =>
+        {
+            Instance.AssetGrid.ItemsSource = null;
+            Instance.LoadedAssets.Content = "Loaded Assets: " + Assets.Count;
+            Instance.AssetGrid.ItemsSource = Assets;
+            Instance.AssetGrid.Refresh();
+        });
     }
 
     private void DataGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -197,10 +196,13 @@ public partial class MainWindow : Window
 
     private void ExportAsset_Click(object sender, RoutedEventArgs e)
     {
-        foreach(AssetListItem selected in AssetGrid.SelectedItems)
+        foreach (AssetListItem selected in Instance.AssetGrid.SelectedItems)
         {
             selected.Export();
         }
+        string word = Instance.AssetGrid.SelectedItems.Count == 1 ? "Asset" : "Assets";
+        MessageBox.Show($"Exported {Instance.AssetGrid.SelectedItems.Count} {word}.", "Success", MessageBoxButton.OK);
+        UpdateItems();
     }
 
     public static void WriteUIOutput(string message)

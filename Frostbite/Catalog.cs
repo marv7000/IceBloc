@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-namespace IceBloc.Frostbite2;
+namespace IceBloc.Frostbite;
 
 public class Catalog : IDisposable
 {
