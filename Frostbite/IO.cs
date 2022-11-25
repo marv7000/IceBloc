@@ -43,13 +43,14 @@ public class IO
                 for (int i = 0; i < encryptedData.Length; i++)
                     data[i] = (byte)(key[i % 257] ^ encryptedData[i]);
             }
-            // Is not XOR encrypted.
+            // Is not XOR encrypted but has sequence + key.
             else if (magic.SequenceEqual(new byte[] { 0x00, 0xD1, 0xCE, 0x03 }))
             {
                 r.BaseStream.Position = 296; // Skip the signature.
                 r.ReadBytes(260); // Empty key.
                 data = r.ReadUntilStreamEnd();
             }
+            // Not encrypted.
             else
             {
                 r.BaseStream.Position = 0; // Go back to the start of the file;

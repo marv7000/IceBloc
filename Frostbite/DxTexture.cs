@@ -47,26 +47,6 @@ public class DxTexture
 
         return internalTex;
     }
-    public static InternalTexture ConvertToInternal(Stream res, Stream chunk)
-    {
-        using var rr = new BinaryReader(res);
-        using var cr = new BinaryReader(chunk);
-
-        InternalTexture internalTex = new();
-        var tex = rr.ReadDxTexture();
-        // Load the chunk containing the image data.
-        byte[] data = cr.ReadBytes((int)cr.BaseStream.Length);
-
-        // Start converting to InternalTexture.
-        internalTex.Width = tex.Width;
-        internalTex.Height = tex.Height;
-        internalTex.Depth = tex.Depth;
-        internalTex.MipmapCount = tex.MipmapCount;
-        internalTex.Format = GetInternalTextureFormat(tex.TexFormat);
-        internalTex.Data = data;
-
-        return internalTex;
-    }
 
     private static InternalTextureFormat GetInternalTextureFormat(TextureFormat texFormat)
     {

@@ -16,7 +16,7 @@ public struct MeshLayout
     public int EdgeDataSize = 0;
     public Guid DataChunkID = new();
     public int AuxVertexIndexDataOffset = 0;
-    public RelocPtr<byte> EmbeddedEdgeData = new();
+    public RelocPtr<byte[]> EmbeddedEdgeData = new();
     public RelocPtr<string> ShaderDebugName = new();
     public RelocPtr<string> Name = new();
     public RelocPtr<string> ShortName = new();

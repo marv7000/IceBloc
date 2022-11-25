@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Text;
 
 namespace IceBloc.Frostbite;
@@ -85,27 +84,6 @@ public static class BinaryReaderExtensions
             else
                 return new string(chars.ToArray());
         }
-    }
-
-    public static T ReadStruct<T>(this BinaryReader reader)
-    {
-        var byteLength = Marshal.SizeOf(typeof(T));
-        var bytes = reader.ReadBytes(byteLength);
-        var pinned = GCHandle.Alloc(bytes, GCHandleType.Pinned);
-        T stt = (T)Marshal.PtrToStructure(pinned.AddrOfPinnedObject(), typeof(T));
-        pinned.Free();
-        return stt;
-    }
-
-    public static void WriteStruct<T>(this BinaryWriter writer, T t)
-    {
-        var sizeOfT = Marshal.SizeOf(typeof(T));
-        var ptr = Marshal.AllocHGlobal(sizeOfT);
-        Marshal.StructureToPtr(t, ptr, false);
-        var bytes = new byte[sizeOfT];
-        Marshal.Copy(ptr, bytes, 0, bytes.Length);
-        Marshal.FreeHGlobal(ptr);
-        writer.Write(bytes);
     }
 
     public static RelocPtr<T> ReadRelocPtr<T>(this BinaryReader reader)
@@ -211,7 +189,7 @@ public static class BinaryReaderExtensions
         ml.EdgeDataSize = r.ReadInt32();
         ml.DataChunkID = new Guid(r.ReadBytes(16));
         ml.AuxVertexIndexDataOffset = r.ReadInt32();
-        ml.EmbeddedEdgeData = r.ReadRelocPtr<byte>();
+        ml.EmbeddedEdgeData = r.ReadRelocPtr<byte[]>();
         ml.ShaderDebugName = r.ReadRelocPtr<string>();
         ml.Name = r.ReadRelocPtr<string>();
         ml.ShortName = r.ReadRelocPtr<string>();
@@ -276,6 +254,15 @@ public static class BinaryReaderExtensions
         return tex;
     }
 
+    public static GenericData ReadGD(this BinaryReader r)
+    {
+        GenericData gd = new();
+
+
+
+        return gd;
+    }
+
     public static object ReadByType<T>(this BinaryReader r)
     {
         switch (typeof(T).Name)
@@ -298,6 +285,8 @@ public static class BinaryReaderExtensions
                 return (T)(object)r.ReadNullTerminatedString();
             case "MeshLayout":
                 return (T)(object)r.ReadMeshLayout();
+            case "Byte[]":
+                return (T)(object)r.ReadUntilStreamEnd();
             default:
                 return default(T);
         }

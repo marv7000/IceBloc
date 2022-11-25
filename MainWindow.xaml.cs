@@ -11,6 +11,7 @@ using IceBloc.Frostbite;
 using System.Threading;
 using System.Windows.Threading;
 using System.Windows.Shapes;
+using IceBloc.Export;
 
 namespace IceBloc;
 
@@ -248,4 +249,19 @@ public partial class MainWindow : Window
         Settings.ExportRaw = false;
     }
     #endregion
+
+    private void MeshFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MeshFormatBox.SelectedIndex == 0)
+            Settings.CurrentModelExporter = new ModelExporterOBJ(); // OBJ
+        if (MeshFormatBox.SelectedIndex == 1)
+            Settings.CurrentModelExporter = new ModelExporterSMD(); // SMD
+    }
+
+    private void TextureFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+
+        if (TextureFormatBox.SelectedIndex == 0)
+            Settings.CurrentTextureExporter = new TextureExporterDDS();
+    }
 }

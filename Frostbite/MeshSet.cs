@@ -47,7 +47,13 @@ public class MeshSet
         // For each LOD.
         for (int i = 0; i < meshSet.Subsets.Length; i++)
         {
-            using var cr = new BinaryReader(new MemoryStream(IO.GetChunk(meshSet.Layout[i].DataChunkID)));
+            Stream stream;
+            if (meshSet.Layout[i].EmbeddedEdgeData.Value == null)
+                stream = new MemoryStream(IO.GetChunk(meshSet.Layout[i].DataChunkID));
+            else
+                stream = new MemoryStream(meshSet.Layout[i].EmbeddedEdgeData.Value);
+
+            using var cr = new BinaryReader(stream);
 
             // For each MeshSubset.
             for (int j = 0; j < meshSet.Subsets[i].Length; j++)
@@ -104,6 +110,7 @@ public class MeshSet
 
                 meshList.Add(mesh);
             }
+            stream.Close();
         }
 
         return meshList;
