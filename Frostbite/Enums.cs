@@ -36,6 +36,7 @@ public enum DbObjectType : byte
 
 public enum ResType : uint
 {
+    EBX = 0xFFFFFFFF,
     ASLibSwfMovie = 0xCC48572A,
     AnimTrackData = 0xD070EED1,
     AnimatedPointCloud = 0xC6DBEE07,

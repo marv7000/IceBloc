@@ -65,22 +65,33 @@ public class Catalog : IDisposable
         while (r.BaseStream.Position < end)
         {
             int uSize = r.ReadInt32();
-            int cSize = r.ReadInt32();
-
-            uSize = BinaryPrimitives.ReverseEndianness(uSize);
-            cSize = BinaryPrimitives.ReverseEndianness(cSize);
-
-            using (var memory = new MemoryStream(r.ReadBytes(cSize)))
+            int cSize = uSize;
+            if (uSize != 263377358)
             {
-                //memory.Position += 2;
-                try
+                cSize = r.ReadInt32();
+
+                uSize = BinaryPrimitives.ReverseEndianness(uSize);
+                cSize = BinaryPrimitives.ReverseEndianness(cSize);
+
+                using (var memory = new MemoryStream(r.ReadBytes(cSize)))
                 {
-                    using (var deflator = new ZLibStream(memory, CompressionMode.Decompress))
+                    try
                     {
-                        deflator.CopyTo(output);
+                        using (var deflator = new ZLibStream(memory, CompressionMode.Decompress))
+                        {
+                            deflator.CopyTo(output);
+                        }
+                    }
+                    catch
+                    {
+                        memory.CopyTo(output);
                     }
                 }
-                catch
+            }
+            else
+            {
+                r.BaseStream.Position -= 4; // Go back since the size we read was just an EBX header.
+                using (var memory = new MemoryStream(r.ReadBytes(entry.DataSize)))
                 {
                     memory.CopyTo(output);
                 }

@@ -10,15 +10,17 @@ public class AssetListItem
 {
     public string Name { get; set; }
     public ResType Type { get; set; }
+    public InternalAssetType AssetType { get; set; }
     public long Size { get; set; }
     public ExportStatus Status { get; set; }
 
     public byte[] MetaData;
 
-    public AssetListItem(string name, ResType type, long size, ExportStatus status, byte[] sha)
+    public AssetListItem(string name, ResType type, InternalAssetType iaType, long size, ExportStatus status, byte[] sha)
     {
         Name = name;
         Type = type;
+        AssetType = iaType;
         Size = size;
         Status = status;
         MetaData = sha;
@@ -26,7 +28,6 @@ public class AssetListItem
 
     public void Export()
     {
-
         string path = $"Output\\{Name}";
         Directory.CreateDirectory(Path.GetDirectoryName(path)); // Make sure the output directory exists.
         byte[] data = MainWindow.ActiveCatalog.Extract(MetaData);
@@ -81,15 +82,12 @@ public struct MetaDataObject
     }
 }
 
-public enum AssetType
+public enum InternalAssetType
 {
     Unknown,
     Chunk,
     EBX,
-    Mesh,
-    Texture,
-    Animation,
-    Audio
+    RES
 }
 
 public enum ExportStatus

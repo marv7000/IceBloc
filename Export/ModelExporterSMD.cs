@@ -11,6 +11,11 @@ public class ModelExporterSMD : IModelExporter
     /// <inheritdoc/>
     public void Export(InternalMesh mesh, string path)
     {
+        Export(mesh, null, path);
+    }
+
+    public void Export(InternalMesh mesh, InternalSkeleton skeleton, string path)
+    {
         // Start writing to disk.
         using var w = new StreamWriter(File.OpenWrite(path + ".smd"));
 
@@ -18,8 +23,12 @@ public class ModelExporterSMD : IModelExporter
         w.WriteLine("version 1");
 
         //TODO
-        // Write object name.
-        w.WriteLine($"o {mesh.Name}");
+
+        // Don't export any nodes.
+        if (skeleton == null)
+        {
+
+        }
 
         // Loop through each vertex.
         for (int i = 0; i < mesh.Vertices.Count; i++)

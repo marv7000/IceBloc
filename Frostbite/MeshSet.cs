@@ -61,7 +61,7 @@ public class MeshSet
                 InternalMesh mesh = new();
                 MeshSubset sub = meshSet.Subsets[i][j];
 
-                mesh.Name = sub.MaterialName.Value;
+                mesh.Name = sub.MaterialName.Value + "_LOD" + j;
                 mesh.IsSkinned = false; // TODO
 
                 var indexStartOffset = meshSet.Layout[i].VertexDataSize;

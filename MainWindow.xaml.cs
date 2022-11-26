@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     public static DbObject ActiveDataBaseObject;
     public static Catalog ActiveCatalog;
     public static DbMetaData MetaData;
-    public static List<AssetListItem> Assets = new();
+    public static Dictionary<string, AssetListItem> Assets = new();
     public static Game ActiveGame;
     public static Dictionary<Guid, byte[]> ChunkTranslations = new();
 
@@ -48,7 +48,7 @@ public partial class MainWindow : Window
         string[] sbFiles = Directory.GetFiles(Settings.GamePath + "\\Data\\Win32\\", "*", SearchOption.AllDirectories);
         for (int i = 0; i < sbFiles.Length; i++)
         {
-            if (!(sbFiles[i].Contains("en.toc") || sbFiles[i].Contains("en.sb")))
+            if (!System.IO.Path.GetDirectoryName(sbFiles[i]).Contains("Loc"))
                 LoadSbFile(sbFiles[i]);
 
             Instance.Dispatcher.Invoke(() => {
@@ -79,7 +79,6 @@ public partial class MainWindow : Window
                 LoadDbObject(element, true);
             }
         }
-        UpdateItems();
     }
 
     public static void LoadDbObject(DbObject asset, bool isChunks)
@@ -111,7 +110,28 @@ public partial class MainWindow : Window
 
     public static void HandleEbxData(DbObject asset)
     {
-        //TODO
+        List<DbObject> ebxData = asset.GetField("ebx").Data as List<DbObject>;
+
+        for (int i = 0; i < ebxData.Count; i++)
+        {
+            string idString = ebxData[i].GetField("name").Data as string;
+
+            ResType type = ResType.EBX;
+            object data = ebxData[i].GetField("size").Data;
+            byte[] sha = ebxData[i].GetField("sha1").Data as byte[];
+
+            // Check if we need to cast the read size to a long.
+            long size = 0;
+            if (data is int var) size = (int)data;
+            else if (data is long var1) size = (long)data;
+
+            var item = new AssetListItem(idString, type, InternalAssetType.EBX, size, ExportStatus.Ready, sha);
+
+            // Check if we already have an asset with that name (Some RES are defined multiple times).
+            item.GetHashCode();
+            if (!Assets.ContainsKey(idString))
+                Assets.Add(idString, item);
+        }
     }
 
     public static void HandleResData(DbObject asset)
@@ -131,12 +151,12 @@ public partial class MainWindow : Window
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
-            var item = new AssetListItem(idString, type, size, ExportStatus.Ready, sha);
+            var item = new AssetListItem(idString, type, InternalAssetType.RES, size, ExportStatus.Ready, sha);
 
             // Check if we already have an asset with that name (Some RES are defined multiple times).
             item.GetHashCode();
-            if ((Assets.Find(x => x.Name == idString) == null))
-                Assets.Add(item);
+            if (!Assets.ContainsKey(idString))
+                Assets.Add(idString, item);
         }
     }
 
@@ -154,7 +174,7 @@ public partial class MainWindow : Window
                 // In this case, check if the new one is larger. If yes, replace it.
                 if(!ChunkTranslations.TryAdd(chunkGuid, chunkSha))
                 {
-
+                    // TODO
                 }
             }
             catch(Exception e)
@@ -172,7 +192,7 @@ public partial class MainWindow : Window
         {
             Instance.AssetGrid.ItemsSource = null;
             Instance.LoadedAssets.Content = "Loaded Assets: " + Assets.Count;
-            Instance.AssetGrid.ItemsSource = Assets;
+            Instance.AssetGrid.ItemsSource = Assets.Values;
             Instance.AssetGrid.Refresh();
         });
     }
@@ -215,19 +235,30 @@ public partial class MainWindow : Window
         WriteUIOutput("\n" + message);
     }
 
+    private void MeshFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MeshFormatBox.SelectedIndex == 0)
+            Settings.CurrentModelExporter = new ModelExporterOBJ(); // OBJ
+        if (MeshFormatBox.SelectedIndex == 1)
+            Settings.CurrentModelExporter = new ModelExporterSMD(); // SMD
+    }
+
+    private void TextureFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TextureFormatBox.SelectedIndex == 0)
+            Settings.CurrentTextureExporter = new TextureExporterDDS();
+    }
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        var assets = Assets;
-        var output = new List<AssetListItem>();
-
-        foreach(var asset in assets)
+        var output = new Dictionary<string, AssetListItem>();
+        foreach(var item in Assets)
         {
-            if (asset.Name.Contains(SearchBox.Text))
+            if(item.Key.Contains(SearchBox.Text))
             {
-                output.Add(asset);
+                output.Add(item.Key, item.Value);
             }
         }
-        AssetGrid.ItemsSource = output;
+        AssetGrid.ItemsSource = output.Values;
     }
     #endregion
 
@@ -249,19 +280,4 @@ public partial class MainWindow : Window
         Settings.ExportRaw = false;
     }
     #endregion
-
-    private void MeshFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (MeshFormatBox.SelectedIndex == 0)
-            Settings.CurrentModelExporter = new ModelExporterOBJ(); // OBJ
-        if (MeshFormatBox.SelectedIndex == 1)
-            Settings.CurrentModelExporter = new ModelExporterSMD(); // SMD
-    }
-
-    private void TextureFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-
-        if (TextureFormatBox.SelectedIndex == 0)
-            Settings.CurrentTextureExporter = new TextureExporterDDS();
-    }
 }

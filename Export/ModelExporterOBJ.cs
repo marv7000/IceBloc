@@ -36,4 +36,10 @@ public class ModelExporterOBJ : IModelExporter
             w.WriteLine($"f {f.A + 1}/{f.A + 1}/{f.A + 1} {f.B + 1}/{f.B + 1}/{f.B + 1} {f.C + 1}/{f.C + 1}/{f.C + 1}");
         }
     }
+
+    public void Export(InternalMesh mesh, InternalSkeleton skeleton, string path)
+    {
+        Export(mesh, path);
+        MainWindow.WriteUIOutputLine($"Attempted to export skinned mesh \"{mesh.Name}\", but OBJ cannot store skinning information! Discarding...");
+    }
 }

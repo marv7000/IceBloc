@@ -34,10 +34,35 @@
                         </ComboBox>
                     </Grid>
                 </GroupBox>
+                <GroupBox x:Name="AnimationExportBox" Header="Animation Export" VerticalAlignment="Top" Margin="180,80,0,0" HorizontalAlignment="Left">
+                    <Grid>
+                        <ComboBox x:Name="AnimationFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="MeshFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
+                            <System:String>.smd</System:String>
+                            <System:String>.atf</System:String>
+                        </ComboBox>
+                    </Grid>
+                </GroupBox>
+                <GroupBox x:Name="EbxExportBox" Header="EBX Export" VerticalAlignment="Top" Margin="180,150,0,0" HorizontalAlignment="Left">
+                    <Grid>
+                        <ComboBox x:Name="EbxFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
+                            <System:String>.ebx (Binary)</System:String>
+                            <System:String>.txt (ASCII)</System:String>
+                        </ComboBox>
+                    </Grid>
+                </GroupBox>
                 <GroupBox x:Name="TextureExportBox" Header="Texture Export" VerticalAlignment="Top" Margin="10,150,0,0" HorizontalAlignment="Left">
                     <Grid>
                         <ComboBox x:Name="TextureFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="TextureFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
                             <System:String>.dds</System:String>
+                        </ComboBox>
+                    </Grid>
+                </GroupBox>
+                <GroupBox x:Name="LoadTypeBox" Header="Asset types to load" VerticalAlignment="Top" Margin="10,220,0,0" HorizontalAlignment="Left">
+                    <Grid>
+                        <ComboBox x:Name="LoadTypeFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
+                            <System:String>RES + EBX</System:String>
+                            <System:String>Only RES</System:String>
+                            <System:String>Only EBX</System:String>
                         </ComboBox>
                     </Grid>
                 </GroupBox>
