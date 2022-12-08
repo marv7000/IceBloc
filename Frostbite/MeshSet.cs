@@ -17,8 +17,11 @@ public class MeshSet
         MeshLayout[] ml    = new MeshLayout[msl.LodCount];
         MeshSubset[][] sub = new MeshSubset[msl.LodCount][];
 
-        for (int i = 0; i < msl.LodCount; i++) 
-            ml[i] = r.ReadMeshLayout();
+        for (int i = 0; i < msl.LodCount; i++)
+        {
+            ml[i] = msl.LOD[i].Value;
+        }
+
         for (int i = 0; i < msl.LodCount; i++)
         {
             r.BaseStream.Position = ml[i].SubSets.Ptr;
@@ -61,7 +64,7 @@ public class MeshSet
                 InternalMesh mesh = new();
                 MeshSubset sub = meshSet.Subsets[i][j];
 
-                mesh.Name = sub.MaterialName.Value + "_LOD" + j;
+                mesh.Name = sub.MaterialName.Value + "_LOD" + i + "_" + j;
                 mesh.IsSkinned = false; // TODO
 
                 var indexStartOffset = meshSet.Layout[i].VertexDataSize;

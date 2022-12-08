@@ -275,6 +275,8 @@ public static class BinaryReaderExtensions
                 return (T)(object)r.ReadNullTerminatedString();
             case "MeshLayout":
                 return (T)(object)r.ReadMeshLayout();
+            case "MeshSubset":
+                return (T)(object)r.ReadMeshSubset();
             case "Byte[]":
                 return (T)(object)r.ReadUntilStreamEnd();
             default:

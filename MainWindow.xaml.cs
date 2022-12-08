@@ -12,6 +12,7 @@ using System.Threading;
 using System.Windows.Threading;
 using System.Windows.Shapes;
 using IceBloc.Export;
+using System.Globalization;
 
 namespace IceBloc;
 
@@ -32,6 +33,8 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        // Why is this a thing...
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
         Instance = this;
         InitializeComponent();
     }
