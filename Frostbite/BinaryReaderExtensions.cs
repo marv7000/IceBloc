@@ -4,10 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using System.Reflection.PortableExecutable;
 using System.Text;
-using System.Windows.Markup;
-using static System.Net.Mime.MediaTypeNames;
+using static IceBloc.Frostbite.GenericData;
 
 namespace IceBloc.Frostbite;
 
@@ -245,14 +243,6 @@ public static class BinaryReaderExtensions
 
         return tex;
     }
-    public static GenericData ReadGD(this BinaryReader r)
-    {
-        GenericData gd = new();
-
-
-
-        return gd;
-    }
     public static object ReadByType<T>(this BinaryReader r)
     {
         switch (typeof(T).Name)
@@ -350,6 +340,17 @@ public static class BinaryReaderExtensions
 
         return array;
     }
+    public static long[] ReadInt64Array(this BinaryReader r, int count, bool bigEndian)
+    {
+        long[] array = new long[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadInt64(bigEndian);
+        }
+
+        return array;
+    }
     public static Guid ReadGuid(this BinaryReader r, bool bigEndian)
     {
         if (bigEndian)
@@ -374,7 +375,6 @@ public static class BinaryReaderExtensions
         r.BaseStream.Position = startPos + complexDesc.Size;
         return cmplx;
     }
-
     public static Field ReadField(this BinaryReader r, in Dbx dbx, int fieldIndex)
     {
         var fieldDesc = dbx.FieldDescriptors[fieldIndex];
@@ -489,7 +489,6 @@ public static class BinaryReaderExtensions
         }
         return field;
     }
-
     public static void WriteField(this StreamWriter f, Field field, int lvl, string text)
     {
         // Indent
@@ -499,7 +498,6 @@ public static class BinaryReaderExtensions
         }
         f.WriteLine(field.Desc.Name + text);
     }
-
     public static void WriteInstance(this StreamWriter f, Complex cmplx, string text)
     {
         f.WriteLine(cmplx.Desc.Name + " " + text);

@@ -39,6 +39,8 @@ public partial class MainWindow : Window
         InitializeComponent();
     }
 
+    #region Asset Loading
+
     public static void LoadAssets()
     {
         // Clear existing DbObject selection.
@@ -186,6 +188,8 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    #endregion
 
     #region UI
 

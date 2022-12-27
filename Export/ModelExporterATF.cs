@@ -35,9 +35,9 @@ public class ModelExporterATF : IModelExporter
         for (int i = 0; i < mesh.Faces.Count; i++)
         {
             // Get the current face (for readability).
-            var f = mesh.Faces[i];
+            var (A, B, C) = mesh.Faces[i];
             // Write three face indices (Format: pos/norm/uv).
-            w.WriteLine($"FACE,{f.A + 1},{f.B + 1},{f.C + 1}");
+            w.WriteLine($"FACE,{A + 1},{B + 1},{C + 1}");
         }
     }
 
@@ -75,7 +75,7 @@ public class ModelExporterATF : IModelExporter
         {
             // Get the current face (for readability).
             var f = mesh.Faces[i];
-            // Write three face indices (Format: pos/norm/uv).
+            // Write three face indices
             w.WriteLine($"FACE,{f.A + 1},{f.B + 1},{f.C + 1}");
         }
 

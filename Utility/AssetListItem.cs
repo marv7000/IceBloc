@@ -28,7 +28,7 @@ public class AssetListItem
 
     public void Export()
     {
-        string path = $"Output\\{Name}";
+        string path = $"Output\\{Settings.CurrentGame}\\{Name}";
         Directory.CreateDirectory(Path.GetDirectoryName(path)); // Make sure the output directory exists.
         byte[] data = MainWindow.ActiveCatalog.Extract(MetaData);
 
