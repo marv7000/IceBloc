@@ -17,5 +17,5 @@ Supported asset types:
 - If you wish to extract unsupported asset types, go to the Settings tab and enable Raw Export.
 
 # Build dependencies
-- NET 6.0
+- NET 7.0
 - VS2022
