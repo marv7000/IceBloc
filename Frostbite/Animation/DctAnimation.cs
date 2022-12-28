@@ -1,12 +1,15 @@
 ﻿using IceBloc.InternalFormats;
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace IceBloc.Frostbite.Animation;
 
 public class DctAnimation : Animation
 {
     public ushort[] KeyTimes;
-    public byte[] Data;
+    public byte[] mData;
     public ushort NumKeys;
     public ushort NumVec3;
     public ushort NumFloat;
@@ -20,7 +23,7 @@ public class DctAnimation : Animation
     public ushort QuantizeMult_Block;
     public byte QuantizeMult_Subblock;
     public byte CatchAllBitCount;
-    public byte[] NumSubblocks; // Bitfield at offset 4, needs to be bitshifted when read
+    public byte[] NumSubblocks; // Bitfield at offset 4, needs to be bitshifted right when read.
 
     public DctAnimation(Stream stream, ref GenericData gd, bool bigEndian)
     {
@@ -30,7 +33,7 @@ public class DctAnimation : Animation
         var data = gd.ReadValues(r, baseOffset, type, false);
 
         KeyTimes = data["KeyTimes"] as ushort[];
-        Data = data["Data"] as byte[];
+        mData = data["Data"] as byte[];
         NumKeys = (ushort)data["NumKeys"];
         NumVec3 = (ushort)data["NumVec3"];
         NumFloat = (ushort)data["NumFloat"];
@@ -58,12 +61,17 @@ public class DctAnimation : Animation
         TrimOffset = (float)baseData["TrimOffset"];
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
+
+        
     }
 
     public InternalAnimation ConvertToInternal()
     {
         InternalAnimation ret = new();
 
+        var decompressor = new DctAnimDecompressor(this, null, new ScratchPad());
+
         return ret;
     }
+
 }

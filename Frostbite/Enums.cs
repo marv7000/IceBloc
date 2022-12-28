@@ -385,3 +385,10 @@ public enum AnimationType : uint
     DctAnimation = 3047189506U,
     RawAnimation = 1419182396U
 }
+
+public enum TargetEndian : int
+{
+    TARGET_ENDIAN_LITTLE = 0x0,
+    TARGET_ENDIAN_BIG = 0x1,
+    PLATFORM_ENDIAN = 0x0,
+};
