@@ -7,7 +7,7 @@ namespace IceBloc.Utility;
 /// </summary>
 public static class Settings
 {
-    public static Game CurrentGame = Game.Battlefield3;
+    public static Game CurrentGame = Game.Unknown;
     public static IModelExporter CurrentModelExporter = new ModelExporterOBJ();
     public static ITextureExporter CurrentTextureExporter = new TextureExporterDDS();
     public static IAnimationExporter CurrentAnimationExporter = new AnimationExporterSMD();
@@ -19,6 +19,7 @@ public static class Settings
 
 public enum Game
 {
+    Unknown = -1,
     Battlefield3,
     Battlefield4
 }

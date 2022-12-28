@@ -3,16 +3,16 @@ using System.Collections.Generic;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
-using Microsoft.Win32;
 using Microsoft.WindowsAPICodePack.Dialogs;
 
 using IceBloc.Utility;
 using IceBloc.Frostbite;
 using System.Threading;
-using System.Windows.Threading;
-using System.Windows.Shapes;
 using IceBloc.Export;
 using System.Globalization;
+using IceBloc.Frostbite.Animation;
+using IceBloc.Frostbite.Database;
+using System.Linq;
 
 namespace IceBloc;
 
@@ -46,6 +46,14 @@ public partial class MainWindow : Window
         // Clear existing DbObject selection.
         ActiveDataBaseObject = null;
 
+        // Find the game name and set it.
+        if (Settings.GamePath.Contains("Battlefield 3"))
+            Settings.CurrentGame = Game.Battlefield3;
+        else if (Settings.GamePath.Contains("Battlefield 4"))
+            Settings.CurrentGame = Game.Battlefield4;
+        else
+            throw new InvalidDataException("Tried to load an unsupported game!");
+
         // We just want to load the game folder.
         ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
         Assets = new();
@@ -53,7 +61,7 @@ public partial class MainWindow : Window
         string[] sbFiles = Directory.GetFiles(Settings.GamePath + "\\Data\\Win32\\", "*", SearchOption.AllDirectories);
         for (int i = 0; i < sbFiles.Length; i++)
         {
-            if (!System.IO.Path.GetDirectoryName(sbFiles[i]).Contains("Loc"))
+            if (!Path.GetDirectoryName(sbFiles[i]).Contains("Loc"))
                 LoadSbFile(sbFiles[i]);
 
             Instance.Dispatcher.Invoke(() => {
@@ -68,21 +76,33 @@ public partial class MainWindow : Window
 
     public static void LoadSbFile(string path)
     {
-        ActiveDataBaseObject = DbObject.UnpackDbObject(path);
-        foreach (var element in ActiveDataBaseObject.Data as List<DbObject>)
+        try
         {
-            if (element.Name == "bundles")
+            ActiveDataBaseObject = DbObject.UnpackDbObject(path);
+            var adboData = ActiveDataBaseObject.Data as List<DbObject>;
+            if (adboData is not null)
             {
-                foreach (DbObject asset in element.Data as List<DbObject>)
+                foreach (var element in adboData)
                 {
-                    LoadDbObject(asset, false);
+                    if (element.Name == "bundles")
+                    {
+                        foreach (DbObject asset in element.Data as List<DbObject>)
+                        {
+                            LoadDbObject(asset, false);
+                        }
+                    }
+                    // If we have pure chunks.
+                    else if (element.Name == "chunks")
+                    {
+                        LoadDbObject(element, true);
+                    }
                 }
             }
-            // If we have pure chunks.
-            else if (element.Name == "chunks")
-            {
-                LoadDbObject(element, true);
-            }
+        }
+        catch(Exception e)
+        {
+            Output.WriteLine(e.Message);
+            Output.WriteLine($"Tried to load an unsupported file \"{path}\", skipping...");
         }
     }
 
@@ -91,17 +111,17 @@ public partial class MainWindow : Window
         if (!isChunks)
         {
             // If we have RES information, use it.
-            if (!(asset.GetField("res") == null || (asset.GetField("res").Data as List<DbObject>).Count == 0))
+            if (!(asset.GetField("res") is null || (asset.GetField("res").Data as List<DbObject>).Count == 0))
             {
                 HandleResData(asset);
             }
             // If we have EBX information, use it.
-            if (!(asset.GetField("ebx") == null || (asset.GetField("ebx").Data as List<DbObject>).Count == 0))
+            if (!(asset.GetField("ebx") is null || (asset.GetField("ebx").Data as List<DbObject>).Count == 0))
             {
                 HandleEbxData(asset);
             }
             // If we have ChunkBundle information, use it.
-            if (!(asset.GetField("chunks") == null || (asset.GetField("chunks").Data as List<DbObject>).Count == 0))
+            if (!(asset.GetField("chunks") is null || (asset.GetField("chunks").Data as List<DbObject>).Count == 0))
             {
                 HandleChunkData(asset.GetField("chunks"));
             }
@@ -172,14 +192,42 @@ public partial class MainWindow : Window
         {
             try
             {
-                var chunkSha = chunks[i].GetField("sha1").Data as byte[];
-                Guid chunkGuid = (Guid)chunks[i].GetField("id").Data;
-
-                // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
-                // In this case, check if the new one is larger. If yes, replace it.
-                if(!ChunkTranslations.TryAdd(chunkGuid, chunkSha))
+                switch(Settings.CurrentGame)
                 {
-                    // TODO
+                    case Game.Battlefield3:
+                        {
+                            var chunkSha = chunks[i].GetField("sha1").Data as byte[];
+                            Guid chunkGuid = (Guid)chunks[i].GetField("id").Data;
+
+                            // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
+                            // In this case, check if the new one is larger. If yes, replace it.
+                            if (!ChunkTranslations.TryAdd(chunkGuid, chunkSha))
+                            {
+                                // TODO
+                            }
+                        }
+                        break;
+                    case Game.Battlefield4:
+                        {
+                            Guid chunkGuid = (Guid)chunks[i].GetField("id").Data;
+                            var chunkSha = chunks[i].GetField("sha1");
+                            if (chunkSha is not null)
+                            {
+                                // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
+                                // In this case, check if the new one is larger. If yes, replace it.
+                                if (!ChunkTranslations.TryAdd(chunkGuid, chunkSha.Data as byte[]))
+                                {
+                                    // TODO
+                                }
+                            }
+                            else
+                            {
+                                // noncas bundle entry, cant read yet
+                            }
+
+
+                            break;
+                        }
                 }
             }
             catch(Exception e)
