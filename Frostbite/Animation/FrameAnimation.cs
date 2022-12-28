@@ -14,7 +14,7 @@ public class FrameAnimation : Animation
     public FrameAnimation(Stream stream, ref GenericData gd, bool bigEndian)
     {
         using var r = new BinaryReader(stream);
-        r.ReadGdDataHeader(out uint hash, out uint type, out uint baseOffset);
+        r.ReadGdDataHeader(bigEndian, out uint hash, out uint type, out uint baseOffset);
 
         var data = gd.ReadValues(r, baseOffset, type, false);
 
@@ -25,7 +25,7 @@ public class FrameAnimation : Animation
 
         // Read the Base class (Animation).
         r.BaseStream.Position = (long)data["__base"];
-        r.ReadGdDataHeader(out uint base_hash, out uint base_type, out uint base_baseOffset);
+        r.ReadGdDataHeader(bigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
 
         var baseData = gd.ReadValues(r, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
 

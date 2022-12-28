@@ -12,7 +12,6 @@ using IceBloc.Export;
 using System.Globalization;
 using IceBloc.Frostbite.Animation;
 using IceBloc.Frostbite.Database;
-using System.Linq;
 
 namespace IceBloc;
 
@@ -54,24 +53,23 @@ public partial class MainWindow : Window
         else
             throw new InvalidDataException("Tried to load an unsupported game!");
 
-        // We just want to load the game folder.
+        // Load the cascat.
         ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
         Assets = new();
 
+        // Get all file names in the Data\Win32 dir.
         string[] sbFiles = Directory.GetFiles(Settings.GamePath + "\\Data\\Win32\\", "*", SearchOption.AllDirectories);
+
         for (int i = 0; i < sbFiles.Length; i++)
         {
-            if (!Path.GetDirectoryName(sbFiles[i]).Contains("Loc"))
-                LoadSbFile(sbFiles[i]);
+            LoadSbFile(sbFiles[i]);
 
+            // Update the progress bar.
             Instance.Dispatcher.Invoke(() => {
                 Instance.ProgressBar.Value = ((double)i / (double)sbFiles.Length) * 100.0;
             });
         }
-        Instance.Dispatcher.Invoke(() =>
-        {
-            UpdateItems();
-        });
+        Instance.Dispatcher.Invoke(UpdateItems);
     }
 
     public static void LoadSbFile(string path)
@@ -98,10 +96,10 @@ public partial class MainWindow : Window
                     }
                 }
             }
+            Output.WriteLine($"Loaded file \"{path}\".");
         }
-        catch(Exception e)
+        catch
         {
-            Output.WriteLine(e.Message);
             Output.WriteLine($"Tried to load an unsupported file \"{path}\", skipping...");
         }
     }
@@ -110,15 +108,21 @@ public partial class MainWindow : Window
     {
         if (!isChunks)
         {
-            // If we have RES information, use it.
-            if (!(asset.GetField("res") is null || (asset.GetField("res").Data as List<DbObject>).Count == 0))
+            if (Settings.LoadMode == AssetLoadMode.All || Settings.LoadMode == AssetLoadMode.OnlyRes)
             {
-                HandleResData(asset);
+                // If we have RES information, use it.
+                if (!(asset.GetField("res") is null || (asset.GetField("res").Data as List<DbObject>).Count == 0))
+                {
+                    HandleResData(asset);
+                }
             }
-            // If we have EBX information, use it.
-            if (!(asset.GetField("ebx") is null || (asset.GetField("ebx").Data as List<DbObject>).Count == 0))
+            if (Settings.LoadMode == AssetLoadMode.All || Settings.LoadMode == AssetLoadMode.OnlyEbx)
             {
-                HandleEbxData(asset);
+                // If we have EBX information, use it.
+                if (!(asset.GetField("ebx") is null || (asset.GetField("ebx").Data as List<DbObject>).Count == 0))
+                {
+                    HandleEbxData(asset);
+                }
             }
             // If we have ChunkBundle information, use it.
             if (!(asset.GetField("chunks") is null || (asset.GetField("chunks").Data as List<DbObject>).Count == 0))
@@ -283,11 +287,14 @@ public partial class MainWindow : Window
 
     public static void WriteUIOutput(string message)
     {
-        Instance.ConsoleOutput.Text += message;
+        Instance.Dispatcher.Invoke(() =>
+        {
+            Instance.ConsoleOutput.Text += message;
+        });
     }
     public static void WriteUIOutputLine(string message)
     {
-        WriteUIOutput("\n" + message);
+        WriteUIOutput(message + "\n");
     }
 
     private void MeshFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -334,5 +341,11 @@ public partial class MainWindow : Window
     {
         Settings.ExportRaw = false;
     }
-    #endregion
+
+    private void LoadTypeFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        Settings.LoadMode = (AssetLoadMode)LoadTypeFormatBox.SelectedIndex;
+    }
 }
+
+#endregion

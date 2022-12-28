@@ -15,6 +15,14 @@ public static class Settings
     public static string GamePath = "";
     public static bool ExportRaw = false;
     public static bool ExportConverted = true;
+    public static AssetLoadMode LoadMode = AssetLoadMode.All;
+}
+
+public enum AssetLoadMode
+{
+    All,
+    OnlyRes,
+    OnlyEbx
 }
 
 public enum Game

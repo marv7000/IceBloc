@@ -59,7 +59,7 @@
                 </GroupBox>
                 <GroupBox x:Name="LoadTypeBox" Header="Asset types to load" VerticalAlignment="Top" Margin="10,220,0,0" HorizontalAlignment="Left">
                     <Grid>
-                        <ComboBox x:Name="LoadTypeFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
+                        <ComboBox x:Name="LoadTypeFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" SelectionChanged="LoadTypeFormatBox_SelectionChanged">
                             <System:String>RES + EBX</System:String>
                             <System:String>Only RES</System:String>
                             <System:String>Only EBX</System:String>
@@ -69,9 +69,11 @@
             </Grid>
         </TabItem>
         <TabItem Header="Output">
-            <Grid Background="#FF303030">
-                <TextBlock x:Name="ConsoleOutput" TextWrapping="NoWrap" Text="================================================" Margin="5,5,5,5" FontFamily="Cascadia Code" Foreground="White"/>
-            </Grid>
+            <ScrollViewer>
+                <Grid Background="#FF303030">
+                    <TextBlock x:Name="ConsoleOutput" TextWrapping="NoWrap" Text="================================================&#x0a;" Margin="5,5,5,5" FontFamily="Cascadia Code" Foreground="White"/>
+                </Grid>
+            </ScrollViewer>
         </TabItem>
     </TabControl>
 </Window>

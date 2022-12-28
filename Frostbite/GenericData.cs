@@ -1,31 +1,15 @@
-﻿using IceBloc.Utility;
+﻿using IceBloc.Frostbite.Animation;
+using IceBloc.Utility;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using System.Windows.Media.Animation;
 
 namespace IceBloc.Frostbite;
 
 public class GenericData
 {
     public Dictionary<uint, GenericDataClass> Classes = new();
-
-    /// <summary>
-    /// Creates an empty GD entity.
-    /// </summary>
-    public GenericData()
-    {
-
-    }
-
-    /// <summary>
-    /// Creates a GD entity from a given set of classes.
-    /// </summary>
-    public GenericData(Dictionary<uint, GenericDataClass> classes)
-    { 
-        Classes = classes; 
-    }
 
     /// <summary>
     /// Reads a GD bank from a stream.
@@ -36,28 +20,38 @@ public class GenericData
 
         // GD Header
         int version = r.ReadInt32(true);
-        int partitions= r.ReadInt32(true);
-        int reflType = r.ReadInt32(true);
-        int subDataCount = r.ReadInt32(true);
-        int subDataCapacity = r.ReadInt32(true);
-        int ptr = r.ReadInt32(true);
-        int pad = r.ReadInt32(true);
-
+        int subDataCount = 0;
+        if (Encoding.ASCII.GetString(r.ReadBytes(7)) != "GD.STRM")
+        {
+            r.BaseStream.Position -= 7;
+            int partitions = r.ReadInt32(true);
+            int reflType = r.ReadInt32(true);
+            subDataCount = r.ReadInt32(true);
+            int subDataCapacity = r.ReadInt32(true);
+            int ptr = r.ReadInt32(true);
+            int pad = r.ReadInt32(true);
+        }
+        else
+        {
+            r.BaseStream.Position = 4;
+        }
         // GD.STRMl block
-        string strmBlock = Encoding.ASCII.GetString(r.ReadBytes(8));
-        uint strmTotalSize = r.ReadUInt32();
-        uint strmIndicesOffset = r.ReadUInt32();
+        string strmBlock = Encoding.ASCII.GetString(r.ReadBytes(7));
+        bool strmBigEndian = r.ReadByte() == 98 ? true : false; // "b" for big endian, "l" for little.
+        uint strmTotalSize = r.ReadUInt32(strmBigEndian);
+        uint strmIndicesOffset = r.ReadUInt32(strmBigEndian);
 
         // GD.REFLl block
-        string reflBlock = Encoding.ASCII.GetString(r.ReadBytes(8));
-        uint reflTotalSize = r.ReadUInt32();
-        uint reflIndicesOffset = r.ReadUInt32();
+        string reflBlock = Encoding.ASCII.GetString(r.ReadBytes(7));
+        bool reflBigEndian = r.ReadByte() == 98 ? true : false;
+        uint reflTotalSize = r.ReadUInt32(reflBigEndian);
+        uint reflIndicesOffset = r.ReadUInt32(reflBigEndian);
 
         // All offsets in the REFL block reference this offset as their base.
         long reflStartOffset = r.BaseStream.Position;
 
-        long size = r.ReadInt64();
-        long[] offsets = r.ReadInt64Array((int)size, false);
+        long size = r.ReadInt64(reflBigEndian);
+        long[] offsets = r.ReadInt64Array((int)size, reflBigEndian);
 
         GenericDataLayoutEntry[] gdLayout = new GenericDataLayoutEntry[size];
 
@@ -68,7 +62,7 @@ public class GenericData
             r.BaseStream.Position = offsets[i] + reflStartOffset;
 
             // Read the GenericData layout entry.
-            gdLayout[i] = r.ReadGDLE(out int fieldSize);
+            gdLayout[i] = r.ReadGDLE(reflBigEndian, out int fieldSize);
 
             // Convert this info to our intermediate format for easier use.
             var cl = new GenericDataClass();
@@ -79,7 +73,7 @@ public class GenericData
             // Loop through all fields of the class.
             for (int j = 0; j < fieldSize; j++)
             {
-                var item = new GenericDataElement();
+                var item = new GenericDataField();
 
                 // Set the field values to our intermediate field.
                 item.Name = gdLayout[i].mFieldNames[j];
@@ -93,7 +87,7 @@ public class GenericData
                     // Set the stream position to the GDLE that we want to read.
                     r.BaseStream.Position = gdLayout[i].mEntries[j].mLayout + reflStartOffset;
                     // Read the GDLE.
-                    var glde = r.ReadGDLE(out int _fieldSize);
+                    var glde = r.ReadGDLE(reflBigEndian, out int _fieldSize);
                     // Get the field's type name.
                     item.Type = glde.mName;
                     // Go back to our original stream position.
@@ -109,56 +103,77 @@ public class GenericData
         r.Align(4);
 
         // Type table
-        int typeTableSize = r.ReadInt32();
-        int[] typeTable = r.ReadInt32Array(typeTableSize, false);
+        int typeTableSize = r.ReadInt32(reflBigEndian);
+        int[] typeTable = r.ReadInt32Array(typeTableSize, reflBigEndian);
 
         // Set this to true if you want to dump the data that's being read next. (debug)
-        bool exportData = false;
+        bool exportData = true;
 
         // Dump the data to disk.
-        if (exportData)
+        for (int i = 0; i < 36; i++)
         {
-            for (int i = 0; i < subDataCount; i++)
+            long basePos = r.BaseStream.Position;
+
+            // Could possibly be "GD.DATAb" for big endian, according to PDB.
+            string header = Encoding.ASCII.GetString(r.ReadBytes(7));
+            bool bigEndian = r.ReadByte() == 98 ? true : false;
+
+            int dataBlockSize = r.ReadInt32(bigEndian);
+            int dataBlockIndexOffset = r.ReadInt32(bigEndian);
+
+            int dataBlockSizeDifference = dataBlockSize - dataBlockIndexOffset;
+
+            r.ReadBytes(16); // Pad
+
+            uint dataBlockClassType = (uint)r.ReadUInt64(bigEndian);
+
+            // Get the data
+            r.BaseStream.Position = basePos + 16;
+            byte[] data = r.ReadBytes(dataBlockIndexOffset - 16);
+            r.ReadBytes(dataBlockSizeDifference); // Pad the indices.
+
+            // Get the name of the file.
+            r.BaseStream.Position = basePos + 16 + 32 + Classes[dataBlockClassType].Size;
+            string fileName = r.ReadNullTerminatedString();
+
+            if (exportData)
             {
-                long basePos = r.BaseStream.Position;
-
-                // Could possibly be "GD.DATAb" for big endian, according to PDB.
-                bool bigEndian = false;
-                string header = Encoding.ASCII.GetString(r.ReadBytes(8));
-                if (header == "GD.DATAl")
-                    bigEndian = false;
-                else if (header == "GD.DATAb")
-                    bigEndian = true;
-                else
-                    throw new InvalidDataException($"Expected format \"GD.DATAl\" or \"GD.DATAb\", but got \"{header}\"");
-
-                int dataBlockSize = r.ReadInt32(bigEndian);
-                int dataBlockIndexOffset = r.ReadInt32(bigEndian);
-
-                int dataBlockSizeDifference = dataBlockSize - dataBlockIndexOffset;
-
-                r.ReadBytes(16); // Pad
-
-                uint dataBlockClassType = r.ReadUInt32(bigEndian);
-
-                // Get the data
-                r.BaseStream.Position = basePos + 16;
-                byte[] data = r.ReadBytes(dataBlockIndexOffset - 16);
-                r.ReadBytes(dataBlockSizeDifference); // Pad the indices.
-
-                // Get the name of the file.
-                r.BaseStream.Position = basePos + 16 + 32 + Classes[dataBlockClassType].Size;
-                string fileName = r.ReadNullTerminatedString();
-
                 // Save all bytes except for the header and the indices at the end.
                 string path = $"Output\\{Settings.CurrentGame}\\";
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
                 File.WriteAllBytes(path + $"{fileName}.{Classes[dataBlockClassType].Name}", data);
 
-                // Set the position to the end of the block.
-                r.BaseStream.Position = basePos + dataBlockSize;
             }
+            // Set the position to the end of the block.
+            r.BaseStream.Position = basePos + dataBlockSize;
         }
+    }
+
+    public object Deserialize(Stream stream, bool bigEndian)
+    {
+        using var r = new BinaryReader(stream);
+
+        r.ReadGdDataHeader(bigEndian, out uint hash, out uint type, out uint baseOffset);
+        r.BaseStream.Position = 0;
+
+        object deserializedData = null;
+
+        GenericData gd = this;
+
+        // Add definitions here.
+        switch (gd.Classes[type].Name)
+        {
+            case "FrameAnimationAsset":
+                deserializedData = new FrameAnimation(r.BaseStream, ref gd, bigEndian); break;
+            case "DctAnimationAsset":
+                deserializedData = new DctAnimation(r.BaseStream, ref gd, bigEndian); break;
+            case "RawAnimationAsset":
+                deserializedData = new RawAnimation(r.BaseStream, ref gd, bigEndian); break;
+            default:
+                throw new MissingMethodException($"Tried to invoke undefined behaviour for class \"{gd.Classes[type].Name}\"\nNo translations for this class exist in IceBloc.");
+        }
+
+        return deserializedData;
     }
 
     public Dictionary<string, object> ReadValues(BinaryReader r, uint baseOffset, uint type, bool bigEndian)
@@ -376,7 +391,7 @@ public class GenericDataClass
     public string Name;
     public int Alignment;
     public int Size;
-    public List<GenericDataElement> Elements = new();
+    public List<GenericDataField> Elements = new();
 
     public GenericDataClass() { }
 
@@ -386,7 +401,7 @@ public class GenericDataClass
     }
 }
 
-public struct GenericDataElement
+public struct GenericDataField
 {
     public string Type;
     public string Name;

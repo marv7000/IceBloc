@@ -15,10 +15,10 @@ public class Animation
 
     }
 
-    public Animation(Stream stream, ref GenericData gd)
+    public Animation(Stream stream, ref GenericData gd, bool bigEndian)
     {
         using var r = new BinaryReader(stream);
-        r.ReadGdDataHeader(out uint base_hash, out uint base_type, out uint base_baseOffset);
+        r.ReadGdDataHeader(bigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
 
         var baseData = gd.ReadValues(r, base_baseOffset, base_type, false);
 

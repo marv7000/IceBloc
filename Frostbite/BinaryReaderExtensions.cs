@@ -595,23 +595,23 @@ public static class BinaryReaderExtensions
 
 
     #region GenericData
-    public static GenericDataLayoutEntry ReadGDLE(this BinaryReader r, out int fieldSize)
+    public static GenericDataLayoutEntry ReadGDLE(this BinaryReader r, bool bigEndian, out int fieldSize)
     {
         var gdle = new GenericDataLayoutEntry();
 
-        gdle.mMinSlot = r.ReadInt32();
-        gdle.mMaxSlot = r.ReadInt32();
+        gdle.mMinSlot = r.ReadInt32(bigEndian);
+        gdle.mMaxSlot = r.ReadInt32(bigEndian);
 
         fieldSize = (gdle.mMinSlot * -1) + gdle.mMaxSlot + 1;
 
-        gdle.mDataSize = r.ReadUInt32();
-        gdle.mAlignment = r.ReadUInt32();
-        gdle.mStringTableOffset = r.ReadUInt32();
-        gdle.mStringTableLength = r.ReadUInt32();
+        gdle.mDataSize = r.ReadUInt32(bigEndian);
+        gdle.mAlignment = r.ReadUInt32(bigEndian);
+        gdle.mStringTableOffset = r.ReadUInt32(bigEndian);
+        gdle.mStringTableLength = r.ReadUInt32(bigEndian);
         gdle.mReordered = r.ReadBoolean();
         gdle.mNative = r.ReadBoolean();
         r.ReadBytes(2); // Pad
-        gdle.mHash = r.ReadUInt32();
+        gdle.mHash = r.ReadUInt32(bigEndian);
 
         // Fill data entries.
         gdle.mEntries = new GenericDataEntry[fieldSize];
@@ -619,15 +619,15 @@ public static class BinaryReaderExtensions
         {
         LABEL_1:
             GenericDataEntry entry = new();
-            entry.mLayoutHash = r.ReadUInt32();
-            entry.mElementSize = r.ReadUInt32();
-            entry.mOffset = r.ReadUInt32();
-            entry.mName = r.ReadUInt32();
-            entry.mCount = r.ReadUInt16();
-            entry.mFlags = (EFlags)r.ReadUInt16();
-            entry.mElementAlign = r.ReadUInt16();
-            entry.mRLE = r.ReadInt16();
-            entry.mLayout = r.ReadInt64();
+            entry.mLayoutHash = r.ReadUInt32(bigEndian);
+            entry.mElementSize = r.ReadUInt32(bigEndian);
+            entry.mOffset = r.ReadUInt32(bigEndian);
+            entry.mName = r.ReadUInt32(bigEndian);
+            entry.mCount = r.ReadUInt16(bigEndian);
+            entry.mFlags = (EFlags)r.ReadUInt16(bigEndian);
+            entry.mElementAlign = r.ReadUInt16(bigEndian);
+            entry.mRLE = r.ReadInt16(bigEndian);
+            entry.mLayout = r.ReadInt64(bigEndian);
 
             // Sometimes there seems to be a missing entry?
             // In that case we let everything finish, but then we fix up the alignments.
@@ -654,13 +654,14 @@ public static class BinaryReaderExtensions
 
         return gdle;
     }
-    public static void ReadGdDataHeader(this BinaryReader r, out uint hash, out uint type, out uint offset)
+    public static void ReadGdDataHeader(this BinaryReader r, bool bigEndian, out uint hash, out uint type, out uint offset)
     {
-        hash = r.ReadUInt32();
-        r.ReadBytes(12);
-        type = r.ReadUInt32();
+        hash = (uint)r.ReadUInt64(bigEndian);
         r.ReadBytes(8);
-        offset = r.ReadUInt32();
+        type = (uint)r.ReadUInt64(bigEndian);
+        r.ReadBytes(4);
+        offset = r.ReadUInt16(bigEndian);
+        r.ReadBytes(2);
     }
     #endregion
 }

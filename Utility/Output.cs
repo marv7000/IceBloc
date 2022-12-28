@@ -16,21 +16,21 @@ public class Output
                 MainWindow.WriteUIOutput("[ERROR]     ");
                 Console.BackgroundColor = ConsoleColor.Black;
                 Console.ForegroundColor = ConsoleColor.DarkYellow;
-                MainWindow.WriteUIOutput(" " + message);
+                MainWindow.WriteUIOutput(" " + message + "\n");
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.Warning:
                 Console.BackgroundColor = ConsoleColor.DarkYellow;
                 MainWindow.WriteUIOutput("[WARN]      ");
                 Console.BackgroundColor = ConsoleColor.Black;
-                MainWindow.WriteUIOutput(" " + message);
+                MainWindow.WriteUIOutput(" " + message + "\n");
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.Info:
                 Console.BackgroundColor = ConsoleColor.DarkBlue;
                 MainWindow.WriteUIOutput("[INFO]      ");
                 Console.BackgroundColor = ConsoleColor.Black;
-                MainWindow.WriteUIOutput(" " + message);
+                MainWindow.WriteUIOutput(" " + message + "\n");
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.Debug:
@@ -39,7 +39,7 @@ public class Output
                     Console.BackgroundColor = ConsoleColor.DarkMagenta;
                     MainWindow.WriteUIOutput("[DEBUG]     ");
                     Console.BackgroundColor = ConsoleColor.Black;
-                    MainWindow.WriteUIOutput(" " + message);
+                    MainWindow.WriteUIOutput(" " + message + "\n");
                     Console.ForegroundColor = ConsoleColor.White;
                 }
                 break;
@@ -47,7 +47,7 @@ public class Output
                 Console.BackgroundColor = ConsoleColor.Green;
                 MainWindow.WriteUIOutput("[SUCCESS]   ");
                 Console.BackgroundColor = ConsoleColor.Black;
-                MainWindow.WriteUIOutput(" " + message);
+                MainWindow.WriteUIOutput(" " + message + "\n");
                 Console.ForegroundColor = ConsoleColor.White;
                 break;
             case MessageType.ErrorQuit:
