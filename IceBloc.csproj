@@ -9,7 +9,6 @@
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
     <StartupObject>IceBloc.App</StartupObject>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>preview</LangVersion>
   </PropertyGroup>

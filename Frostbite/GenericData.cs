@@ -149,9 +149,17 @@ public class GenericData
         }
     }
 
-    public object Deserialize(Stream stream, bool bigEndian)
+    public object Deserialize(Stream stream)
     {
         using var r = new BinaryReader(stream);
+
+        bool bigEndian = false;
+
+        if (r.ReadInt32() == 0)
+        {
+            bigEndian = true;
+        }
+        r.BaseStream.Position = 0;
 
         r.ReadGdDataHeader(bigEndian, out uint hash, out uint type, out uint baseOffset);
         r.BaseStream.Position = 0;
@@ -170,7 +178,7 @@ public class GenericData
             case "RawAnimationAsset":
                 deserializedData = new RawAnimation(r.BaseStream, ref gd, bigEndian); break;
             default:
-                throw new MissingMethodException($"Tried to invoke undefined behaviour for class \"{gd.Classes[type].Name}\"\nNo translations for this class exist in IceBloc.");
+                throw new MissingMethodException($"Tried to invoke undefined behaviour for type \"{gd.Classes[type].Name}\"\nThe type is valid, but no translations for this class have been defined in IceBloc.");
         }
 
         return deserializedData;
