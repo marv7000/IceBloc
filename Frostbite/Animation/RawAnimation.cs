@@ -29,7 +29,17 @@ public class RawAnimation : Animation
         Data = data["Data"] as float[];
         Cycle = (bool)data["Cycle"];
 
-        ConvertToInternal();
+        // Read the Base class (Animation).
+        r.BaseStream.Position = (long)data["__base"];
+        r.ReadGdDataHeader(out uint base_hash, out uint base_type, out uint base_baseOffset);
+
+        var baseData = gd.ReadValues(r, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
+
+        CodecType = (int)baseData["CodecType"];
+        AnimId = (int)baseData["AnimId"];
+        TrimOffset = (float)baseData["TrimOffset"];
+        EndFrame = (ushort)baseData["EndFrame"];
+        Additive = (bool)baseData["Additive"];
     }
 
     public InternalAnimation ConvertToInternal()

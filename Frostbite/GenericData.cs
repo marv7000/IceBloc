@@ -318,7 +318,7 @@ public class GenericData
                         uint capacity = r.ReadUInt32(bigEndian);
                         long offset = r.ReadInt64();
                         r.BaseStream.Position = offset;
-                        fieldData = Encoding.ASCII.GetString(r.ReadBytes((int)size - 1)); // -1 to ignore \0 at the end
+                        fieldData = Encoding.ASCII.GetString(r.ReadBytes((int)size)).Replace("\0", "");
                     }
                     break;
                 case "Guid":
