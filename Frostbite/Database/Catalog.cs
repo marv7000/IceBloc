@@ -6,7 +6,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 
-namespace IceBloc.Frostbite;
+namespace IceBloc.Frostbite.Database;
 
 public class Catalog : IDisposable
 {
@@ -52,7 +52,7 @@ public class Catalog : IDisposable
     public byte[] Extract(byte[] sha)
     {
         // Throw an exception if we can't find a chunk with the given SHA.
-        if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry)) 
+        if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry))
             throw new KeyNotFoundException($"Could not get a value for {Encoding.ASCII.GetString(sha)}!");
 
         BinaryReader r = CasStreams[entry.CasFileIndex];

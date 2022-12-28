@@ -3,7 +3,7 @@ using IceBloc.Utility;
 using System;
 using System.IO;
 using System.Text;
-namespace IceBloc.Frostbite;
+namespace IceBloc.Frostbite.Textures;
 
 public class DxTexture
 {
@@ -50,7 +50,7 @@ public class DxTexture
 
     private static InternalTextureFormat GetInternalTextureFormat(TextureFormat texFormat)
     {
-        switch(texFormat)
+        switch (texFormat)
         {
             case TextureFormat.DXT1:
                 return InternalTextureFormat.DXT1;

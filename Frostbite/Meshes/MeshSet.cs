@@ -3,7 +3,7 @@ using IceBloc.Utility;
 using System.Collections.Generic;
 using System.IO;
 
-namespace IceBloc.Frostbite;
+namespace IceBloc.Frostbite.Meshes;
 
 public class MeshSet
 {
@@ -13,8 +13,8 @@ public class MeshSet
 
     public MeshSet(BinaryReader r)
     {
-        MeshSetLayout msl  = r.ReadMeshSetLayout();
-        MeshLayout[] ml    = new MeshLayout[msl.LodCount];
+        MeshSetLayout msl = r.ReadMeshSetLayout();
+        MeshLayout[] ml = new MeshLayout[msl.LodCount];
         MeshSubset[][] sub = new MeshSubset[msl.LodCount][];
 
         for (int i = 0; i < msl.LodCount; i++)
@@ -100,7 +100,7 @@ public class MeshSet
                 }
 
                 // Read face indices.
-                cr.BaseStream.Position = indexStartOffset + (sub.StartIndex * 2);
+                cr.BaseStream.Position = indexStartOffset + sub.StartIndex * 2;
 
                 for (int k = 0; k < sub.PrimitiveCount; k++)
                 {
@@ -170,12 +170,12 @@ public class MeshSet
                     vert.NormalZ = normals.Z;
                     vert.TexCoordX = texcoord.X;
                     vert.TexCoordY = 1.0f - texcoord.Y;
-                    
+
                     mesh.Vertices.Add(vert);
                 }
 
                 // Read face indices.
-                cr.BaseStream.Position = indexStartOffset + (sub.StartIndex*2);
+                cr.BaseStream.Position = indexStartOffset + sub.StartIndex * 2;
 
                 for (int k = 0; k < sub.PrimitiveCount; k++)
                 {

@@ -1,4 +1,6 @@
-﻿namespace IceBloc.Frostbite;
+﻿using System;
+
+namespace IceBloc.Frostbite;
 
 public enum DbObjectType : byte
 {
@@ -351,3 +353,35 @@ public enum DdsFormat
     BC7_UNORM = 0x62,
     BC7_UNORM_SRGB = 0x63
 };
+
+public enum EFormat : uint
+{
+    fmtINVALID = 0xFFFFFFFF,
+    fmtGD_DATA = 0x0,
+    fmtGD_STRM = 0x1,
+    fmtGD_REFL = 0x2,
+    fmtREFPACK = 0x3,
+};
+public enum Endian : uint
+{
+    kEndianBig = 0x0,
+    kEndianLittle = 0x1,
+    kEndianLocal = 0x1,
+};
+
+public enum EFlags : uint
+{
+    None = 0x0,
+    Array = 0x1,
+    ForceAlign4 = 0x2,
+    ForceAlign8 = 0x4,
+    ForceAlign16 = 0x8,
+};
+
+public enum AnimationType : uint
+{
+    None = 0,
+    FrameAnimation = 493637489U,
+    DctAnimation = 3047189506U,
+    RawAnimation = 1419182396U
+}

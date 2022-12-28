@@ -1,4 +1,6 @@
 ﻿using IceBloc.Frostbite;
+using IceBloc.Frostbite.Meshes;
+using IceBloc.Frostbite.Textures;
 using IceBloc.InternalFormats;
 using System;
 using System.Collections.Generic;

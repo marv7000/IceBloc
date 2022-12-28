@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Text;
+using IceBloc.Frostbite.Database;
+using IceBloc.Frostbite.Meshes;
+using IceBloc.Frostbite.Textures;
 using static IceBloc.Frostbite.GenericData;
 
 namespace IceBloc.Frostbite;
@@ -122,6 +125,46 @@ public static class BinaryReaderExtensions
         }
         return arr;
     }
+    public static object ReadByType<T>(this BinaryReader r)
+    {
+        switch (typeof(T).Name)
+        {
+            case "Byte":
+                return (T)(object)r.ReadByte();
+            case "Int16":
+                return (T)(object)r.ReadInt16();
+            case "UInt16":
+                return (T)(object)r.ReadUInt16();
+            case "Int32":
+                return (T)(object)r.ReadInt32();
+            case "UInt32":
+                return (T)(object)r.ReadUInt32();
+            case "Int64":
+                return (T)(object)r.ReadInt64();
+            case "IntU64":
+                return (T)(object)r.ReadUInt64();
+            case "String":
+                return (T)(object)r.ReadNullTerminatedString();
+            case "MeshLayout":
+                return (T)(object)r.ReadMeshLayout();
+            case "MeshSubset":
+                return (T)(object)r.ReadMeshSubset();
+            case "Byte[]":
+                return (T)(object)r.ReadUntilStreamEnd();
+            default:
+                return default(T);
+        }
+    }
+    /// <summary>
+    /// Advances the stream to the next position that is a multiple of the given parameter.
+    /// </summary>
+    public static void Align(this BinaryReader r, int alignBy)
+    {
+        r.BaseStream.Position += alignBy - (r.BaseStream.Position % alignBy);
+    }
+
+    #region Mesh Extensions
+
     public static GeometryDeclarationDesc ReadGeometryDeclarationDesc(this BinaryReader reader)
     {
         GeometryDeclarationDesc desc = new();
@@ -243,36 +286,10 @@ public static class BinaryReaderExtensions
 
         return tex;
     }
-    public static object ReadByType<T>(this BinaryReader r)
-    {
-        switch (typeof(T).Name)
-        {
-            case "Byte":
-                return (T)(object)r.ReadByte();
-            case "Int16":
-                return (T)(object)r.ReadInt16();
-            case "UInt16":
-                return (T)(object)r.ReadUInt16();
-            case "Int32":
-                return (T)(object)r.ReadInt32();
-            case "UInt32":
-                return (T)(object)r.ReadUInt32();
-            case "Int64":
-                return (T)(object)r.ReadInt64();
-            case "IntU64":
-                return (T)(object)r.ReadUInt64();
-            case "String":
-                return (T)(object)r.ReadNullTerminatedString();
-            case "MeshLayout":
-                return (T)(object)r.ReadMeshLayout();
-            case "MeshSubset":
-                return (T)(object)r.ReadMeshSubset();
-            case "Byte[]":
-                return (T)(object)r.ReadUntilStreamEnd();
-            default:
-                return default(T);
-        }
-    }
+
+    #endregion
+
+    #region Primitive Extensions
     public static int ReadInt32(this BinaryReader r, bool bigEndian)
     {
         if (bigEndian)
@@ -329,6 +346,17 @@ public static class BinaryReaderExtensions
         else
             return r.ReadDouble();
     }
+    public static short[] ReadInt16Array(this BinaryReader r, int count, bool bigEndian)
+    {
+        short[] array = new short[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadInt16(bigEndian);
+        }
+
+        return array;
+    }
     public static int[] ReadInt32Array(this BinaryReader r, int count, bool bigEndian)
     {
         int[] array = new int[count];
@@ -351,6 +379,66 @@ public static class BinaryReaderExtensions
 
         return array;
     }
+    public static ushort[] ReadUInt16Array(this BinaryReader r, int count, bool bigEndian)
+    {
+        ushort[] array = new ushort[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadUInt16(bigEndian);
+        }
+
+        return array;
+    }
+    public static uint[] ReadUInt32Array(this BinaryReader r, int count, bool bigEndian)
+    {
+        uint[] array = new uint[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadUInt32(bigEndian);
+        }
+
+        return array;
+    }
+    public static ulong[] ReadUInt64Array(this BinaryReader r, int count, bool bigEndian)
+    {
+        ulong[] array = new ulong[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadUInt64(bigEndian);
+        }
+
+        return array;
+    }
+    public static float[] ReadSingleArray(this BinaryReader r, int count, bool bigEndian)
+    {
+        float[] array = new float[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadSingle(bigEndian);
+        }
+
+        return array;
+    }
+    public static double[] ReadDoubleArray(this BinaryReader r, int count, bool bigEndian)
+    {
+        double[] array = new double[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadDouble(bigEndian);
+        }
+
+        return array;
+    }
+
+    #endregion
+
+    #region EBX Extensions
+
     public static Guid ReadGuid(this BinaryReader r, bool bigEndian)
     {
         if (bigEndian)
@@ -502,4 +590,77 @@ public static class BinaryReaderExtensions
     {
         f.WriteLine(cmplx.Desc.Name + " " + text);
     }
+
+    #endregion
+
+
+    #region GenericData
+    public static GenericDataLayoutEntry ReadGDLE(this BinaryReader r, out int fieldSize)
+    {
+        var gdle = new GenericDataLayoutEntry();
+
+        gdle.mMinSlot = r.ReadInt32();
+        gdle.mMaxSlot = r.ReadInt32();
+
+        fieldSize = (gdle.mMinSlot * -1) + gdle.mMaxSlot + 1;
+
+        gdle.mDataSize = r.ReadUInt32();
+        gdle.mAlignment = r.ReadUInt32();
+        gdle.mStringTableOffset = r.ReadUInt32();
+        gdle.mStringTableLength = r.ReadUInt32();
+        gdle.mReordered = r.ReadBoolean();
+        gdle.mNative = r.ReadBoolean();
+        r.ReadBytes(2); // Pad
+        gdle.mHash = r.ReadUInt32();
+
+        // Fill data entries.
+        gdle.mEntries = new GenericDataEntry[fieldSize];
+        for (int j = 0; j < fieldSize; j++)
+        {
+        LABEL_1:
+            GenericDataEntry entry = new();
+            entry.mLayoutHash = r.ReadUInt32();
+            entry.mElementSize = r.ReadUInt32();
+            entry.mOffset = r.ReadUInt32();
+            entry.mName = r.ReadUInt32();
+            entry.mCount = r.ReadUInt16();
+            entry.mFlags = (EFlags)r.ReadUInt16();
+            entry.mElementAlign = r.ReadUInt16();
+            entry.mRLE = r.ReadInt16();
+            entry.mLayout = r.ReadInt64();
+
+            // Sometimes there seems to be a missing entry?
+            // In that case we let everything finish, but then we fix up the alignments.
+            if (entry.mElementSize != 0 && entry.mCount != 0)
+            {
+                gdle.mEntries[j] = entry;
+            }
+            else
+            {
+                fieldSize -= 1;
+                goto LABEL_1;
+            }
+        }
+
+        r.ReadBytes(1); // Pad
+        gdle.mName = r.ReadNullTerminatedString();
+
+        // Fill field names.
+        gdle.mFieldNames = new string[fieldSize];
+        for (int j = 0; j < fieldSize; j++)
+        {
+            gdle.mFieldNames[j] = r.ReadNullTerminatedString();
+        }
+
+        return gdle;
+    }
+    public static void ReadGdDataHeader(this BinaryReader r, out uint hash, out uint type, out uint offset)
+    {
+        hash = r.ReadUInt32();
+        r.ReadBytes(12);
+        type = r.ReadUInt32();
+        r.ReadBytes(8);
+        offset = r.ReadUInt32();
+    }
+    #endregion
 }

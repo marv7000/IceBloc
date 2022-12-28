@@ -6,7 +6,7 @@ using System.Numerics;
 using System.Text;
 using IceBloc.Utility;
 
-namespace IceBloc.Frostbite;
+namespace IceBloc.Frostbite.Database;
 
 public class DbObject
 {
@@ -34,7 +34,8 @@ public class DbObject
                     if (reader.ReadByte() != 0x00)
                         throw new InvalidDataException("Array does not end with 0x00 byte. Position: " + reader.BaseStream.Position);
                     Data = list;
-                } break;
+                }
+                break;
             case DbObjectType.Object:
                 {
                     var list = new List<DbObject>();
@@ -48,7 +49,8 @@ public class DbObject
                     if (reader.ReadByte() != 0x00)
                         throw new InvalidDataException("Entry does not end with 0x00 byte. Position: " + reader.BaseStream.Position);
                     Data = list;
-                } break;
+                }
+                break;
             case DbObjectType.Null:
                 break;
             case DbObjectType.ObjectId:
@@ -60,7 +62,8 @@ public class DbObject
                     var data = reader.ReadChars(reader.ReadLEB128() - 1);
                     Data = new string(data);
                     reader.BaseStream.Position += 1;
-                } break;
+                }
+                break;
             case DbObjectType.Integer:
                 Data = reader.ReadInt32(); break;
             case DbObjectType.Long:
@@ -69,7 +72,8 @@ public class DbObject
                 {
                     var val = reader.ReadLEB128();
                     Data = val >> 1 ^ val & 1;
-                } break;
+                }
+                break;
             case DbObjectType.Float:
                 Data = reader.ReadSingle(); break;
             case DbObjectType.Double:

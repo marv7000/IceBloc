@@ -1,9 +1,15 @@
-﻿namespace IceBloc.InternalFormats;
+﻿using System.Numerics;
+
+namespace IceBloc.InternalFormats;
 
 public sealed class InternalAnimation
 {
-    public int FrameLength;
-    public int FPS;
+    public Frame[] Frames;
 
-
+    public struct Frame
+    {
+        public int FrameIndex;
+        public Vector3[] Positions;
+        public Quaternion[] Rotations;
+    }
 }
