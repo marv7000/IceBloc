@@ -10,6 +10,7 @@ namespace IceBloc.Frostbite;
 public class GenericData
 {
     public Dictionary<uint, GenericDataClass> Classes = new();
+    public List<Memory<byte>> Data = new();
 
     /// <summary>
     /// Reads a GD bank from a stream.
@@ -20,7 +21,7 @@ public class GenericData
 
         // GD Header
         int version = r.ReadInt32(true);
-        int subDataCount = 0;
+        int subDataCount = -1;
         if (Encoding.ASCII.GetString(r.ReadBytes(7)) != "GD.STRM")
         {
             r.BaseStream.Position -= 7;
@@ -110,11 +111,11 @@ public class GenericData
         bool exportData = true;
 
         // Dump the data to disk.
-        for (int i = 0; i < 36; i++)
+        while (r.BaseStream.Position < r.BaseStream.Length)
         {
             long basePos = r.BaseStream.Position;
 
-            // Could possibly be "GD.DATAb" for big endian, according to PDB.
+            // Could possibly be "GD.DATAb" for big endian, according to PDB. Not really used in BF3.
             string header = Encoding.ASCII.GetString(r.ReadBytes(7));
             bool bigEndian = r.ReadByte() == 98 ? true : false;
 
@@ -129,37 +130,53 @@ public class GenericData
 
             // Get the data
             r.BaseStream.Position = basePos + 16;
-            byte[] data = r.ReadBytes(dataBlockIndexOffset - 16);
+            Memory<byte> data = r.ReadBytes(dataBlockIndexOffset - 16);
             r.ReadBytes(dataBlockSizeDifference); // Pad the indices.
 
             // Get the name of the file.
             r.BaseStream.Position = basePos + 16 + 32 + Classes[dataBlockClassType].Size;
             string fileName = r.ReadNullTerminatedString();
 
+            Data.Add(data);
+
             if (exportData)
             {
                 // Save all bytes except for the header and the indices at the end.
                 string path = $"Output\\{Settings.CurrentGame}\\";
                 Directory.CreateDirectory(Path.GetDirectoryName(path));
-                File.WriteAllBytes(path + $"{fileName}.{Classes[dataBlockClassType].Name}", data);
-
+                File.WriteAllBytes(path + $"{fileName}.{Classes[dataBlockClassType].Name}", data.ToArray());
             }
             // Set the position to the end of the block.
             r.BaseStream.Position = basePos + dataBlockSize;
         }
     }
 
+    /// <summary>
+    /// Deserializes a GD.DATA block into native classes with defined behaviour. Endianess is guessed from the context.
+    /// </summary>
     public object Deserialize(Stream stream)
     {
         using var r = new BinaryReader(stream);
 
         bool bigEndian = false;
 
+        // If first 4 bytes are 0, we likely have a BE long.
+        // TODO: Find more reliable method to determine endianess.
         if (r.ReadInt32() == 0)
         {
             bigEndian = true;
         }
         r.BaseStream.Position = 0;
+
+        return Deserialize(stream, bigEndian);
+    }
+
+    /// <summary>
+    /// Deserializes a GD.DATA block into native classes with defined behaviour.
+    /// </summary>
+    public object Deserialize(Stream stream, bool bigEndian)
+    {
+        using var r = new BinaryReader(stream);
 
         r.ReadGdDataHeader(bigEndian, out uint hash, out uint type, out uint baseOffset);
         r.BaseStream.Position = 0;
