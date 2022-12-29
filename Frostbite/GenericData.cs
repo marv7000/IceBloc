@@ -20,22 +20,24 @@ public class GenericData
         using var r = new BinaryReader(stream);
 
         // GD Header
-        int version = r.ReadInt32(true);
+        AntPackagingType packageType = (AntPackagingType)r.ReadInt32(true);
         int subDataCount = -1;
-        if (Encoding.ASCII.GetString(r.ReadBytes(7)) != "GD.STRM")
+
+        switch (packageType)
         {
-            r.BaseStream.Position -= 7;
-            int partitions = r.ReadInt32(true);
-            int reflType = r.ReadInt32(true);
-            subDataCount = r.ReadInt32(true);
-            int subDataCapacity = r.ReadInt32(true);
-            int ptr = r.ReadInt32(true);
-            int pad = r.ReadInt32(true);
+            case AntPackagingType.Chunk:
+                int partitions = r.ReadInt32(true);
+                int reflType = r.ReadInt32(true);
+                subDataCount = r.ReadInt32(true);
+                int subDataCapacity = r.ReadInt32(true);
+                int ptr = r.ReadInt32(true);
+                int pad = r.ReadInt32(true);
+                break;
+            case AntPackagingType.Bundle:
+            case AntPackagingType.AnimationSet:
+                break;
         }
-        else
-        {
-            r.BaseStream.Position = 4;
-        }
+
         // GD.STRMl block
         string strmBlock = Encoding.ASCII.GetString(r.ReadBytes(7));
         bool strmBigEndian = r.ReadByte() == 98 ? true : false; // "b" for big endian, "l" for little.

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace IceBloc.Frostbite.Animation;
@@ -18,8 +17,8 @@ public unsafe class DctAnimDecompressor
 
     public unsafe DctAnimDecompressor(DctAnimation dctAnim, ChannelDofMap dofMap, ScratchPad scratchPad)
     {
-        uint v5; // edi
-        __m128* v6; // eax
+        uint mMatricesSize; // edi
+        __m128* mFinalMatrices; // eax
         ScratchPad mScratchPad; // ecx
 
         mDctAnim = dctAnim;
@@ -33,15 +32,15 @@ public unsafe class DctAnimDecompressor
         this.mPrevFrameInBuffer = 0xFFFFFFFF;
         this.mNextFrameInBuffer = 0xFFFFFFFF;
 
-        ushort mNQ = this.mCodec.mHeader->mNumQuats;
-        ushort mNV = this.mCodec.mHeader->mNumVec3s;
-        ushort mNF = this.mCodec.mHeader->mNumFloatVecs;
+        ushort mNQ = mCodec.mHeader->mNumQuats;
+        ushort mNV = mCodec.mHeader->mNumVec3s;
+        ushort mNF = mCodec.mHeader->mNumFloatVecs;
 
-        v5 = (uint)(16 * (mNQ + mNV + mNF));
-        v6 = (__m128*)this.mScratchPad.Alloc(v5);
+        mMatricesSize = (uint)(16 * (mNQ + mNV + mNF));
+        mFinalMatrices = (__m128*)this.mScratchPad.Alloc(mMatricesSize);
         mScratchPad = this.mScratchPad;
-        this.mPrevMemBuffer = v6;
-        this.mNextMemBuffer = (__m128*)mScratchPad.Alloc(v5);
+        mPrevMemBuffer = mFinalMatrices;
+        mNextMemBuffer = (__m128*)mScratchPad.Alloc(mMatricesSize);
     }
 }
 
@@ -56,11 +55,11 @@ public unsafe class FIXED_Decompressor
 
     public FIXED_Decompressor(byte* CompressedSource_All, TargetEndian targetEndian)
     {
-        FIXED_DofTable* v3; // edi
+        FIXED_DofTable* v3;
 
         mTargetEndian = targetEndian;
-        mDofTable = (FIXED_DofTable*)0;
-        mCompressedData = (byte*)0;
+        mDofTable = (FIXED_DofTable*)0U;
+        mCompressedData = (byte*)0U;
         mCompressedSource_All = CompressedSource_All;
         mHeader = (FIXED_Header*)CompressedSource_All;
         mDofTableDescriptor = (FIXED_DofTableDescriptor*)(CompressedSource_All + 12);
@@ -72,8 +71,18 @@ public unsafe class FIXED_Decompressor
     }
 }
 
-public unsafe class FIXED_DofTableDescriptor
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 0x1)]
+public unsafe struct FIXED_DofTableDescriptor
 {
+    [FieldOffset(0)]
+    private byte Data = 0;
+
+    public FIXED_DofTableDescriptor()
+    {
+    }
+
+    public byte mNumSubblocks { get => (byte)(Data >> 4); set => Data = value; }
+
     public static unsafe int GetSerializedDofTableSize(FIXED_DofTableDescriptor* DescriptorTable, uint NumDescriptorEntries)
     {
         uint v2; // edi
@@ -106,35 +115,57 @@ public unsafe class FIXED_DofTableDescriptor
     }
 }
 
-[StructLayout(LayoutKind.Sequential, Pack = 2)]
-public unsafe class FIXED_Header
+[StructLayout(LayoutKind.Explicit, Pack = 2, Size = 0x0E)]
+public unsafe struct FIXED_Header
 {
-    public ushort mNumFrames;
-    public ushort mNumQuats;
-    public ushort mNumVec3s;
-    public ushort mNumFloatVecs;
-    public ushort mQuantizeMult_Block;
-    public byte mQuantizeMult_Subblock;
-    public byte mCatchAllBitCount;
-    public FIXED_DofTableDescriptor* mDofDescriptor; // const [1]
-}
+    [FieldOffset(0)]
+    public ushort mNumFrames = 0;
+    [FieldOffset(2)]
+    public ushort mNumQuats = 0;
+    [FieldOffset(4)]
+    public ushort mNumVec3s = 0;
+    [FieldOffset(6)]
+    public ushort mNumFloatVecs = 0;
+    [FieldOffset(8)]
+    public ushort mQuantizeMult_Block = 0;
+    [FieldOffset(10)]
+    public byte mQuantizeMult_Subblock = 0;
+    [FieldOffset(11)]
+    public byte mCatchAllBitCount = 0;
+    [FieldOffset(12)]
+    public FIXED_DofTableDescriptor mDofDescriptor; // const [1]
 
-public unsafe class FIXED_DofTable
-{
-    public (short X, short Y, short Z, short W) mDeltaBase;
-    public BitsPerComponent[] mBitsPerSubblock = new BitsPerComponent[8];
-
-    [StructLayout(LayoutKind.Sequential, Size = 2)]
-    public struct BitsPerComponent
+    public FIXED_Header()
     {
-        ushort mBitsW;
-        ushort mBitsZ;
-        ushort mBitsY;
-        ushort mBitsX;
     }
 }
 
-public class ChannelDofMap
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 0x18)]
+public unsafe struct FIXED_DofTable
+{
+    [FieldOffset(0)]
+    public (short X, short Y, short Z, short W) mDeltaBase;
+    [FieldOffset(8), MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+    public BitsPerComponent[] mBitsPerSubblock = new BitsPerComponent[8];
+
+    public FIXED_DofTable()
+    {
+    }
+}
+
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 2)]
+public unsafe struct BitsPerComponent
+{
+    [FieldOffset(0)]
+    public ushort Data;
+
+    public ushort mBitsW { get => (ushort)(Data & 0x000F); set => Data = value; }
+    public ushort mBitsZ { get => (ushort)((Data & 0x00F0) >> 4); set => Data = value; }
+    public ushort mBitsY { get => (ushort)((Data & 0x0F00) >> 8); set => Data = value; }
+    public ushort mBitsX { get => (ushort)((Data & 0xF000) >> 12); set => Data = value; }
+}
+
+public unsafe struct ChannelDofMap
 {
     public ChannelDofMapCache mCache;
     public uint mSize;
@@ -193,43 +224,60 @@ public class LayoutMask
 {
 }
 
-[StructLayout(LayoutKind.Explicit, Size = 16)]
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
 public unsafe struct __m128
 {
     [FieldOffset(0)]
-    float[] m128_f32 = new float[4];
+    fixed float m128_f32[4];
     [FieldOffset(0)]
-    ulong[] m128_u64 = new ulong[2];
+    fixed ulong m128_u64[2];
     [FieldOffset(0)]
-    sbyte[] m128_i8 = new sbyte[16];
+    fixed sbyte m128_i8[16];
     [FieldOffset(0)]
-    short[] m128_i16 = new short[8];
+    fixed short m128_i16[8];
     [FieldOffset(0)]
-    int[] m128_i32 = new int[4];
+    fixed int m128_i32[4];
     [FieldOffset(0)]
-    long[] m128_i64 = new long[2];
+    fixed long m128_i64[2];
     [FieldOffset(0)]
-    byte[] m128_u8 = new byte[16];
+    fixed byte m128_u8[16];
     [FieldOffset(0)]
-    ushort[] m128_u16 = new ushort[8];
+    fixed ushort m128_u16[8];
     [FieldOffset(0)]
-    uint[] m128_u32 = new uint[4];
+    fixed uint m128_u32[4];
 
     public __m128()
     {
     }
 }
 
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 20)]
 public unsafe struct ScratchPad
 {
-    //BlendMask mBlendMask;
+    [FieldOffset(0)]
+    BlendMask* mBlendMask;
+    [FieldOffset(4)]
     uint mCurrentPos;
+    [FieldOffset(8)]
     uint mLastLock;
+    [FieldOffset(12)]
     byte* mMemory;
+    [FieldOffset(16)]
     uint mCurrentMax;
 
     public ScratchPad()
     {
+        //QueueManagerPageAllocator* v2; // ecx
+        //TlsEntry* TlsEntry; // eax
+        //
+        //v2 = gQueueManagerPageAllocator;
+        //
+        //mBlendMask = 0;
+        //TlsEntry = QueueManagerPageAllocator.GetTlsEntry(v2);
+        //mMemory = TlsEntry.GetScratchPad();
+        mCurrentPos = 0;
+        mLastLock = 0;
+        mCurrentMax = 0;
     }
 
     public byte* Alloc(uint aSize)
@@ -240,8 +288,8 @@ public unsafe struct ScratchPad
         uint offsetPos; // ecx
 
         mCurrentPos = this.mCurrentPos;
-        mCurrentMax = this.mCurrentMax;
-        result = (byte*)mMemory[mCurrentPos];
+        mCurrentMax = this.mCurrentMax; 
+        result = &mMemory[mCurrentPos];
         offsetPos = ((aSize + 15) & 0xFFFFFFF0) + mCurrentPos;
         this.mCurrentPos = offsetPos;
         if (offsetPos <= mCurrentMax)
@@ -252,3 +300,52 @@ public unsafe struct ScratchPad
     }
 }
 
+public unsafe struct BlendMask
+{
+
+}
+
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 0xD0)]
+public unsafe struct QueueManagerPageAllocator
+{
+    [FieldOffset(0x0)]
+    public ThreadLocalStorage mStorage;
+    [FieldOffset(0x4)]
+    public ThreadLocalStorage mID;
+    [FieldOffset(0x8)]
+    public fbStack mTlsEntries;
+    [FieldOffset(0x10)]
+    public FixedAllocator mScratchPadAllocator;
+    [FieldOffset(0x50)]
+    public FixedAllocator mTlsEntryAllocator;
+    [FieldOffset(0x90)]
+    public FixedAllocator mPageAllocator;
+}
+
+public unsafe struct ThreadLocalStorage
+{
+}
+
+public unsafe struct FixedAllocator
+{
+    //public ICoreAllocator* mAllocator;
+    public uint mObjectSize;
+    public uint mCountPerCoreBlock;
+    public uint mObjectAlignment;
+    public uint mHeaderSize;
+    public uint mBlockSize;
+    public bool mAssertOnExhaust;
+    public char* mName;
+    //public CoreBlock* mHeadCoreBlock;
+    public fbStack mHeadChunk;
+    public int mWaitLock;
+    public int mNumAllocated;
+    public int mMaxAllocated;
+}
+
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 8)]
+public unsafe struct fbStack
+{
+    [FieldOffset(0)]
+    public long mHeader;
+}

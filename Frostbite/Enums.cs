@@ -392,3 +392,11 @@ public enum TargetEndian : int
     TARGET_ENDIAN_BIG = 0x1,
     PLATFORM_ENDIAN = 0x0,
 };
+
+public enum AntPackagingType : int
+{
+    Static = 0x0,
+    Chunk = 0x1,
+    Bundle = 0x2,
+    AnimationSet = 0x3,
+};

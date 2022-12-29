@@ -4,14 +4,16 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.WindowsAPICodePack.Dialogs;
+using System.Globalization;
+using System.Threading;
 
 using IceBloc.Utility;
 using IceBloc.Frostbite;
-using System.Threading;
 using IceBloc.Export;
-using System.Globalization;
 using IceBloc.Frostbite.Animation;
 using IceBloc.Frostbite.Database;
+
+using IceBloc.InternalFormats;
 
 namespace IceBloc;
 
@@ -57,7 +59,7 @@ public partial class MainWindow : Window
         ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
         Assets = new();
 
-        // Get all file names in the Data\Win32 dir.
+        // Get all file names in the Data\Win32\ dir.
         string[] sbFiles = Directory.GetFiles(Settings.GamePath + "\\Data\\Win32\\", "*", SearchOption.AllDirectories);
 
         for (int i = 0; i < sbFiles.Length; i++)
@@ -102,6 +104,7 @@ public partial class MainWindow : Window
         {
             Output.WriteLine($"Tried to load an unsupported file \"{path}\", skipping...");
         }
+
     }
 
     public static void LoadDbObject(DbObject asset, bool isChunks)

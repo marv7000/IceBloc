@@ -1,8 +1,6 @@
 ﻿using IceBloc.InternalFormats;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Runtime.InteropServices;
 
 namespace IceBloc.Frostbite.Animation;
 
@@ -61,15 +59,16 @@ public class DctAnimation : Animation
         TrimOffset = (float)baseData["TrimOffset"];
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
+        ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
+}
 
-        
-    }
-
-    public InternalAnimation ConvertToInternal()
+    public unsafe InternalAnimation ConvertToInternal()
     {
         InternalAnimation ret = new();
 
-        var decompressor = new DctAnimDecompressor(this, null, new ScratchPad());
+        //var a = sizeof(FIXED_Header);
+
+        //var decompressor = new DctAnimDecompressor(this, new ChannelDofMap(), new ScratchPad());
 
         return ret;
     }

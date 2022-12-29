@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 
 namespace IceBloc.Frostbite.Animation;
 
@@ -9,6 +10,7 @@ public class Animation
     public float TrimOffset;
     public ushort EndFrame;
     public bool Additive;
+    public Guid ChannelToDofAsset;
 
     public Animation()
     {
