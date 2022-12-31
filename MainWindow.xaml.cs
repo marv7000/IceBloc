@@ -37,7 +37,28 @@ public partial class MainWindow : Window
         // Why is this a thing...
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
         Instance = this;
+
         InitializeComponent();
+    }
+
+    public static void Test()
+    {
+        GenericData gd = new GenericData(File.OpenRead(@"D:\Tools\Dumps\BF3\bundles\res\animations\characters\sp\sp_paris\tradingfloor\tradingfloorwires_animset.AssetBank"));
+        //GenericData gd = new GenericData(File.OpenRead(@"D:\Tools\Dumps\BF3\bundles\chunks\fc05bd92-bd78-6d3c-3c0f-1c293fe14ef5.chunk"));
+
+        using var stream = File.OpenRead(@"D:\repos\IceBloc\bin\Debug\net7.0-windows\Output\Battlefield3\ReloadClipEmpty Anim.DctAnimationAsset");
+        
+        DctAnimation f = gd.Deserialize(stream) as DctAnimation;
+
+        //using var w = new BinaryWriter(File.Open(@"D:\data.x", FileMode.Create));
+        //foreach (byte v in (f as DctAnimation).mData)
+        //{
+        //    w.Write(v);
+        //}
+
+        //byte[] data = ActiveCatalog.Extract(ChunkTranslations[(f as DctAnimation).ChannelToDofAsset]);
+
+        //InternalAnimation a = (f as DctAnimation).ConvertToInternal();
     }
 
     #region Asset Loading
@@ -72,6 +93,9 @@ public partial class MainWindow : Window
             });
         }
         Instance.Dispatcher.Invoke(UpdateItems);
+
+
+        Test();
     }
 
     public static void LoadSbFile(string path)
