@@ -37,11 +37,14 @@ public class AssetListItem
         // If the user wants to export the raw RES.
         if (Settings.ExportRaw)
         {
+            using var stream = new MemoryStream(data);
+            List<InternalMesh> output = MeshSet.ConvertToInternal(stream, out var chunk);
             File.WriteAllBytes(path + "." + Type, data);
+            File.WriteAllBytes(path + ".chunk", chunk);
         }
         if (Settings.ExportConverted)
         {
-            switch (this.Type)
+            switch (Type)
             {
                 case ResType.DxTexture:
                     {
@@ -53,7 +56,7 @@ public class AssetListItem
                 case ResType.MeshSet:
                     {
                         using var stream = new MemoryStream(data);
-                        List<InternalMesh> output = MeshSet.ConvertToInternal(stream);
+                        List<InternalMesh> output = MeshSet.ConvertToInternal(stream, out var chunk);
                         for (int i = 0; i < output.Count; i++)
                         {
                             Settings.CurrentModelExporter.Export(output[i], path + i.ToString());
