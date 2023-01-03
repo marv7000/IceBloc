@@ -43,12 +43,12 @@ public partial class MainWindow : Window
 
     public static void Test()
     {
-        GenericData gd = new GenericData(File.OpenRead(@"D:\Tools\Dumps\BF3\bundles\res\animations\characters\sp\sp_paris\tradingfloor\tradingfloorwires_animset.AssetBank"));
-        //GenericData gd = new GenericData(File.OpenRead(@"D:\Tools\Dumps\BF3\bundles\chunks\fc05bd92-bd78-6d3c-3c0f-1c293fe14ef5.chunk"));
-
-        using var stream = File.OpenRead(@"D:\repos\IceBloc\bin\Debug\net7.0-windows\Output\Battlefield3\ReloadClipEmpty Anim.DctAnimationAsset");
-        
-        DctAnimation f = gd.Deserialize(stream) as DctAnimation;
+        //GenericData gd = new GenericData(File.OpenRead(@"D:\Tools\Dumps\BF3\bundles\res\animations\characters\sp\sp_paris\tradingfloor\tradingfloorwires_animset.AssetBank"));
+        ////GenericData gd = new GenericData(File.OpenRead(@"D:\Tools\Dumps\BF3\bundles\chunks\fc05bd92-bd78-6d3c-3c0f-1c293fe14ef5.chunk"));
+        //
+        //using var stream = File.OpenRead(@"D:\repos\IceBloc\bin\Debug\net7.0-windows\Output\Battlefield3\ReloadClipEmpty Anim.DctAnimationAsset");
+        //
+        //DctAnimation f = gd.Deserialize(stream) as DctAnimation;
 
         //using var w = new BinaryWriter(File.Open(@"D:\data.x", FileMode.Create));
         //foreach (byte v in (f as DctAnimation).mData)
@@ -227,15 +227,24 @@ public partial class MainWindow : Window
                 {
                     case Game.Battlefield3:
                         {
-                            var chunkSha = chunks[i].GetField("sha1").Data as byte[];
                             Guid chunkGuid = (Guid)chunks[i].GetField("id").Data;
-
-                            // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
-                            // In this case, check if the new one is larger. If yes, replace it.
-                            if (!ChunkTranslations.TryAdd(chunkGuid, chunkSha))
+                            var chunkSha = chunks[i].GetField("sha1");
+                            if (chunkSha is not null)
                             {
-                                // TODO
+                                // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
+                                // In this case, check if the new one is larger. If yes, replace it.
+                                if (!ChunkTranslations.TryAdd(chunkGuid, chunkSha.Data as byte[]))
+                                {
+                                    // TODO
+                                }
                             }
+                            else
+                            {
+                                // noncas bundle entry, cant read yet
+                            }
+
+
+                            break;
                         }
                         break;
                     case Game.Battlefield4:

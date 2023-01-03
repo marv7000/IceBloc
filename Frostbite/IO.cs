@@ -23,7 +23,7 @@ public class IO
     /// </summary>
     public static void DecryptAndCache(string path)
     {
-        if (!Path.Exists(path))
+        if (!Path.Exists($"Cache\\{Settings.CurrentGame}\\{Path.GetFileName(path)}"))
         {
             using (var r = new BinaryReader(File.OpenRead(path)))
             {
