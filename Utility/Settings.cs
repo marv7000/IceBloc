@@ -29,5 +29,7 @@ public enum Game
 {
     Unknown = -1,
     Battlefield3,
-    Battlefield4
+    Battlefield4,
+    BattlefieldHardline,
+
 }

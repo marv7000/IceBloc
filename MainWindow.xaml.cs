@@ -73,6 +73,8 @@ public partial class MainWindow : Window
             Settings.CurrentGame = Game.Battlefield3;
         else if (Settings.GamePath.Contains("Battlefield 4"))
             Settings.CurrentGame = Game.Battlefield4;
+        else if (Settings.GamePath.Contains("BFH"))
+            Settings.CurrentGame = Game.BattlefieldHardline;
         else
             throw new InvalidDataException("Tried to load an unsupported game!");
 
@@ -95,7 +97,7 @@ public partial class MainWindow : Window
         Instance.Dispatcher.Invoke(UpdateItems);
 
 
-        Test();
+        //Test();
     }
 
     public static void LoadSbFile(string path)
