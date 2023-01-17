@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32526.322
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBloc", "IceBloc.csproj", "{C99A1000-81F2-418E-9867-97888406B1D2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBloc", "IceBloc\IceBloc.csproj", "{8B9CE586-B15D-4F54-B59E-CB5E733F8431}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBlocCLI", "IceBlocCLI\IceBlocCLI.csproj", "{EBCB01E7-BE1C-4DBC-9727-61061580EC87}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBlocLib", "IceBlocLib\IceBlocLib.csproj", "{FEFC8036-5AF6-462D-82D4-736D8B38D79F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +15,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C99A1000-81F2-418E-9867-97888406B1D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C99A1000-81F2-418E-9867-97888406B1D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C99A1000-81F2-418E-9867-97888406B1D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C99A1000-81F2-418E-9867-97888406B1D2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B9CE586-B15D-4F54-B59E-CB5E733F8431}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B9CE586-B15D-4F54-B59E-CB5E733F8431}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B9CE586-B15D-4F54-B59E-CB5E733F8431}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B9CE586-B15D-4F54-B59E-CB5E733F8431}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBCB01E7-BE1C-4DBC-9727-61061580EC87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBCB01E7-BE1C-4DBC-9727-61061580EC87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBCB01E7-BE1C-4DBC-9727-61061580EC87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBCB01E7-BE1C-4DBC-9727-61061580EC87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEFC8036-5AF6-462D-82D4-736D8B38D79F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEFC8036-5AF6-462D-82D4-736D8B38D79F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEFC8036-5AF6-462D-82D4-736D8B38D79F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEFC8036-5AF6-462D-82D4-736D8B38D79F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

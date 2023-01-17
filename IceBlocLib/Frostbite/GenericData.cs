@@ -10,7 +10,7 @@ namespace IceBloc.Frostbite;
 public class GenericData
 {
     public Dictionary<uint, GenericDataClass> Classes = new();
-    public List<Memory<byte>> Data = new();
+    public Dictionary<Memory<byte>, bool> Data = new();
 
     /// <summary>
     /// Reads a GD bank from a stream.
@@ -79,7 +79,12 @@ public class GenericData
                 var item = new GenericDataField();
 
                 // Set the field values to our intermediate field.
-                item.Name = gdLayout[i].mFieldNames[j];
+                // Get the correct name from the string table.
+                var curOffset = r.BaseStream.Position;
+                r.BaseStream.Position = offsets[i] + reflStartOffset + gdLayout[i].mStringTableOffset + gdLayout[i].mEntries[j].mName;
+                item.Name = r.ReadNullTerminatedString();
+                r.BaseStream.Position = curOffset;
+
                 item.Offset = (int)gdLayout[i].mEntries[j].mOffset;
                 item.IsArray = gdLayout[i].mEntries[j].mFlags == EFlags.Array;
 
@@ -110,7 +115,7 @@ public class GenericData
         int[] typeTable = r.ReadInt32Array(typeTableSize, reflBigEndian);
 
         // Set this to true if you want to dump the data that's being read next. (debug)
-        bool exportData = true;
+        bool exportData = false;
 
         // Dump the data to disk.
         while (r.BaseStream.Position < r.BaseStream.Length)
@@ -139,7 +144,7 @@ public class GenericData
             r.BaseStream.Position = basePos + 16 + 32 + Classes[dataBlockClassType].Size;
             string fileName = r.ReadNullTerminatedString();
 
-            Data.Add(data);
+            Data.Add(data, bigEndian);
 
             if (exportData)
             {

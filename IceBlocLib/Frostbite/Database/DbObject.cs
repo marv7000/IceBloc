@@ -109,9 +109,9 @@ public class DbObject
     /// </summary>
     /// <param name="filePath"></param>
     /// <returns>The decrypted file as a byte array.</returns>
-    public static DbObject UnpackDbObject(string filePath)
+    public static DbObject UnpackDbObject(string filePath, out bool wasCached)
     {
-        IO.DecryptAndCache(filePath);
+        wasCached = IO.DecryptAndCache(filePath);
 
         using var r = new BinaryReader(File.OpenRead($"Cache\\{Settings.CurrentGame}\\{Path.GetFileName(filePath)}"));
         // Use decrypted data to create a DbObject structure.
@@ -133,7 +133,7 @@ public class DbObject
         }
         catch
         {
-            Output.WriteLine($"Couldn't find the requested field {name} in the DbObject!");
+            Console.WriteLine($"Couldn't find the requested field {name} in the DbObject!");
             return null;
         }
     }

@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.IO;
-using System.Linq;
-using System.Reflection;
+﻿using System.IO;
 using System.Text;
 
 namespace IceBloc.Frostbite;
@@ -12,14 +7,16 @@ public static class Ebx
 {
     public static Dictionary<Guid, string> GuidTable = new();
     public static List<string> ParsedEbx = new();
+    public static Dictionary<int, string> StringTable = new();
+    public static string Seperator = "::";
 
-    public static void AddEbxGuid(string path, string ebxRoot)
+    public static void AddEbxGuid(string path)
     {
         if (ParsedEbx.Contains(path))
             return;
 
         // Add EBX GUID and name to the database.
-        var dbx = new Dbx(path, ebxRoot);
+        var dbx = new Dbx(path);
         GuidTable[dbx.FileGuid] = dbx.TrueFileName;
         ParsedEbx.Add(path);
     }
@@ -67,15 +64,15 @@ public class EbxHeader
 
 public class FieldDescriptor
 {
-    public string Name;
+    public int Name;
     public int Type;
     public int Ref;
     public int Offset;
     public int SecondaryOffset;
 
-    public FieldDescriptor(int[] varList, Dictionary<int, string> keywordDict)
+    public FieldDescriptor(int[] varList)
     {
-        Name = keywordDict[varList[0]];
+        Name = varList[0];
         Type = varList[1];
         Ref = varList[2];
         Offset = varList[3];
@@ -90,7 +87,7 @@ public class FieldDescriptor
 
 public class ComplexDescriptor
 {
-    public string Name;
+    public int Name;
     public int FieldStartIndex;
     public int NumField;
     public int Alignment;
@@ -98,9 +95,9 @@ public class ComplexDescriptor
     public int Size;
     public int SecondarySize;
 
-    public ComplexDescriptor(int[] varList, Dictionary<int, string> keywordDict)
+    public ComplexDescriptor(int[] varList)
     {
-        Name = keywordDict[varList[0]];
+        Name = varList[0];
         FieldStartIndex = varList[1]; //the index of the first field belonging to the complex
         NumField = varList[2]; //the total number of fields belonging to the complex
         Alignment = varList[3];
@@ -162,7 +159,7 @@ public class Complex
 
         foreach (var field in Fields)
         {
-            if (field.Desc.Name == name && field.Desc.GetFieldType() == FieldType.Array)
+            if (field.Desc.Name == Ebx.GetHashCode(name) && field.Desc.GetFieldType() == FieldType.Array)
             {
                 return (field.Value as Complex).Fields;
             }
@@ -203,7 +200,7 @@ public class Field
 
             (Guid A, Guid B) extguid = dbx.ExternalGuids[(int)Value & 0x7fffffff];
 
-            var extDbx = new Dbx(Path.Join(dbx.EbxRoot, Ebx.GuidTable[extguid.A] + ".ebx").ToLower(), dbx.EbxRoot);
+            var extDbx = new Dbx(Path.Join(dbx.EbxRoot, Ebx.GuidTable[extguid.A] + ".ebx").ToLower());
             foreach (var instance in extDbx.Instances)
             {
                 if (instance.Key == extguid.B)
@@ -233,28 +230,29 @@ public class Dbx
     public uint ArraySectionStart;
     public Guid FileGuid;
     public Guid PrimaryInstanceGuid;
-    public List<(Guid, Guid)> ExternalGuids;
-    public List<Guid> InternalGuids;
+    public List<(Guid, Guid)> ExternalGuids = new();
+    public List<Guid> InternalGuids = new();
     public FieldDescriptor[] FieldDescriptors;
     public ComplexDescriptor[] ComplexDescriptors;
     public InstanceRepeater[] InstanceRepeaters;
     public ArrayRepeater[] ArrayRepeaters;
-    public Dictionary<Guid, Complex> Instances;
+    public Dictionary<Guid, Complex> Instances = new();
     public bool IsPrimaryInstance;
     public Complex Prim;
-    public Dictionary<int, Enumeration> Enumerations;
+    public Dictionary<int, Enumeration> Enumerations = new();
 
-    public Dbx(string path, string ebxRoot)
+    public Dbx(string path) : this(File.OpenRead(path)) { }
+
+    public Dbx(Stream s)
     {
-        using var r = new BinaryReader(File.OpenRead(path));
-
+        using BinaryReader r = new BinaryReader(s);
         // metadata
         var magic = r.ReadBytes(4);
         if (magic.SequenceEqual(new byte[] { 0xCE, 0xD1, 0xB2, 0x0F })) BigEndian = false;
         else if (magic.SequenceEqual(new byte[] { 0x0F, 0xB2, 0xD1, 0xCE })) BigEndian = true;
-        else throw new InvalidDataException("The file is not an EBX) " + path);
+        else throw new InvalidDataException("This file is not an EBX!");
 
-        EbxRoot = ebxRoot;
+        EbxRoot = "";
         TrueFileName = "";
         uint[] headerData = new uint[11];
         for (int i = 0; i < 11; i++)
@@ -265,52 +263,52 @@ public class Dbx
         ArraySectionStart = Header.AbsStringOffset + Header.LenString + Header.LenPayload;
         FileGuid = r.ReadGuid(BigEndian);
         PrimaryInstanceGuid = r.ReadGuid(BigEndian);
-        ExternalGuids = new();
         for (int i = 0; i < Header.NumGUID; i++)
         {
             ExternalGuids.Add((r.ReadGuid(BigEndian), r.ReadGuid(BigEndian)));
         }
-        string[] keywords = Encoding.ASCII.GetString(r.ReadBytes((int)Header.LenName)).Split("\0");
-        Dictionary<int, string> keywordDict = new();
+        string[] keywords = Encoding.ASCII.GetString(r.ReadBytes((int)Header.LenName)).Split("\0", StringSplitOptions.RemoveEmptyEntries);
+
         foreach (var keyword in keywords)
         {
-            keywordDict.Add(Ebx.GetHashCode(keyword), keyword);
-            FieldDescriptors = new FieldDescriptor[Header.NumField];
-            for (int i = 0; i < Header.NumField; i++)
-            {
-                int[] array = new int[5];
-                array[0] = r.ReadInt32(BigEndian);
-                array[1] = r.ReadInt16(BigEndian);
-                array[2] = r.ReadInt16(BigEndian);
-                array[3] = r.ReadInt32(BigEndian);
-                array[4] = r.ReadInt32(BigEndian);
+            Ebx.StringTable.TryAdd(Ebx.GetHashCode(keyword), keyword);
+        }
 
-                FieldDescriptors[i] = new FieldDescriptor(array, keywordDict);
-            }
-            ComplexDescriptors = new ComplexDescriptor[Header.NumComplex];
-            for (int i = 0; i < Header.NumField; i++)
-            {
-                int[] array = new int[7];
-                array[0] = r.ReadInt32(BigEndian);
-                array[1] = r.ReadInt32(BigEndian);
-                array[2] = r.ReadByte();
-                array[3] = r.ReadByte();
-                array[4] = r.ReadInt16(BigEndian);
-                array[5] = r.ReadInt16(BigEndian);
-                array[6] = r.ReadInt16(BigEndian);
-
-                ComplexDescriptors[i] = new ComplexDescriptor(array, keywordDict);
-            }
-            InstanceRepeaters = new InstanceRepeater[Header.NumInstanceRepeater];
-            for (int i = 0; i < Header.NumField; i++)
-            {
-                int[] array = new int[3];
-                array[0] = r.ReadInt32(BigEndian);
-                array[1] = r.ReadInt32(BigEndian);
-                array[2] = r.ReadInt32(BigEndian);
-
-                InstanceRepeaters[i] = new InstanceRepeater(array);
-            }
+        FieldDescriptors = new FieldDescriptor[Header.NumField];
+        for (int i = 0; i < Header.NumField; i++)
+        {
+            int[] array = new int[5];
+            array[0] = r.ReadInt32(BigEndian);
+            array[1] = r.ReadInt16(BigEndian);
+            array[2] = r.ReadInt16(BigEndian);
+            array[3] = r.ReadInt32(BigEndian);
+            array[4] = r.ReadInt32(BigEndian);
+        
+            FieldDescriptors[i] = new FieldDescriptor(array);
+        }
+        ComplexDescriptors = new ComplexDescriptor[Header.NumComplex];
+        for (int i = 0; i < Header.NumComplex; i++)
+        {
+            int[] array = new int[7];
+            array[0] = r.ReadInt32(BigEndian);
+            array[1] = r.ReadInt32(BigEndian);
+            array[2] = r.ReadByte();
+            array[3] = r.ReadByte();
+            array[4] = r.ReadInt16(BigEndian);
+            array[5] = r.ReadInt16(BigEndian);
+            array[6] = r.ReadInt16(BigEndian);
+        
+            ComplexDescriptors[i] = new ComplexDescriptor(array);
+        }
+        InstanceRepeaters = new InstanceRepeater[Header.NumInstanceRepeater];
+        for (int i = 0; i < Header.NumInstanceRepeater; i++)
+        {
+            int[] array = new int[3];
+            array[0] = r.ReadInt32(BigEndian);
+            array[1] = r.ReadInt32(BigEndian);
+            array[2] = r.ReadInt32(BigEndian);
+        
+            InstanceRepeaters[i] = new InstanceRepeater(array);
         }
 
         while (r.BaseStream.Position % 16 != 0)
@@ -348,25 +346,40 @@ public class Dbx
         }
 
         if (TrueFileName == "")
-            TrueFileName = Path.GetRelativePath((r.BaseStream as FileStream).Name, ebxRoot).Replace("\\", "/");
+            TrueFileName = Path.GetRelativePath((r.BaseStream as FileStream).Name, "").Replace("\\", "/");
     }
 
     public void Dump(string outName)
     {
         var writer = new StreamWriter(outName, false, Encoding.ASCII);
-        MainWindow.WriteUIOutputLine(TrueFileName);
-        writer.WriteLine(FileGuid);
+        writer.WriteLine("Partition " + FileGuid);
 
         foreach(var instance in Instances)
         {
-            if (instance.Key == PrimaryInstanceGuid) writer.WriteInstance(instance.Value, instance.Key + " //primary instance");
+            if (instance.Key == PrimaryInstanceGuid) writer.WriteInstance(instance.Value, instance.Key + " // Primary instance");
             else writer.WriteInstance(instance.Value, instance.Key.ToString());
-            Recurse(instance.Value.Fields, 0, ref writer);
+            Recurse(instance.Value.Fields, 0, writer);
         }
         writer.Close();
     }
 
-    public void Recurse(List<Field> fields, int lvl, ref StreamWriter w)
+    public byte[] Export()
+    {
+        using var stream = new MemoryStream();
+        using var writer = new StreamWriter(stream, Encoding.ASCII);
+        writer.WriteLine("Partition " + FileGuid);
+
+        foreach (var instance in Instances)
+        {
+            if (instance.Key == PrimaryInstanceGuid) writer.WriteInstance(instance.Value, instance.Key + " // Primary instance");
+            else writer.WriteInstance(instance.Value, instance.Key.ToString());
+            Recurse(instance.Value.Fields, 0, writer);
+        }
+
+        return stream.ToArray();
+    }
+
+    public void Recurse(List<Field> fields, int lvl, StreamWriter w)
     {
         lvl += 1;
         foreach(var field in fields)
@@ -375,16 +388,16 @@ public class Dbx
 
             if (typ == FieldType.Void || typ == FieldType.ValueType)
             {
-                w.WriteField(field, lvl, "))" + (field.Value as Complex).Desc.Name);
-                Recurse((field.Value as Complex).Fields, lvl, ref w);
+                w.WriteField(field, lvl, Ebx.Seperator + Ebx.StringTable[(field.Value as Complex).Desc.Name]);
+                Recurse((field.Value as Complex).Fields, lvl, w);
             }
             else if (typ == FieldType.Class)
             {
                 var towrite = "";
 
-                if ((int)field.Value >> 31 == 1)
+                if ((uint)field.Value >> 31 == 1)
                 {
-                    (Guid A, Guid B) extguid = ExternalGuids[(int)field.Value & 0x7fffffff];
+                    (Guid A, Guid B) extguid = ExternalGuids[(int)((uint)field.Value & 0x7fffffff)];
                     try
                     {
                         towrite = Ebx.GuidTable[extguid.A] + "/" + extguid.B.ToString();
@@ -395,11 +408,11 @@ public class Dbx
                     }
                 }
 
-                else if ((int)field.Value == 0)
-                    towrite = "*nullGuid*";
+                else if ((uint)field.Value == 0)
+                    towrite = "<NullGuid>";
                 else
                 {
-                    var intGuid = InternalGuids[(int)field.Value - 1];
+                    var intGuid = InternalGuids[(int)(uint)field.Value - 1];
                     towrite = intGuid.ToString();
                 }
                 w.WriteField(field, lvl, " " + towrite);
@@ -410,30 +423,31 @@ public class Dbx
                 var arrayFieldDesc = FieldDescriptors[arrayCmplxDesc.FieldStartIndex];
 
                 if ((field.Value as Complex).Fields.Count == 0)
-                    w.WriteField(field, lvl, " *nullArray*");
+                    w.WriteField(field, lvl, " <NullArray>");
                 else
                 {
                     if (arrayFieldDesc.GetFieldType() == FieldType.Enum && arrayFieldDesc.Ref == 0) //hack for enum arrays
-                        w.WriteField(field, lvl, "))" + (field.Value as Complex).Desc.Name + " //unknown enum");
+                        w.WriteField(field, lvl, Ebx.Seperator + (field.Value as Complex).Desc.Name + " // Unknown Enum");
                     else
-                        w.WriteField(field, lvl, "))" + (field.Value as Complex).Desc.Name);
+                        w.WriteField(field, lvl, Ebx.Seperator + Ebx.StringTable[(field.Value as Complex).Desc.Name]);
 
                     for (int i = 0; i < (field.Value as Complex).Fields.Count; i++)
                     {
                         var member = (field.Value as Complex).Fields[i];
-                        if (member.Desc.Name == "member")
+                        if (member.Desc.Name == Ebx.GetHashCode("member"))
                         {
-                            member.Desc.Name = "member(" + i + ")";
+                            Ebx.StringTable.TryAdd(Ebx.GetHashCode($"member[{i}]"), $"member[{i}]");
+                            member.Desc.Name = Ebx.GetHashCode($"member[{i}]");
                         }
                     }
-                    Recurse((field.Value as Complex).Fields, lvl, ref w);
+                    Recurse((field.Value as Complex).Fields, lvl, w);
                 }
 
             }
             else if (typ == FieldType.GUID)
             {
                 if (field.Value == null)
-                    w.WriteField(field, lvl, " *nullGuid*");
+                    w.WriteField(field, lvl, " <NullGuid>");
                 else
                     w.WriteField(field, lvl, " " + field.Value);
             }

@@ -503,7 +503,7 @@ public static class BinaryReaderExtensions
                         field.Value = r.ReadNullTerminatedString();
                         r.BaseStream.Position = startPos + 4;
 
-                        if (dbx.IsPrimaryInstance && fieldDesc.Name == "Name" && dbx.TrueFileName == "")
+                        if (dbx.IsPrimaryInstance && fieldDesc.Name == Ebx.GetHashCode("Name") && dbx.TrueFileName == "")
                             dbx.TrueFileName = (string)field.Value;
                     }
                     break;
@@ -516,15 +516,20 @@ public static class BinaryReaderExtensions
                     {
                         var enumeration = new Enumeration();
                         enumeration.Type = fieldDesc.Ref;
-
+                        enumeration.Values = new();
                         for (int i = enumComplex.FieldStartIndex; i < enumComplex.FieldStartIndex + enumComplex.NumField; i++)
-                            enumeration.Values[dbx.FieldDescriptors[i].Offset] = dbx.FieldDescriptors[i].Name;
+                            enumeration.Values[dbx.FieldDescriptors[i].Offset] = Ebx.StringTable[dbx.FieldDescriptors[i].Name];
 
                         dbx.Enumerations[fieldDesc.Ref] = enumeration;
                     }
 
-                    if (!value.Values.TryGetValue(compareValue, out var compare))
-                        field.Value = compareValue.ToString();
+                    if (value is not null)
+                    {
+                        if (!value.Values.TryGetValue(compareValue, out var compare))
+                            field.Value = compareValue.ToString();
+                        else
+                            field.Value = dbx.Enumerations[fieldDesc.Ref].Values[compareValue];
+                    }
                     else
                         field.Value = dbx.Enumerations[fieldDesc.Ref].Values[compareValue];
                     break;
@@ -542,7 +547,7 @@ public static class BinaryReaderExtensions
                         r.BaseStream.Position = startPos + 4;
                     }
     
-                    if (dbx.IsPrimaryInstance && fieldDesc.Name == "Name" && dbx.TrueFileName == "")
+                    if (dbx.IsPrimaryInstance && fieldDesc.Name == Ebx.GetHashCode("Name") && dbx.TrueFileName == "")
                         dbx.TrueFileName = field.Value as string;
                     break;
                 }
@@ -584,11 +589,12 @@ public static class BinaryReaderExtensions
         {
             f.Write("\t");
         }
-        f.WriteLine(field.Desc.Name + text);
+        f.WriteLine(Ebx.StringTable[field.Desc.Name] + text);
+        //f.WriteLine(field.Desc.Name + text);
     }
     public static void WriteInstance(this StreamWriter f, Complex cmplx, string text)
     {
-        f.WriteLine(cmplx.Desc.Name + " " + text);
+        f.WriteLine(Ebx.StringTable[cmplx.Desc.Name] + " " + text);
     }
 
     #endregion

@@ -2,9 +2,6 @@
 using IceBloc.Frostbite.Meshes;
 using IceBloc.Frostbite.Textures;
 using IceBloc.InternalFormats;
-using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace IceBloc.Utility;
 
@@ -32,30 +29,27 @@ public class AssetListItem
     {
         string path = $"Output\\{Settings.CurrentGame}\\{Name}";
         Directory.CreateDirectory(Path.GetDirectoryName(path)); // Make sure the output directory exists.
-        byte[] data = MainWindow.ActiveCatalog.Extract(MetaData);
+        byte[] data = IO.ActiveCatalog.Extract(MetaData);
 
         // If the user wants to export the raw RES.
         if (Settings.ExportRaw)
         {
-            using var stream = new MemoryStream(data);
-            List<InternalMesh> output = MeshSet.ConvertToInternal(stream, out var chunk);
             File.WriteAllBytes(path + "." + Type, data);
-            File.WriteAllBytes(path + ".chunk", chunk);
         }
+
         if (Settings.ExportConverted)
         {
+            using var stream = new MemoryStream(data);
             switch (Type)
             {
                 case ResType.DxTexture:
                     {
-                        using var stream = new MemoryStream(data);
                         InternalTexture output = DxTexture.ConvertToInternal(stream);
                         Settings.CurrentTextureExporter.Export(output, path);
                         break;
                     }
                 case ResType.MeshSet:
                     {
-                        using var stream = new MemoryStream(data);
                         List<InternalMesh> output = MeshSet.ConvertToInternal(stream, out var chunk);
                         for (int i = 0; i < output.Count; i++)
                         {
@@ -63,11 +57,17 @@ public class AssetListItem
                         }
                         break;
                     }
+                case ResType.EBX:
+                    {
+                        var output = new Dbx(stream);
+                        File.WriteAllBytes(path + ".ebx", output.Export());
+                        break;
+                    }
                 default:
                     break;
             }
         }
-        MainWindow.WriteUIOutputLine($"Exported {Name}...");
+        Console.WriteLine($"Exported {Name}...");
         Status = ExportStatus.Exported;
     }
 }

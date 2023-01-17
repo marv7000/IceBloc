@@ -14,8 +14,9 @@
                 <Button x:Name="LoadInstall" Content="Load Game" HorizontalAlignment="Right" Margin="0,0,10,2" VerticalAlignment="Bottom" Click="LoadInstall_Click" Height="25"/>
                 <Button x:Name="ExportAsset" Content="Export Selection" HorizontalAlignment="Right" Margin="0,0,79,2" VerticalAlignment="Bottom" Height="25" Click="ExportAsset_Click"/>
                 <Label x:Name="LoadedAssets" Content="Assets Loaded: 0" HorizontalAlignment="Left" Margin="310,0,0,0" VerticalAlignment="Bottom" FontWeight="Normal"/>
+                <Label x:Name="GameName" Content="Unknown Game" HorizontalAlignment="Right" Margin="0,0,250,0" VerticalAlignment="Bottom" FontWeight="Normal"/>
                 <TextBox x:Name="SearchBox" HorizontalAlignment="Left" Margin="10,0,0,5" TextWrapping="Wrap" Text="" VerticalAlignment="Bottom" Width="300" ToolTip="Find an asset." TextChanged="SearchBox_TextChanged"/>
-                <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Right" Height="10" Margin="0,0,180,10" VerticalAlignment="Bottom" Width="100"/>
+                <ProgressBar x:Name="ProgressBar" HorizontalAlignment="Right" Height="15" Margin="0,0,180,5" VerticalAlignment="Bottom" Width="70"/>
             </Grid>
         </TabItem>
         <TabItem Header="Settings">

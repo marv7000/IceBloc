@@ -7,7 +7,7 @@ namespace IceBloc.Utility;
 /// </summary>
 public static class Settings
 {
-    public static Game CurrentGame = Game.Unknown;
+    public static Game CurrentGame = Game.UnknownGame;
     public static IModelExporter CurrentModelExporter = new ModelExporterOBJ();
     public static ITextureExporter CurrentTextureExporter = new TextureExporterDDS();
     public static IAnimationExporter CurrentAnimationExporter = new AnimationExporterSMD();
@@ -16,6 +16,7 @@ public static class Settings
     public static bool ExportRaw = false;
     public static bool ExportConverted = true;
     public static AssetLoadMode LoadMode = AssetLoadMode.All;
+    public static double Progress = 0.0;
 }
 
 public enum AssetLoadMode
@@ -27,7 +28,7 @@ public enum AssetLoadMode
 
 public enum Game
 {
-    Unknown = -1,
+    UnknownGame = -1,
     Battlefield3,
     Battlefield4,
     BattlefieldHardline,
