@@ -465,23 +465,30 @@ public static class BinaryReaderExtensions
     }
     public static Field ReadField(this BinaryReader r, in Dbx dbx, int fieldIndex)
     {
-        var fieldDesc = dbx.FieldDescriptors[fieldIndex];
-        var field = new Field(fieldDesc);
-        var typ = fieldDesc.GetFieldType();
+        var field = new Field(
+            new FieldDescriptor(
+                new int[] { 
+                    dbx.FieldDescriptors[fieldIndex].Name, 
+                    dbx.FieldDescriptors[fieldIndex].Type,
+                    dbx.FieldDescriptors[fieldIndex].Ref,
+                    dbx.FieldDescriptors[fieldIndex].Offset,
+                    dbx.FieldDescriptors[fieldIndex].SecondaryOffset
+                }));
+        var typ = field.Desc.GetFieldType();
 
         switch(typ)
         {
             case FieldType.Void:
-                field.Value = r.ReadComplex(dbx, fieldDesc.Ref); break;
+                field.Value = r.ReadComplex(dbx, field.Desc.Ref); break;
             case FieldType.ValueType:
-                field.Value = r.ReadComplex(dbx, fieldDesc.Ref); break;
+                field.Value = r.ReadComplex(dbx, field.Desc.Ref); break;
             case FieldType.Class:
                 field.Value = r.ReadUInt32(dbx.BigEndian); break;
             case FieldType.Array:
                 {
                     // Array
                     var arrayRptr = dbx.ArrayRepeaters[r.ReadUInt32(dbx.BigEndian)];
-                    var arrayCmplxDesc = dbx.ComplexDescriptors[fieldDesc.Ref];
+                    var arrayCmplxDesc = dbx.ComplexDescriptors[field.Desc.Ref];
 
                     r.BaseStream.Position = dbx.ArraySectionStart + arrayRptr.Offset;
                     var arrayCmplx = new Complex(arrayCmplxDesc);
@@ -496,14 +503,14 @@ public static class BinaryReaderExtensions
                     var startPos = r.BaseStream.Position;
                     var stringOffset = r.ReadInt32(dbx.BigEndian);
                     if (stringOffset == -1)
-                        field.Value = "*nullString*";
+                        field.Value = "<NullString>";
                     else
                     {
                         r.BaseStream.Position = dbx.Header.AbsStringOffset + stringOffset;
                         field.Value = r.ReadNullTerminatedString();
                         r.BaseStream.Position = startPos + 4;
 
-                        if (dbx.IsPrimaryInstance && fieldDesc.Name == Ebx.GetHashCode("Name") && dbx.TrueFileName == "")
+                        if (dbx.IsPrimaryInstance && field.Desc.Name == Ebx.GetHashCode("Name") && dbx.TrueFileName == "")
                             dbx.TrueFileName = (string)field.Value;
                     }
                     break;
@@ -511,16 +518,16 @@ public static class BinaryReaderExtensions
             case FieldType.Enum:
                 {
                     int compareValue = r.ReadInt32(dbx.BigEndian);
-                    var enumComplex = dbx.ComplexDescriptors[fieldDesc.Ref];
-                    if (!dbx.Enumerations.TryGetValue(fieldDesc.Ref, out var value))
+                    var enumComplex = dbx.ComplexDescriptors[field.Desc.Ref];
+                    if (!dbx.Enumerations.TryGetValue(field.Desc.Ref, out var value))
                     {
                         var enumeration = new Enumeration();
-                        enumeration.Type = fieldDesc.Ref;
+                        enumeration.Type = field.Desc.Ref;
                         enumeration.Values = new();
                         for (int i = enumComplex.FieldStartIndex; i < enumComplex.FieldStartIndex + enumComplex.NumField; i++)
                             enumeration.Values[dbx.FieldDescriptors[i].Offset] = Ebx.StringTable[dbx.FieldDescriptors[i].Name];
 
-                        dbx.Enumerations[fieldDesc.Ref] = enumeration;
+                        dbx.Enumerations[field.Desc.Ref] = enumeration;
                     }
 
                     if (value is not null)
@@ -528,10 +535,10 @@ public static class BinaryReaderExtensions
                         if (!value.Values.TryGetValue(compareValue, out var compare))
                             field.Value = compareValue.ToString();
                         else
-                            field.Value = dbx.Enumerations[fieldDesc.Ref].Values[compareValue];
+                            field.Value = dbx.Enumerations[field.Desc.Ref].Values[compareValue];
                     }
                     else
-                        field.Value = dbx.Enumerations[fieldDesc.Ref].Values[compareValue];
+                        field.Value = dbx.Enumerations[field.Desc.Ref].Values[compareValue];
                     break;
                 }
             case FieldType.FileRef:
@@ -539,7 +546,7 @@ public static class BinaryReaderExtensions
                     var startPos = r.BaseStream.Position;
                     var stringOffset = r.ReadInt32(dbx.BigEndian);
                     if (stringOffset == -1)
-                        field.Value = "*nullRef*";
+                        field.Value = "<NullRef>";
                     else
                     {
                         r.BaseStream.Position = dbx.Header.AbsStringOffset + stringOffset;
@@ -547,7 +554,7 @@ public static class BinaryReaderExtensions
                         r.BaseStream.Position = startPos + 4;
                     }
     
-                    if (dbx.IsPrimaryInstance && fieldDesc.Name == Ebx.GetHashCode("Name") && dbx.TrueFileName == "")
+                    if (dbx.IsPrimaryInstance && field.Desc.Name == Ebx.GetHashCode("Name") && dbx.TrueFileName == "")
                         dbx.TrueFileName = field.Value as string;
                     break;
                 }
@@ -590,7 +597,6 @@ public static class BinaryReaderExtensions
             f.Write("\t");
         }
         f.WriteLine(Ebx.StringTable[field.Desc.Name] + text);
-        //f.WriteLine(field.Desc.Name + text);
     }
     public static void WriteInstance(this StreamWriter f, Complex cmplx, string text)
     {

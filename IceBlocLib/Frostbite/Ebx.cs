@@ -64,6 +64,10 @@ public class EbxHeader
 
 public class FieldDescriptor
 {
+    // Without this, C# will generate identical hashes for array objects,
+    // which makes it so that changes on one member apply to every single one.
+    public int Random = new Random().Next();
+
     public int Name;
     public int Type;
     public int Ref;
@@ -139,7 +143,7 @@ public class ArrayRepeater
 public class Enumeration
 {
     public int Type;
-    public Dictionary<int,string> Values;
+    public Dictionary<int,string> Values = new();
 }
 
 public class Complex
@@ -426,20 +430,23 @@ public class Dbx
                     w.WriteField(field, lvl, " <NullArray>");
                 else
                 {
-                    if (arrayFieldDesc.GetFieldType() == FieldType.Enum && arrayFieldDesc.Ref == 0) //hack for enum arrays
+                    int fieldCount = (field.Value as Complex).Fields.Count;
+                    for (int i = 0; i < fieldCount; i++)
+                    {
+                        if ((field.Value as Complex).Fields[i].Desc.Name == Ebx.GetHashCode("member"))
+                        {
+                            string toAdd = $"member[{i}]";
+                            Ebx.StringTable.TryAdd(Ebx.GetHashCode(toAdd), toAdd);
+                            (field.Value as Complex).Fields[i].Desc.Name = Ebx.GetHashCode(toAdd);
+                        }
+                    }
+
+                    if (arrayFieldDesc.GetFieldType() == FieldType.Enum && arrayFieldDesc.Ref == 0) 
                         w.WriteField(field, lvl, Ebx.Seperator + (field.Value as Complex).Desc.Name + " // Unknown Enum");
                     else
                         w.WriteField(field, lvl, Ebx.Seperator + Ebx.StringTable[(field.Value as Complex).Desc.Name]);
 
-                    for (int i = 0; i < (field.Value as Complex).Fields.Count; i++)
-                    {
-                        var member = (field.Value as Complex).Fields[i];
-                        if (member.Desc.Name == Ebx.GetHashCode("member"))
-                        {
-                            Ebx.StringTable.TryAdd(Ebx.GetHashCode($"member[{i}]"), $"member[{i}]");
-                            member.Desc.Name = Ebx.GetHashCode($"member[{i}]");
-                        }
-                    }
+
                     Recurse((field.Value as Complex).Fields, lvl, w);
                 }
 
@@ -455,6 +462,7 @@ public class Dbx
                 w.WriteField(field, lvl, " " + Convert.ToBase64String(field.Value as byte[]));
             else
                 w.WriteField(field, lvl, " " + field.Value.ToString());
-            }
+        }
     }
+    
 }
