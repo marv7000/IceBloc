@@ -23,14 +23,34 @@ public class DxTexture
     public uint ResourceNameHash;
     public string TextureGroup;
 
-    public DxTexture() { }
+    public DxTexture(BinaryReader rr)
+    {
+        Version = rr.ReadUInt32();
+        TexType = (TextureType)rr.ReadInt32();
+        TexFormat = (TextureFormat)rr.ReadUInt32();
+        Flags = rr.ReadUInt32();
+        Width = rr.ReadUInt16();
+        Height = rr.ReadUInt16();
+        Depth = rr.ReadUInt16();
+        SliceCount = rr.ReadUInt16();
+        rr.ReadUInt16();
+        MipmapCount = rr.ReadByte();
+        MipmapBaseIndex = rr.ReadByte();
+        StreamingChunkId = new Guid(rr.ReadBytes(16));
+        // Mipmaps.
+        for (int i = 0; i < 15; i++) MipmapSizes[i] = rr.ReadUInt32();
+        MipmapChainSize = rr.ReadUInt32();
+        ResourceNameHash = rr.ReadUInt32();
+        // A TextureGroup is always 16 chars long, we will reinterpret as string for ease of use.
+        TextureGroup = Encoding.ASCII.GetString(rr.ReadBytes(16)).Replace("\0", "");
+    }
 
     public static InternalTexture ConvertToInternal(Stream res)
     {
         using var rr = new BinaryReader(res);
 
         InternalTexture internalTex = new();
-        var tex = rr.ReadDxTexture();
+        var tex = new DxTexture(rr);
 
         using var mem = new MemoryStream(IO.GetChunk(tex.StreamingChunkId));
         using var cr = new BinaryReader(mem);

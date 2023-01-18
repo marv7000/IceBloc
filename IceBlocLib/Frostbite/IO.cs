@@ -1,6 +1,7 @@
 ﻿using IceBloc.Frostbite.Database;
 using IceBloc.Utility;
 using System.IO;
+using System.Reflection;
 
 namespace IceBloc.Frostbite;
 
@@ -251,6 +252,47 @@ public class IO
             catch (Exception e)
             {
                 Console.WriteLine("Error: " + e.Message);
+            }
+        }
+    }
+
+    public static string EnsurePath(string path, string extension)
+    {
+        if (!Path.Exists($"Output\\{Settings.CurrentGame}"))
+            Directory.CreateDirectory($"Output\\{Settings.CurrentGame}");
+
+        return $"Output\\{Settings.CurrentGame}\\" + Path.GetFileNameWithoutExtension(path) + extension;
+    }
+
+    public static void Dump(object o, string path)
+    {
+        FieldInfo[] info = o.GetType().GetFields();
+        using var w = new StreamWriter(EnsurePath(path, "_dump.txt"));
+
+        w.WriteLine(o.GetType().Name + ":");
+        foreach (FieldInfo fi in info)
+        {
+            object value = fi.GetValue(o);
+            w.Write($"\t{fi.FieldType.Name} {fi.Name}");
+            if (value is Enum)
+            {
+                w.WriteLine($" = {(value as Enum).ToString("g")} ({(value as Enum).ToString("d")})");
+            }
+            else
+            {
+                if (value is Array)
+                {
+                    w.Write($"[{(value as Array).Length}] = ");
+                    foreach (object val in (value as Array))
+                    {
+                        w.Write($"{val.ToString()}, ");
+                    }
+                    w.WriteLine("");
+                }
+                else
+                {
+                    w.WriteLine(" = " + value.ToString());
+                }
             }
         }
     }

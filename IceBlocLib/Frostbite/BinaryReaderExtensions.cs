@@ -261,31 +261,7 @@ public static class BinaryReaderExtensions
 
         return subset;
     }
-    public static DxTexture ReadDxTexture(this BinaryReader rr)
-    {
-        var tex = new DxTexture();
-
-        tex.Version = rr.ReadUInt32();
-        tex.TexType = (TextureType)rr.ReadInt32();
-        tex.TexFormat = (TextureFormat)rr.ReadUInt32();
-        tex.Flags = rr.ReadUInt32();
-        tex.Width = rr.ReadUInt16();
-        tex.Height = rr.ReadUInt16();
-        tex.Depth = rr.ReadUInt16();
-        tex.SliceCount = rr.ReadUInt16();
-        rr.ReadUInt16();
-        tex.MipmapCount = rr.ReadByte();
-        tex.MipmapBaseIndex = rr.ReadByte();
-        tex.StreamingChunkId = new Guid(rr.ReadBytes(16));
-        // Mipmaps.
-        for (int i = 0; i < 15; i++) tex.MipmapSizes[i] = rr.ReadUInt32();
-        tex.MipmapChainSize = rr.ReadUInt32();
-        tex.ResourceNameHash = rr.ReadUInt32();
-        // A TextureGroup is always 16 chars long, we will reinterpret as string for ease of use.
-        tex.TextureGroup = Encoding.ASCII.GetString(rr.ReadBytes(16)).Replace("\0", "");
-
-        return tex;
-    }
+    
 
     #endregion
 
