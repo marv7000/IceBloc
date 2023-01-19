@@ -6,14 +6,16 @@ public class CatalogEntry
     public uint Offset;
     public int DataSize;
     public int CasFileIndex;
+    public bool IsCompressed;
 
     public CatalogEntry() { }
 
-    public CatalogEntry(byte[] sHA, uint offset, int dataSize, int casFileIndex)
+    public CatalogEntry(byte[] sHA, uint offset, int dataSize, int casFileIndex, bool isCompressed)
     {
         SHA = sHA;
         Offset = offset;
         DataSize = dataSize;
         CasFileIndex = casFileIndex;
+        IsCompressed = isCompressed;
     }
 }

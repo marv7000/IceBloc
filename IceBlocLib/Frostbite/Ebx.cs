@@ -9,6 +9,7 @@ public static class Ebx
     public static List<string> ParsedEbx = new();
     public static Dictionary<int, string> StringTable = new();
     public static string Seperator = "::";
+    public static bool WriteArrayIndexers = true;
 
     public static void AddEbxGuid(string path)
     {
@@ -108,6 +109,17 @@ public class ComplexDescriptor
         Type = (FieldType)varList[4];
         Size = varList[5]; //total length of the complex in the payload section
         SecondarySize = varList[6]; //seems deprecated
+    }
+
+    public ComplexDescriptor(int name, int fieldStartIndex, int numField, int alignment, FieldType type, int size, int secondarySize)
+    {
+        Name = name;
+        FieldStartIndex = fieldStartIndex;
+        NumField = numField;
+        Alignment = alignment;
+        Type = type;
+        Size = size;
+        SecondarySize = secondarySize;
     }
 }
 
@@ -227,11 +239,11 @@ public class Field
 
 public class Dbx
 {
-    public string TrueFileName;
-    public string EbxRoot;
-    public bool BigEndian;
+    public string TrueFileName = "";
+    public string EbxRoot = "";
+    public bool BigEndian = false;
     public EbxHeader Header;
-    public uint ArraySectionStart;
+    public uint ArraySectionStart = 0;
     public Guid FileGuid;
     public Guid PrimaryInstanceGuid;
     public List<(Guid, Guid)> ExternalGuids = new();
@@ -241,12 +253,12 @@ public class Dbx
     public InstanceRepeater[] InstanceRepeaters;
     public ArrayRepeater[] ArrayRepeaters;
     public Dictionary<Guid, Complex> Instances = new();
-    public bool IsPrimaryInstance;
+    public bool IsPrimaryInstance = false;
     public Complex Prim;
     public Dictionary<int, Enumeration> Enumerations = new();
 
+    public Dbx() { }
     public Dbx(string path) : this(File.OpenRead(path)) { }
-
     public Dbx(Stream s)
     {
         using BinaryReader r = new BinaryReader(s);
@@ -352,17 +364,70 @@ public class Dbx
         if (TrueFileName == "")
             TrueFileName = Path.GetRelativePath((r.BaseStream as FileStream).Name, "").Replace("\\", "/");
     }
+    public static Dbx Import(string path)
+    {
+        Dbx dbx = new();
+        string[] lines = File.ReadAllLines(path);
+        using var w = new BinaryWriter(File.OpenWrite(IO.EnsurePath(path, "_compiled.ebx")));
+
+        List<(string[] Str, int Lvl)> tokens = new();
+        for (int i = 0; i < lines.Length; i++)
+        {
+            tokens.Add((IO.SplitLiteral(lines[i]), IO.GetIndentCount(lines[i])));
+        }
+
+        Complex lastComplex = null;
+        for (int i = 0; i < tokens.Count; i++)
+        {
+            var kvp = tokens[i];
+
+            // "Partition" is always the FileGuid.
+            if (kvp.Str[0] == "Partition")
+                dbx.FileGuid = Guid.Parse(kvp.Str[1]);
+
+            // If we have no indents, we're defining a new instance.
+            else if (kvp.Lvl == 0)
+            {
+                var name = kvp.Str[0];
+                var guid = Guid.Parse(kvp.Str[1]);
+                
+                var cdesc = new ComplexDescriptor(Ebx.GetHashCode(name),0, 0, 0, FieldType.Class, 0, 0);
+                var cplx = new Complex(cdesc);
+
+                // Mark IsPrimaryInstance
+                if (guid == dbx.FileGuid)
+                    dbx.IsPrimaryInstance = true;
+
+                // Add the name with hash to the string table.
+                Ebx.StringTable.TryAdd(Ebx.GetHashCode(name), name);
+
+                dbx.Instances.Add(guid, cplx);
+            }
+
+            // If we're finished with the current indent level.
+            if (tokens[i].Lvl < tokens[i-1].Lvl)
+            {
+
+            }
+        }
+
+        if (dbx.TrueFileName == "")
+            dbx.TrueFileName = Path.GetFileNameWithoutExtension(path);
+
+        return dbx;
+    }
 
     public void Dump(string outName)
     {
         var writer = new StreamWriter(outName, false, Encoding.ASCII);
+
         writer.WriteLine("Partition " + FileGuid);
 
         foreach(var instance in Instances)
         {
             if (instance.Key == PrimaryInstanceGuid) writer.WriteInstance(instance.Value, instance.Key + " // Primary instance");
             else writer.WriteInstance(instance.Value, instance.Key.ToString());
-            Recurse(instance.Value.Fields, 0, writer);
+            RecurseWrite(instance.Value.Fields, 0, writer);
         }
         writer.Close();
     }
@@ -377,13 +442,13 @@ public class Dbx
         {
             if (instance.Key == PrimaryInstanceGuid) writer.WriteInstance(instance.Value, instance.Key + " // Primary instance");
             else writer.WriteInstance(instance.Value, instance.Key.ToString());
-            Recurse(instance.Value.Fields, 0, writer);
+            RecurseWrite(instance.Value.Fields, 0, writer);
         }
 
         return stream.ToArray();
     }
 
-    public void Recurse(List<Field> fields, int lvl, StreamWriter w)
+    private void RecurseWrite(List<Field> fields, int lvl, StreamWriter w)
     {
         lvl += 1;
         foreach(var field in fields)
@@ -392,8 +457,8 @@ public class Dbx
 
             if (typ == FieldType.Void || typ == FieldType.ValueType)
             {
-                w.WriteField(field, lvl, Ebx.Seperator + Ebx.StringTable[(field.Value as Complex).Desc.Name]);
-                Recurse((field.Value as Complex).Fields, lvl, w);
+                w.WriteField(field, lvl, "Complex", Ebx.StringTable[(field.Value as Complex).Desc.Name], false);
+                RecurseWrite((field.Value as Complex).Fields, lvl, w);
             }
             else if (typ == FieldType.Class)
             {
@@ -419,7 +484,7 @@ public class Dbx
                     var intGuid = InternalGuids[(int)(uint)field.Value - 1];
                     towrite = intGuid.ToString();
                 }
-                w.WriteField(field, lvl, " " + towrite);
+                w.WriteField(field, lvl, towrite, "Class", true);
             }
             else if (typ == FieldType.Array)
             {
@@ -427,42 +492,55 @@ public class Dbx
                 var arrayFieldDesc = FieldDescriptors[arrayCmplxDesc.FieldStartIndex];
 
                 if ((field.Value as Complex).Fields.Count == 0)
-                    w.WriteField(field, lvl, " <NullArray>");
+                    w.WriteField(field, lvl, "Null", "Array", false);
                 else
                 {
                     int fieldCount = (field.Value as Complex).Fields.Count;
                     for (int i = 0; i < fieldCount; i++)
                     {
-                        if ((field.Value as Complex).Fields[i].Desc.Name == Ebx.GetHashCode("member"))
+                        // Replace "member" with an indexer.
+                        if (Ebx.WriteArrayIndexers)
                         {
-                            string toAdd = $"member[{i}]";
-                            Ebx.StringTable.TryAdd(Ebx.GetHashCode(toAdd), toAdd);
-                            (field.Value as Complex).Fields[i].Desc.Name = Ebx.GetHashCode(toAdd);
+                            if ((field.Value as Complex).Fields[i].Desc.Name == Ebx.GetHashCode("member"))
+                            {
+                                string toAdd = $"[{i}]";
+                                Ebx.StringTable.TryAdd(Ebx.GetHashCode(toAdd), toAdd);
+                                (field.Value as Complex).Fields[i].Desc.Name = Ebx.GetHashCode(toAdd);
+                            }
                         }
                     }
 
                     if (arrayFieldDesc.GetFieldType() == FieldType.Enum && arrayFieldDesc.Ref == 0) 
-                        w.WriteField(field, lvl, Ebx.Seperator + (field.Value as Complex).Desc.Name + " // Unknown Enum");
+                        w.WriteField(field, lvl, "Anon", "Enum", false);
+                    else if (arrayFieldDesc.GetFieldType() == FieldType.Enum && arrayFieldDesc.Ref != 0)
+                        w.WriteField(field, lvl, "Anon", "Enum", false);
                     else
-                        w.WriteField(field, lvl, Ebx.Seperator + Ebx.StringTable[(field.Value as Complex).Desc.Name]);
+                        w.WriteField(field, lvl, "[]", "Array", false);
 
 
-                    Recurse((field.Value as Complex).Fields, lvl, w);
+                    RecurseWrite((field.Value as Complex).Fields, lvl, w);
                 }
 
             }
             else if (typ == FieldType.GUID)
             {
                 if (field.Value == null)
-                    w.WriteField(field, lvl, " <NullGuid>");
+                    w.WriteField(field, lvl, "<NullGuid>");
                 else
-                    w.WriteField(field, lvl, " " + field.Value);
+                    w.WriteField(field, lvl, field.Value.ToString());
             }
             else if (typ == FieldType.SHA1)
-                w.WriteField(field, lvl, " " + Convert.ToBase64String(field.Value as byte[]));
+                w.WriteField(field, lvl, Convert.ToBase64String(field.Value as byte[]), "SHA1", true);
             else
-                w.WriteField(field, lvl, " " + field.Value.ToString());
+                w.WriteField(field, lvl, 
+                    (field.Value != null ? field.Value.ToString() : "<Null>"), 
+                    (field.Value != null ? field.Value.GetType().Name : "Null"), true);
         }
+    }
+
+    private void RecurseRead(List<Field> fields, int lvl, string[] lines, int index)
+    {
+
     }
     
 }

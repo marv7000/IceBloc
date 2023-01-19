@@ -29,12 +29,13 @@ public class AssetListItem
     {
         string path = $"Output\\{Settings.CurrentGame}\\{Name}";
         Directory.CreateDirectory(Path.GetDirectoryName(path)); // Make sure the output directory exists.
-        byte[] data = IO.ActiveCatalog.Extract(MetaData);
+
+        byte[] data = IO.ActiveCatalog.Extract(MetaData, true, AssetType);
 
         // If the user wants to export the raw RES.
         if (Settings.ExportRaw)
         {
-            File.WriteAllBytes(path + "." + Type, data);
+            File.WriteAllBytes(path + ("_raw." + Type).ToLower(), data);
         }
 
         if (Settings.ExportConverted)
@@ -60,7 +61,7 @@ public class AssetListItem
                 case ResType.EBX:
                     {
                         var output = new Dbx(stream);
-                        File.WriteAllBytes(path + ".ebx", output.Export());
+                        output.Dump(path + ".ebx");
                         break;
                     }
                 default:
@@ -69,21 +70,6 @@ public class AssetListItem
         }
         Console.WriteLine($"Exported {Name}...");
         Status = ExportStatus.Exported;
-    }
-}
-
-/// <summary>
-/// Provides a mechanism to connect Guid and SHA values.
-/// </summary>
-public struct MetaDataObject
-{
-    public byte[] SHA;
-    public Guid GUID;
-
-    public MetaDataObject(byte[] sha, Guid guid)
-    {
-        SHA = sha;
-        GUID = guid;
     }
 }
 

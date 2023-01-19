@@ -1,10 +1,9 @@
 ﻿using IceBloc.Utility;
 using System;
 using System.Buffers.Binary;
-using System.Collections.Generic;
-using System.IO;
 using System.IO.Compression;
 using System.Text;
+using static IceBloc.Frostbite.Animation.ChannelDofMapCache;
 
 namespace IceBloc.Frostbite.Database;
 
@@ -23,18 +22,21 @@ public class Catalog : IDisposable
         switch (Settings.CurrentGame)
         {
             case Game.Battlefield3:
-                r.BaseStream.Position += 16;
-                while (r.BaseStream.Position < r.BaseStream.Length)
+            case Game.Battlefield4:
                 {
-                    CatalogEntry catEntry = r.ReadCatalogEntry();
-                    Entries[Convert.ToBase64String(catEntry.SHA)] = catEntry;
-                }
-                foreach (var file in Directory.EnumerateFiles(Settings.GamePath + "\\Data", "*.cas"))
-                {
-                    // Get the index number of the cas archive by removing "cas_" and the file extension.
-                    int index = int.Parse(Path.GetFileNameWithoutExtension(file).Replace("cas_", ""));
-                    // Open the file corresponding to the cas archive index.
-                    CasStreams.Add(index, new(File.OpenRead(file), Encoding.ASCII, true));
+                    r.BaseStream.Position += 16;
+                    while (r.BaseStream.Position < r.BaseStream.Length)
+                    {
+                        CatalogEntry catEntry = r.ReadCatalogEntry();
+                        Entries[Convert.ToBase64String(catEntry.SHA)] = catEntry;
+                    }
+                    foreach (var file in Directory.EnumerateFiles(Settings.GamePath + "\\Data", "*.cas"))
+                    {
+                        // Get the index number of the cas archive by removing "cas_" and the file extension.
+                        int index = int.Parse(Path.GetFileNameWithoutExtension(file).Replace("cas_", ""));
+                        // Open the file corresponding to the cas archive index.
+                        CasStreams.Add(index, new(File.OpenRead(file), Encoding.ASCII, true));
+                    }
                 }
                 break;
             default:
@@ -45,59 +47,76 @@ public class Catalog : IDisposable
     public CatalogEntry GetEntry(byte[] sha)
     {
         if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry))
-            throw new Exception("SHA was not found in the Cas entry list.");
+            throw new Exception($"SHA {Convert.ToBase64String(sha)} was not found in the Cas entry list.");
         return entry;
     }
 
-    public byte[] Extract(byte[] sha)
+    public byte[] Extract(byte[] sha, bool isBundle, InternalAssetType type)
     {
         // Throw an exception if we can't find a chunk with the given SHA.
-        if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry))
-            throw new KeyNotFoundException($"Could not get a value for {Encoding.ASCII.GetString(sha)}!");
+        var entry = GetEntry(sha);
 
-        BinaryReader r = CasStreams[entry.CasFileIndex];
-        r.BaseStream.Position = entry.Offset;
+        bool compressed = false;
 
-        using MemoryStream output = new(entry.DataSize);
-
-        long end = r.BaseStream.Position + entry.DataSize;
-
-        while (r.BaseStream.Position < end)
+        switch (Settings.CurrentGame)
         {
-            int uSize = r.ReadInt32();
-            int cSize = uSize;
-            if (uSize != 263377358)
-            {
-                cSize = r.ReadInt32();
+            case Game.Battlefield3:
+                if (type == InternalAssetType.RES)
+                    compressed = true;
+                else if (type == InternalAssetType.EBX)
+                    compressed = false;
+                else if (type == InternalAssetType.Chunk)
+                    compressed = entry.IsCompressed;
+                break;
+        }
 
-                uSize = BinaryPrimitives.ReverseEndianness(uSize);
-                cSize = BinaryPrimitives.ReverseEndianness(cSize);
-
-                using (var memory = new MemoryStream(r.ReadBytes(cSize)))
+        switch (Settings.CurrentGame)
+        {
+            case Game.Battlefield3:
                 {
-                    try
-                    {
-                        using (var deflator = new ZLibStream(memory, CompressionMode.Decompress))
-                        {
-                            deflator.CopyTo(output);
-                        }
-                    }
-                    catch
-                    {
-                        memory.CopyTo(output);
-                    }
+                    BinaryReader r = CasStreams[entry.CasFileIndex];
+                    r.BaseStream.Position = entry.Offset;
+
+                    if (compressed)
+                        return ZLibDecompress(r, entry.DataSize);
+                    else
+                        return r.ReadBytes(entry.DataSize);
                 }
+        }
+        return null;
+    }
+
+
+    private byte[] ZLibDecompress(BinaryReader r, int size)
+    {
+        using var s = new MemoryStream();
+
+        long startOffset = r.BaseStream.Position;
+
+        while (r.BaseStream.Position < startOffset + size - 8)
+        {
+            int uSize = r.ReadInt32(true);
+            int cSize = r.ReadInt32(true);
+
+            using var memory = new MemoryStream(r.ReadBytes(cSize));
+            using var deflator = new ZLibStream(memory, CompressionMode.Decompress);
+
+            try
+            {
+                deflator.CopyTo(s);
             }
-            else
+            catch
             {
-                r.BaseStream.Position -= 4; // Go back since the size we read was just an EBX header.
-                using (var memory = new MemoryStream(r.ReadBytes(entry.DataSize)))
-                {
-                    memory.CopyTo(output);
-                }
+                memory.CopyTo(s);
             }
         }
-        return output.ToArray();
+
+        return s.ToArray();
+    }
+
+    public byte[] CasChunkPayload(CatalogEntry entry)
+    {
+        return null;
     }
 
     protected virtual void Dispose(bool disposing)

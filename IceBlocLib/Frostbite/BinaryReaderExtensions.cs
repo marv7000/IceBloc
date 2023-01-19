@@ -514,7 +514,13 @@ public static class BinaryReaderExtensions
                             field.Value = dbx.Enumerations[field.Desc.Ref].Values[compareValue];
                     }
                     else
-                        field.Value = dbx.Enumerations[field.Desc.Ref].Values[compareValue];
+                    {
+                        dbx.Enumerations[field.Desc.Ref].Values.TryGetValue(compareValue, out string val);
+                        if (val is null)
+                            field.Value = "0";
+                        else
+                            field.Value = val;
+                    }
                     break;
                 }
             case FieldType.FileRef:
@@ -567,12 +573,23 @@ public static class BinaryReaderExtensions
     }
     public static void WriteField(this StreamWriter f, Field field, int lvl, string text)
     {
+        WriteField(f, field, lvl, text, field.Value.GetType().Name, true);
+    }
+    public static void WriteField(this StreamWriter f, Field field, int lvl, string text, string type, bool writeValue)
+    {
         // Indent
         for (int i = 0; i < lvl; i++)
         {
             f.Write("\t");
         }
-        f.WriteLine(Ebx.StringTable[field.Desc.Name] + text);
+        if (writeValue)
+        {
+            f.WriteLine($"{type} {Ebx.StringTable[field.Desc.Name]} = \"{text}\"");
+        }
+        else
+        {
+            f.WriteLine($"{type} {Ebx.StringTable[field.Desc.Name]}");
+        }
     }
     public static void WriteInstance(this StreamWriter f, Complex cmplx, string text)
     {
