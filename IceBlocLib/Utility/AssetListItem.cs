@@ -1,5 +1,6 @@
 ﻿using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2.Meshes;
+using IceBlocLib.Frostbite2.Misc;
 using IceBlocLib.Frostbite2.Textures;
 using IceBlocLib.InternalFormats;
 
@@ -51,8 +52,15 @@ public class AssetListItem
             using var stream = new MemoryStream(data);
             if (AssetType == InternalAssetType.EBX)
             {
-                var output = new Dbx(stream);
-                output.Dump(path + ".ebx");
+                var dbx = new Dbx(stream);
+                if (Type == "SkeletonAsset")
+                {
+                    SkeletonAsset.ConvertToInternal(in dbx);
+                }
+                else
+                {
+                    dbx.Dump(path + ".ebx");
+                }
             }
             else if (AssetType == InternalAssetType.RES)
             {

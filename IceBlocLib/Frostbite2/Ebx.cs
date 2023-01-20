@@ -1,5 +1,6 @@
 ﻿using IceBlocLib.Frostbite;
 using System.IO;
+using System.Numerics;
 using System.Text;
 namespace IceBlocLib.Frostbite;
 
@@ -171,6 +172,22 @@ public class Complex
         Fields = new();
     }
 
+    public Field this[string name]
+    {
+        get
+        {
+            int hash = Ebx.GetHashCode(name);
+            foreach (var f in Fields)
+            {
+                if (f.Desc.Name == hash)
+                {
+                    return f;
+                }
+            }
+            return null;
+        }
+    }
+
     public object Get(string name)
     {
 
@@ -204,6 +221,35 @@ public class Field
     {
         Desc = desc;
     }
+
+    public Field this[string name]
+    {
+        get
+        {
+            int hash = Ebx.GetHashCode(name);
+            foreach (var f in (Value as Complex).Fields)
+            {
+                if (f.Desc.Name == hash)
+                {
+                    return f;
+                }
+            }
+            return null;
+        }
+    }
+    public Complex this[int index]
+    {
+        get
+        {
+            var t = Desc.GetFieldType();
+            if (t == FieldType.Array)
+            {
+                return (Complex)(Value as Complex).Fields[index].Value;
+            }
+            return null;
+        }
+    }
+
 
     public Complex Link(Dbx dbx)
     {
