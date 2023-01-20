@@ -17,6 +17,7 @@ public static class Settings
     public static bool ExportConverted = true;
     public static AssetLoadMode LoadMode = AssetLoadMode.All;
     public static double Progress = 0.0;
+    public static Exporter ExporterType = Exporter.CLI;
 }
 
 public enum AssetLoadMode
@@ -33,4 +34,10 @@ public enum Game
     Battlefield4,
     BattlefieldHardline,
 
+}
+
+public enum Exporter
+{
+    GUI,
+    CLI
 }

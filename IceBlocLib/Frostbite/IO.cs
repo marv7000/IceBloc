@@ -13,7 +13,7 @@ public class IO
     public static DbObject ActiveDataBaseObject;
     public static Catalog ActiveCatalog = null;
     public static DbMetaData MetaData;
-    public static Dictionary<string, AssetListItem> Assets = new();
+    public static Dictionary<(string, InternalAssetType), AssetListItem> Assets = new();
     public static Game ActiveGame;
     public static Dictionary<Guid, (CatalogEntry Entry, bool IsBundle, bool IsCas)> ChunkTranslations = new();
 
@@ -186,8 +186,8 @@ public class IO
             var item = new AssetListItem(idString, type.ToString(), InternalAssetType.EBX, size, ExportStatus.Ready, sha);
 
             // Check if we already have an asset with that name (Some RES are defined multiple times).
-            if (!Assets.ContainsKey(idString))
-                Assets.Add(idString, item);
+            if (!Assets.ContainsKey((idString, InternalAssetType.EBX)))
+                Assets.Add((idString, InternalAssetType.EBX), item);
         }
     }
 
@@ -212,8 +212,8 @@ public class IO
 
             // Check if we already have an asset with that name (Some RES are defined multiple times).
             item.GetHashCode();
-            if (!Assets.ContainsKey(idString))
-                Assets.Add(idString, item);
+            if (!Assets.ContainsKey((idString, InternalAssetType.RES)))
+                Assets.Add((idString, InternalAssetType.RES), item);
         }
     }
 

@@ -35,7 +35,7 @@ public class MeshSet
         r.BaseStream.Position = 0;
     }
 
-    public static List<InternalMesh> ConvertToInternal(Stream meshSetStream, out byte[] chunk)
+    public static List<InternalMesh> ConvertToInternal(Stream meshSetStream)
     {
         List<InternalMesh> meshList = new();
 
@@ -45,7 +45,7 @@ public class MeshSet
         // Load the MeshSet from stream.
         MeshSet meshSet = new(mr);
 
-        chunk = new byte[0];
+        byte[] chunk = new byte[0];
         // For each LOD.
         for (int i = 0; i < meshSet.Subsets.Length; i++)
         {

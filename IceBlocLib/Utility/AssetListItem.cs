@@ -27,10 +27,11 @@ public class AssetListItem
 
         if (type == "EBX")
         {
-            using var s = new MemoryStream(IO.ActiveCatalog.Extract(sha, true, iaType));
-            var d = new Dbx(s);
-            int n = d.Instances[d.PrimaryInstanceGuid].Desc.Name;
+            using var stream = new MemoryStream(IO.ActiveCatalog.Extract(sha, true, InternalAssetType.EBX));
+            var dbx = new Dbx(stream);
+            int n = dbx.Instances[dbx.PrimaryInstanceGuid].Desc.Name;
             Type = Ebx.StringTable[n];
+            Ebx.LinkTargets.TryAdd(dbx.FileGuid, sha);
         }
     }
 
@@ -53,9 +54,18 @@ public class AssetListItem
             if (AssetType == InternalAssetType.EBX)
             {
                 var dbx = new Dbx(stream);
+
                 if (Type == "SkeletonAsset")
-                {
                     SkeletonAsset.ConvertToInternal(in dbx);
+                else if (Type == "SoundWaveAsset")
+                    SoundWaveAsset.ConvertToInternal(in dbx);
+                else if (Type == "SkinnedMeshAsset")
+                {
+                    if (Settings.ExporterType == Exporter.GUI)
+                    {
+                        
+                    }
+                    SkinnedMeshAsset.ConvertToInternal(in dbx);
                 }
                 else
                 {
@@ -71,7 +81,7 @@ public class AssetListItem
                 }
                 if (Type == "MeshSet")
                 {
-                    List<InternalMesh> output = MeshSet.ConvertToInternal(stream, out var chunk);
+                    List<InternalMesh> output = MeshSet.ConvertToInternal(stream);
                     for (int i = 0; i < output.Count; i++)
                     {
                         Settings.CurrentModelExporter.Export(output[i], path + i.ToString());

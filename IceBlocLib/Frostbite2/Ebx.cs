@@ -1,7 +1,4 @@
-﻿using IceBlocLib.Frostbite;
-using System.IO;
-using System.Numerics;
-using System.Text;
+﻿using System.Text;
 namespace IceBlocLib.Frostbite;
 
 public static class Ebx
@@ -9,6 +6,7 @@ public static class Ebx
     public static Dictionary<Guid, string> GuidTable = new();
     public static List<string> ParsedEbx = new();
     public static Dictionary<int, string> StringTable = new();
+    public static Dictionary<Guid, byte[]> LinkTargets = new();
     public static bool WriteArrayIndexers = true;
 
     public static void AddEbxGuid(string path)
@@ -210,6 +208,11 @@ public class Complex
 
         return null;
     }
+
+    public Complex Link(in Dbx dbx)
+    {
+        return Fields[0].Link(in dbx);
+    }
 }
 
 public class Field
@@ -251,19 +254,18 @@ public class Field
     }
 
 
-    public Complex Link(Dbx dbx)
+    public Complex Link(in Dbx dbx)
     {
         if (Desc.GetFieldType() != FieldType.Class)
             throw new Exception("Invalid link, wrong field type\nField name: " + Desc.Name + "\nField type: " + Desc.GetFieldType() + "\nFile name: " + dbx.TrueFileName);
 
-        if ((int)Value >> 31 == 1)
+        if ((uint)Value >> 31 == 1)
         {
-            if (dbx.EbxRoot == "")
-                throw new Exception("Ebx root path is not specified!");
+            (Guid A, Guid B) extguid = dbx.ExternalGuids[(int)((uint)Value & 0x7fffffff)];
+            byte[] bytes = IO.ActiveCatalog.Extract(Ebx.LinkTargets[extguid.A], true, Utility.InternalAssetType.EBX);
+            using var s = new MemoryStream(bytes);
 
-            (Guid A, Guid B) extguid = dbx.ExternalGuids[(int)Value & 0x7fffffff];
-
-            var extDbx = new Dbx(Path.Join(dbx.EbxRoot, Ebx.GuidTable[extguid.A] + ".ebx").ToLower());
+            var extDbx = new Dbx(s);
             foreach (var instance in extDbx.Instances)
             {
                 if (instance.Key == extguid.B)
@@ -271,7 +273,7 @@ public class Field
             }
             throw new Exception("Nullguid link.\nFilename: " + dbx.TrueFileName);
         }
-        else if ((int)Value != 0)
+        else if ((uint)Value != 0)
         {
             foreach (var instance in dbx.Instances)
                 if (instance.Key == dbx.InternalGuids[(int)Value - 1])

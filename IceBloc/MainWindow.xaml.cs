@@ -27,7 +27,7 @@ public partial class MainWindow : Window
     {
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
         Instance = this;
-
+        Settings.ExporterType = Exporter.GUI;
         InitializeComponent();
     }
 
@@ -55,7 +55,7 @@ public partial class MainWindow : Window
     {
         Instance.Dispatcher.Invoke(() =>
         {
-            Instance.AssetGrid.ItemsSource = null;
+            //Instance.AssetGrid.ItemsSource = null;
             Instance.LoadedAssets.Content = "Loaded Assets: " + IO.Assets.Count;
             Instance.AssetGrid.ItemsSource = IO.Assets.Values;
             Instance.AssetGrid.Refresh();
@@ -118,15 +118,18 @@ public partial class MainWindow : Window
     }
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        var output = new Dictionary<string, AssetListItem>();
-        foreach(var item in IO.Assets)
+        var output = new Dictionary<(string, InternalAssetType), AssetListItem>();
+        if (SearchBox.Text != "")
         {
-            if(item.Key.Contains(SearchBox.Text))
+            foreach (var item in IO.Assets)
             {
-                output.Add(item.Key, item.Value);
+                if (item.Key.Item1.Contains(SearchBox.Text))
+                {
+                    output.Add((item.Key), item.Value);
+                }
             }
+            AssetGrid.ItemsSource = output.Values;
         }
-        AssetGrid.ItemsSource = output.Values;
     }
     #endregion
 

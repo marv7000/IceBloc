@@ -11,6 +11,7 @@ public sealed class InternalMesh
     public bool IsSkinned;
     public List<Vertex> Vertices = new();
     public List<(int A, int B, int C)> Faces = new();
+    public InternalSkeleton Skeleton;
 
     public InternalMesh() { }
 }

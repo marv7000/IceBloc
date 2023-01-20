@@ -3,13 +3,14 @@ using IceBloc.Utility;
 using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2;
 using IceBlocLib.Frostbite2.Textures;
+using IceBlocLib.Utility;
 using System.Globalization;
 
 namespace IceBlocCLI;
 
 public class Program
 {
-    public static AssetListItem Selection = new("No selection", ResType.AssetBank, InternalAssetType.Unknown, 0, ExportStatus.Error, null);
+    public static AssetListItem Selection = new("No selection", "AssetBank", InternalAssetType.Unknown, 0, ExportStatus.Error, null);
 
     static void Main(string[] args)
     {
@@ -71,7 +72,7 @@ public class Program
                 case "find":
                     foreach (var a in IO.Assets)
                     {
-                        if (a.Key.Contains(cmd[1]))
+                        if (a.Key.Item1.Contains(cmd[1]))
                             Console.WriteLine(a.Key);
                     } break;
                 case "compile":
@@ -87,10 +88,10 @@ public class Program
 
     public static void SelectAsset(string asset)
     {
-        IO.Assets.TryGetValue(asset, out Selection);
+        IO.Assets.TryGetValue((asset, InternalAssetType.RES), out Selection);
         if (Selection is null)
         {
-            Selection = new("Invalid selection", ResType.AssetBank, InternalAssetType.Unknown, 0, ExportStatus.Error, null);
+            Selection = new("Invalid selection", "AssetBank", InternalAssetType.Unknown, 0, ExportStatus.Error, null);
         }
     }
 
