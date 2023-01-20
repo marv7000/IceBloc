@@ -1,9 +1,11 @@
-﻿using IceBloc.Frostbite.Database;
-using IceBloc.Utility;
+﻿using IceBloc.Utility;
+using IceBlocLib.Frostbite.Database;
+using IceBlocLib.Utility;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 
-namespace IceBloc.Frostbite;
+namespace IceBlocLib.Frostbite;
 
 public class IO
 {
@@ -181,7 +183,7 @@ public class IO
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
-            var item = new AssetListItem(idString, type, InternalAssetType.EBX, size, ExportStatus.Ready, sha);
+            var item = new AssetListItem(idString, type.ToString(), InternalAssetType.EBX, size, ExportStatus.Ready, sha);
 
             // Check if we already have an asset with that name (Some RES are defined multiple times).
             if (!Assets.ContainsKey(idString))
@@ -206,7 +208,7 @@ public class IO
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
-            var item = new AssetListItem(idString, type, InternalAssetType.RES, size, ExportStatus.Ready, sha);
+            var item = new AssetListItem(idString, type.ToString(), InternalAssetType.RES, size, ExportStatus.Ready, sha);
 
             // Check if we already have an asset with that name (Some RES are defined multiple times).
             item.GetHashCode();
@@ -240,7 +242,7 @@ public class IO
                                     e.SHA = chunkSha.Data as byte[];
                                     if (!ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas)))
                                     {
-                                        if (ActiveCatalog.GetEntry((chunkSha.Data as byte[])).DataSize >
+                                        if (ActiveCatalog.GetEntry(chunkSha.Data as byte[]).DataSize >
                                             ChunkTranslations[chunkGuid].Entry.DataSize)
                                         {
                                             ChunkTranslations[chunkGuid] = (e, isChunk, isCas);
@@ -266,7 +268,8 @@ public class IO
                                     ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas));
                                 }
                             }
-                        } break;
+                        }
+                        break;
                 }
             }
             catch (Exception e)
@@ -306,7 +309,7 @@ public class IO
                 if (value is Array)
                 {
                     w.Write($"[{(value as Array).Length}] = ");
-                    foreach (object val in (value as Array))
+                    foreach (object val in value as Array)
                     {
                         w.Write($"{val.ToString()}, ");
                     }
@@ -352,7 +355,7 @@ public class IO
             {
                 LoadSbFile(toc, true);
                 i++;
-                Settings.Progress = ((double)i / (double)files.Length) * 100.0;
+                Settings.Progress = i / (double)files.Length * 100.0;
             }
         }
         // Then, load all .sb files.
@@ -366,7 +369,7 @@ public class IO
                 else
                     LoadNonCasFile(sb);
                 i++;
-                Settings.Progress = ((double)i / (double)files.Length) * 100.0;
+                Settings.Progress = i / (double)files.Length * 100.0;
             }
         }
 
@@ -383,5 +386,33 @@ public class IO
     public static int GetIndentCount(string input)
     {
         return input.Count(ch => ch == '\t');
+    }
+
+    public static bool GetEbxCachedName(byte[] sha, out string s)
+    {
+        var path = $"Cache\\{Settings.CurrentGame}\\EbxNameCache.txt";
+        if (Path.Exists(path))
+        {
+            string[] lines = File.ReadAllLines(path);
+            string base64 = Convert.ToBase64String(sha);
+            foreach (var l in lines)
+            {
+                if (l.Contains(base64))
+                {
+                    s = l.Split(";")[1];
+                    return true;
+                }
+            }
+        }
+        s = string.Empty;
+        return false;
+    }
+
+    public static void AppendEbxCachedName(byte[] sha, string v)
+    {
+        var path = $"Cache\\{Settings.CurrentGame}\\EbxNameCache.txt";
+        if (!Path.Exists(path))
+            File.WriteAllText(path, "");
+        File.AppendAllText(path, $"{Convert.ToBase64String(sha)};{v}\n");
     }
 }

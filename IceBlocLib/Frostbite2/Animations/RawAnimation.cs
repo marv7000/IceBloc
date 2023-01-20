@@ -1,8 +1,8 @@
-﻿using IceBloc.InternalFormats;
+﻿using IceBlocLib.InternalFormats;
 using System.IO;
 using System.Numerics;
 
-namespace IceBloc.Frostbite.Animation;
+namespace IceBlocLib.Frostbite2.Animations;
 
 public class RawAnimation : Animation
 {
@@ -60,7 +60,7 @@ public class RawAnimation : Animation
             }
             for (int k = 0; k < Vec3Count; k++)
             {
-                int floatDataIndex = (k * 4) + (QuatCount * 4);
+                int floatDataIndex = k * 4 + QuatCount * 4;
                 positions[k] = new Vector3(Data[floatDataIndex + 0], Data[floatDataIndex + 1], Data[floatDataIndex + 2]);
             }
 

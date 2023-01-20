@@ -1,7 +1,8 @@
-﻿using System;
+﻿using IceBlocLib.Frostbite;
+using System;
 using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite.Meshes;
+namespace IceBlocLib.Frostbite2.Meshes;
 
 public struct MeshLayout
 {

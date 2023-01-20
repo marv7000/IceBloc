@@ -1,8 +1,9 @@
-﻿using IceBloc.InternalFormats;
+﻿using IceBlocLib.InternalFormats;
+using IceBlocLib.Utility;
 using System.IO;
 using System.Numerics;
 
-namespace IceBloc.Frostbite.Animation;
+namespace IceBlocLib.Frostbite2.Animations;
 
 public class FrameAnimation : Animation
 {

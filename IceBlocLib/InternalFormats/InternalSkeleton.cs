@@ -1,4 +1,4 @@
-﻿namespace IceBloc.InternalFormats;
+﻿namespace IceBlocLib.InternalFormats;
 
 public sealed class InternalSkeleton
 {

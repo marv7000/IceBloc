@@ -1,7 +1,7 @@
 ﻿using System.IO;
-using IceBloc.InternalFormats;
+using IceBlocLib.InternalFormats;
 
-namespace IceBloc.Export;
+namespace IceBlocLib.Export;
 
 /// <summary>
 /// Exports <see cref="InternalMesh"/> objects to the .OBJ format.

@@ -1,6 +1,7 @@
-﻿using System.Runtime.InteropServices;
+﻿using IceBlocLib.Frostbite;
+using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite.Meshes;
+namespace IceBlocLib.Frostbite2.Meshes;
 
 [StructLayout(LayoutKind.Sequential, Size = 0x94)]
 public unsafe struct MeshSubset

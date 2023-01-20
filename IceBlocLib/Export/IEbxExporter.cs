@@ -1,4 +1,4 @@
-﻿namespace IceBloc.Export;
+﻿namespace IceBlocLib.Export;
 
 public interface IEbxExporter
 {

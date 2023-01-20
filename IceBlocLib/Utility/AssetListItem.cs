@@ -1,21 +1,21 @@
-﻿using IceBloc.Frostbite;
-using IceBloc.Frostbite.Meshes;
-using IceBloc.Frostbite.Textures;
-using IceBloc.InternalFormats;
+﻿using IceBlocLib.Frostbite;
+using IceBlocLib.Frostbite2.Meshes;
+using IceBlocLib.Frostbite2.Textures;
+using IceBlocLib.InternalFormats;
 
-namespace IceBloc.Utility;
+namespace IceBlocLib.Utility;
 
 public class AssetListItem
 {
     public string Name { get; set; }
-    public ResType Type { get; set; }
+    public string Type { get; set; }
     public InternalAssetType AssetType { get; set; }
     public long Size { get; set; }
     public ExportStatus Status { get; set; }
 
     public byte[] MetaData;
 
-    public AssetListItem(string name, ResType type, InternalAssetType iaType, long size, ExportStatus status, byte[] sha)
+    public AssetListItem(string name, string type, InternalAssetType iaType, long size, ExportStatus status, byte[] sha)
     {
         Name = name;
         Type = type;
@@ -23,6 +23,14 @@ public class AssetListItem
         Size = size;
         Status = status;
         MetaData = sha;
+
+        if (type == "EBX")
+        {
+            using var s = new MemoryStream(IO.ActiveCatalog.Extract(sha, true, iaType));
+            var d = new Dbx(s);
+            int n = d.Instances[d.PrimaryInstanceGuid].Desc.Name;
+            Type = Ebx.StringTable[n];
+        }
     }
 
     public void Export()
@@ -35,37 +43,32 @@ public class AssetListItem
         // If the user wants to export the raw RES.
         if (Settings.ExportRaw)
         {
-            File.WriteAllBytes(path + ("_raw." + Type).ToLower(), data);
+            File.WriteAllBytes(path + ("_raw." + Type), data);
         }
 
         if (Settings.ExportConverted)
         {
             using var stream = new MemoryStream(data);
-            switch (Type)
+            if (AssetType == InternalAssetType.EBX)
             {
-                case ResType.DxTexture:
+                var output = new Dbx(stream);
+                output.Dump(path + ".ebx");
+            }
+            else if (AssetType == InternalAssetType.RES)
+            {
+                if (Type == "DxTexture")
+                {
+                    InternalTexture output = DxTexture.ConvertToInternal(stream);
+                    Settings.CurrentTextureExporter.Export(output, path);
+                }
+                if (Type == "MeshSet")
+                {
+                    List<InternalMesh> output = MeshSet.ConvertToInternal(stream, out var chunk);
+                    for (int i = 0; i < output.Count; i++)
                     {
-                        InternalTexture output = DxTexture.ConvertToInternal(stream);
-                        Settings.CurrentTextureExporter.Export(output, path);
-                        break;
+                        Settings.CurrentModelExporter.Export(output[i], path + i.ToString());
                     }
-                case ResType.MeshSet:
-                    {
-                        List<InternalMesh> output = MeshSet.ConvertToInternal(stream, out var chunk);
-                        for (int i = 0; i < output.Count; i++)
-                        {
-                            Settings.CurrentModelExporter.Export(output[i], path + i.ToString());
-                        }
-                        break;
-                    }
-                case ResType.EBX:
-                    {
-                        var output = new Dbx(stream);
-                        output.Dump(path + ".ebx");
-                        break;
-                    }
-                default:
-                    break;
+                }
             }
         }
         Console.WriteLine($"Exported {Name}...");

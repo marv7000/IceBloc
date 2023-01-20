@@ -1,11 +1,8 @@
-﻿using IceBloc.Utility;
-using System;
-using System.Buffers.Binary;
+﻿using IceBlocLib.Utility;
 using System.IO.Compression;
 using System.Text;
-using static IceBloc.Frostbite.Animation.ChannelDofMapCache;
 
-namespace IceBloc.Frostbite.Database;
+namespace IceBlocLib.Frostbite.Database;
 
 public class Catalog : IDisposable
 {

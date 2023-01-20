@@ -1,7 +1,8 @@
 ﻿using IceBloc;
-using IceBloc.Frostbite;
-using IceBloc.Frostbite.Textures;
 using IceBloc.Utility;
+using IceBlocLib.Frostbite;
+using IceBlocLib.Frostbite2;
+using IceBlocLib.Frostbite2.Textures;
 using System.Globalization;
 
 namespace IceBlocCLI;

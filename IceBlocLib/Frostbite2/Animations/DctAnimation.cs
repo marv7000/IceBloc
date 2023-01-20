@@ -1,8 +1,8 @@
-﻿using IceBloc.InternalFormats;
+﻿using IceBlocLib.InternalFormats;
 using System;
 using System.IO;
 
-namespace IceBloc.Frostbite.Animation;
+namespace IceBlocLib.Frostbite2.Animations;
 
 public class DctAnimation : Animation
 {
@@ -60,7 +60,7 @@ public class DctAnimation : Animation
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
-}
+    }
 
     public unsafe InternalAnimation ConvertToInternal()
     {

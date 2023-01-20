@@ -1,6 +1,6 @@
-﻿using IceBloc.Export;
+﻿using IceBlocLib.Export;
 
-namespace IceBloc.Utility;
+namespace IceBlocLib.Utility;
 
 /// <summary>
 /// Stores all settings as a static object.

@@ -5,10 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	  <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Frostbite\Sounds\" />
+    <Folder Include="Frostbite2\Sounds\" />
+    <Folder Include="Frostbite2013\" />
   </ItemGroup>
 
 </Project>

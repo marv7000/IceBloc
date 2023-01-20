@@ -1,11 +1,10 @@
-﻿using IceBloc.Frostbite.Animation;
-using IceBloc.Utility;
-using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using IceBlocLib.Frostbite;
+using IceBlocLib.Frostbite2.Animations;
+using IceBlocLib.Utility;
 using System.Text;
+using static IceBlocLib.Frostbite2.GenericData;
 
-namespace IceBloc.Frostbite;
+namespace IceBlocLib.Frostbite2;
 
 public class GenericData
 {
@@ -445,5 +444,77 @@ public struct GenericDataField
     {
         string isArray = IsArray ? "[]" : "";
         return $"Field, \"{Name}\", {Type}{isArray}, {Offset}";
+    }
+}
+
+public static class GenericDataExtensions
+{
+    public static GenericDataLayoutEntry ReadGDLE(this BinaryReader r, bool bigEndian, out int fieldSize)
+    {
+        var gdle = new GenericDataLayoutEntry();
+
+        gdle.mMinSlot = r.ReadInt32(bigEndian);
+        gdle.mMaxSlot = r.ReadInt32(bigEndian);
+
+        fieldSize = (gdle.mMinSlot * -1) + gdle.mMaxSlot + 1;
+
+        gdle.mDataSize = r.ReadUInt32(bigEndian);
+        gdle.mAlignment = r.ReadUInt32(bigEndian);
+        gdle.mStringTableOffset = r.ReadUInt32(bigEndian);
+        gdle.mStringTableLength = r.ReadUInt32(bigEndian);
+        gdle.mReordered = r.ReadBoolean();
+        gdle.mNative = r.ReadBoolean();
+        r.ReadBytes(2); // Pad
+        gdle.mHash = r.ReadUInt32(bigEndian);
+
+        // Fill data entries.
+        gdle.mEntries = new GenericDataEntry[fieldSize];
+        for (int j = 0; j < fieldSize; j++)
+        {
+        LABEL_1:
+            GenericDataEntry entry = new();
+            entry.mLayoutHash = r.ReadUInt32(bigEndian);
+            entry.mElementSize = r.ReadUInt32(bigEndian);
+            entry.mOffset = r.ReadUInt32(bigEndian);
+            entry.mName = r.ReadUInt32(bigEndian);
+            entry.mCount = r.ReadUInt16(bigEndian);
+            entry.mFlags = (EFlags)r.ReadUInt16(bigEndian);
+            entry.mElementAlign = r.ReadUInt16(bigEndian);
+            entry.mRLE = r.ReadInt16(bigEndian);
+            entry.mLayout = r.ReadInt64(bigEndian);
+
+            // Sometimes there seems to be a missing entry?
+            // In that case we let everything finish, but then we fix up the alignments.
+            if (entry.mElementSize != 0 && entry.mCount != 0)
+            {
+                gdle.mEntries[j] = entry;
+            }
+            else
+            {
+                fieldSize -= 1;
+                goto LABEL_1;
+            }
+        }
+
+        r.ReadBytes(1); // Pad
+        gdle.mName = r.ReadNullTerminatedString();
+
+        // Fill field names.
+        gdle.mFieldNames = new string[fieldSize];
+        for (int j = 0; j < fieldSize; j++)
+        {
+            gdle.mFieldNames[j] = r.ReadNullTerminatedString();
+        }
+
+        return gdle;
+    }
+    public static void ReadGdDataHeader(this BinaryReader r, bool bigEndian, out uint hash, out uint type, out uint offset)
+    {
+        hash = (uint)r.ReadUInt64(bigEndian);
+        r.ReadBytes(8);
+        type = (uint)r.ReadUInt64(bigEndian);
+        r.ReadBytes(4);
+        offset = r.ReadUInt16(bigEndian);
+        r.ReadBytes(2);
     }
 }

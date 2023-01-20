@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace IceBloc.InternalFormats;
+namespace IceBlocLib.InternalFormats;
 
 /// <summary>
 /// This class holds mesh data being read in and is stored in our own format so we can streamline the exporting process.

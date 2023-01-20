@@ -1,8 +1,9 @@
-﻿using System;
+﻿using IceBlocLib.Frostbite;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite.Animation;
+namespace IceBlocLib.Frostbite2.Animations;
 
 public unsafe class DctAnimDecompressor
 {

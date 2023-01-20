@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace IceBloc.Frostbite.Animation;
+namespace IceBlocLib.Frostbite2.Animations;
 
 public class Animation
 {

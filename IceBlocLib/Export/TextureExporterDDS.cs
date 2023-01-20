@@ -1,9 +1,7 @@
-﻿using IceBloc.InternalFormats;
-using System.IO;
-using System;
+﻿using IceBlocLib.InternalFormats;
 using IceBloc.Utility;
 
-namespace IceBloc.Export;
+namespace IceBlocLib.Export;
 
 public class TextureExporterDDS : ITextureExporter
 {
@@ -20,11 +18,11 @@ public class TextureExporterDDS : ITextureExporter
             InternalTextureFormat.RGBA => DirectXTexUtility.DXGIFormat.R8G8B8A8UNORM,
             InternalTextureFormat.RGB0 => DirectXTexUtility.DXGIFormat.R8G8B8A8UNORM,
             InternalTextureFormat.DXN => DirectXTexUtility.DXGIFormat.BC5UNORM,
-            _=>0
+            _ => 0
         }, false);
 
         DirectXTexUtility.GenerateDDSHeader(metadata, DirectXTexUtility.DDSFlags.NONE, out var header, out var dx10h);
-        
+
         w.Write(DirectXTexUtility.EncodeDDSHeader(header, dx10h));
         w.Write(texture.Data);
     }

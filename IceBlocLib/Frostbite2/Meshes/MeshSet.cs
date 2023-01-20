@@ -1,9 +1,7 @@
-﻿using IceBloc.InternalFormats;
-using IceBloc.Utility;
-using System.Collections.Generic;
-using System.IO;
+﻿using IceBlocLib.InternalFormats;
+using IceBlocLib.Frostbite;
 
-namespace IceBloc.Frostbite.Meshes;
+namespace IceBlocLib.Frostbite2.Meshes;
 
 public class MeshSet
 {
@@ -121,5 +119,106 @@ public class MeshSet
         }
 
         return meshList;
+    }
+}
+
+public static class MeshSetExtensions
+{
+    public static GeometryDeclarationDesc ReadGeometryDeclarationDesc(this BinaryReader reader)
+    {
+        GeometryDeclarationDesc desc = new();
+        for (int i = 0; i < 16; i++)
+        {
+            desc.Elements[i].Usage = (VertexElementUsage)reader.ReadByte();
+            desc.Elements[i].Format = (VertexElementFormat)reader.ReadByte();
+            desc.Elements[i].Offset = reader.ReadByte();
+            desc.Elements[i].StreamIndex = reader.ReadByte();
+        }
+        for (int i = 0; i < 4; i++)
+        {
+            desc.Streams[i].Stride = reader.ReadByte();
+            desc.Streams[i].Classification = (VertexElementClassification)reader.ReadByte();
+        }
+        desc.ElementCount = reader.ReadByte();
+        desc.StreamCount = reader.ReadByte();
+        reader.ReadBytes(2);
+
+        return desc;
+    }
+
+    public static MeshSetLayout ReadMeshSetLayout(this BinaryReader r)
+    {
+        MeshSetLayout msl = new();
+        msl.MeshType = (MeshType)r.ReadUInt32();
+        msl.Flags = r.ReadUInt32();
+        msl.LodCount = r.ReadInt32();
+        msl.TotalSubsetCount = r.ReadInt32();
+        msl.BoundBoxMin = r.ReadVector4();
+        msl.BoundBoxMax = r.ReadVector4();
+        for (int i = 0; i < 5; i++)
+        {
+            msl.LOD[i] = r.ReadRelocPtr<MeshLayout>();
+        }
+        msl.Name = r.ReadRelocPtr<string>();
+        msl.ShortName = r.ReadRelocPtr<string>();
+        msl.NameHash = r.ReadInt32();
+        r.ReadInt32(); // Pad
+
+        return msl;
+    }
+    public static MeshLayout ReadMeshLayout(this BinaryReader r)
+    {
+        MeshLayout ml = new();
+
+        ml.Type = (MeshType)r.ReadUInt32();
+        ml.SubCount = r.ReadInt32();
+        ml.SubSets = r.ReadRelocPtr<MeshSubset>();
+        for (int j = 0; j < 4; j++)
+        {
+            ml.CategorySubsetIndices[j] = r.ReadRelocArray<byte>();
+        }
+        ml.Flags = (MeshLayoutFlags)r.ReadUInt32();
+        ml.IndexBufferFormat = (IndexBufferFormat)r.ReadInt32();
+        ml.IndexDataSize = r.ReadInt32();
+        ml.VertexDataSize = r.ReadInt32();
+        ml.EdgeDataSize = r.ReadInt32();
+        ml.DataChunkID = new Guid(r.ReadBytes(16));
+        ml.AuxVertexIndexDataOffset = r.ReadInt32();
+        ml.EmbeddedEdgeData = r.ReadRelocPtr<byte[]>();
+        ml.ShaderDebugName = r.ReadRelocPtr<string>();
+        ml.Name = r.ReadRelocPtr<string>();
+        ml.ShortName = r.ReadRelocPtr<string>();
+        ml.NameHash = r.ReadInt32();
+        ml.Data = r.ReadRelocPtr<int>();
+        ml.u17 = r.ReadInt32();
+        ml.u18 = r.ReadInt64();
+        ml.u19 = r.ReadInt64();
+        ml.SubsetPartIndices = r.ReadRelocPtr<short>();
+
+        return ml;
+    }
+    public static MeshSubset ReadMeshSubset(this BinaryReader r)
+    {
+        MeshSubset subset = new();
+
+        subset.GeometryDeclarations = r.ReadRelocPtr<int>();
+        subset.MaterialName = r.ReadRelocPtr<string>();
+        subset.MaterialIndex = r.ReadInt32();
+        subset.PrimitiveCount = r.ReadInt32();
+        subset.StartIndex = r.ReadInt32();
+        subset.VertexOffset = r.ReadInt32();
+        subset.VertexCount = r.ReadInt32();
+        subset.VertexStride = r.ReadByte();
+        subset.PrimitiveType = (PrimitiveType)r.ReadByte();
+        subset.BonesPerVertex = r.ReadByte();
+        subset.BoneCount = r.ReadByte();
+        subset.BoneIndices = r.ReadRelocPtr<short>();
+        subset.GeoDecls = r.ReadGeometryDeclarationDesc();
+        for (int i = 0; i < 6; i++)
+        {
+            subset.TexCoordRatios[i] = r.ReadSingle();
+        }
+
+        return subset;
     }
 }

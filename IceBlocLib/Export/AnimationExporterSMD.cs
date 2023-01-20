@@ -1,11 +1,11 @@
-﻿using IceBloc.InternalFormats;
+﻿using IceBlocLib.InternalFormats;
 
-namespace IceBloc.Export;
+namespace IceBlocLib.Export;
 
 public class AnimationExporterSMD : IAnimationExporter
 {
     public void Export(InternalAnimation mesh, InternalSkeleton skeleton, string path)
     {
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 }

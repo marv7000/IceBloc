@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace IceBloc.Frostbite;
+namespace IceBlocLib.Frostbite2;
 
 public struct GeometryDeclarationDesc
 {
@@ -24,7 +24,7 @@ public struct GeometryDeclarationDesc
             if (Elements[i].Usage == usage)
                 return Elements[i];
         }
-        return default(Element);
+        return default;
     }
 
     public struct Element
