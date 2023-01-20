@@ -6,14 +6,18 @@ Supported games:
 - Battlefield Hardline
 - Battlefield 4
 
-Supported asset types:
+Supported RES types:
 | Type | Formats |
 | --- | --- |
-| Mesh | .obj .smd .semodel .atf |
-| Texture | .dds |
-| Animation | .smd .seanim .atf |
-| Sound | .wav  .flac |
+| MeshSet | .obj .smd .semodel .atf |
+| DxTexture | .dds |
 | Metadata (EBX) | .txt |
+
+Supported EBX types:
+| Type | Formats |
+| --- | --- |
+| SoundWave | .wav  .flac |
+| Skeleton | .smd .atf |
 
 # Usage
 - Open the program and click the Load Game button on the bottom right.
