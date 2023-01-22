@@ -1,4 +1,5 @@
-﻿using IceBlocLib.Frostbite;
+﻿using IceBlocLib.Export;
+using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2.Meshes;
 using IceBlocLib.Frostbite2.Misc;
 using IceBlocLib.Frostbite2.Textures;
@@ -55,17 +56,16 @@ public class AssetListItem
             {
                 var dbx = new Dbx(stream);
 
+                dbx.Dump(path + ".ebx");
                 if (Type == "SkeletonAsset")
                     SkeletonAsset.ConvertToInternal(in dbx);
                 else if (Type == "SoundWaveAsset")
-                    SoundWaveAsset.ConvertToInternal(in dbx);
-                else if (Type == "SkinnedMeshAsset")
                 {
-                    if (Settings.ExporterType == Exporter.GUI)
+                    var s = SoundWaveAsset.ConvertToInternal(in dbx);
+                    for (int i = 0; i < s.Count; i++)
                     {
-                        
+                        new SoundExporterWAV().Export(s[i], path + $"_var{i}");
                     }
-                    SkinnedMeshAsset.ConvertToInternal(in dbx);
                 }
                 else
                 {
@@ -84,7 +84,7 @@ public class AssetListItem
                     List<InternalMesh> output = MeshSet.ConvertToInternal(stream);
                     for (int i = 0; i < output.Count; i++)
                     {
-                        Settings.CurrentModelExporter.Export(output[i], path + i.ToString());
+                        Settings.CurrentModelExporter.Export(output[i], path);
                     }
                 }
             }

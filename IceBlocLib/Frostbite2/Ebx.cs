@@ -185,6 +185,13 @@ public class Complex
             return null;
         }
     }
+    public Field this[int index]
+    {
+        get
+        {
+            return Fields[index];
+        }
+    }
 
     public object Get(string name)
     {
@@ -240,14 +247,14 @@ public class Field
             return null;
         }
     }
-    public Complex this[int index]
+    public Field this[int index]
     {
         get
         {
             var t = Desc.GetFieldType();
             if (t == FieldType.Array)
             {
-                return (Complex)(Value as Complex).Fields[index].Value;
+                return (Value as Complex).Fields[index];
             }
             return null;
         }
@@ -276,7 +283,7 @@ public class Field
         else if ((uint)Value != 0)
         {
             foreach (var instance in dbx.Instances)
-                if (instance.Key == dbx.InternalGuids[(int)Value - 1])
+                if (instance.Key == dbx.InternalGuids[(int)(uint)Value - 1])
                     return instance.Value;
         }
         else

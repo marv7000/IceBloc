@@ -248,7 +248,7 @@ public class IO
                                             ChunkTranslations[chunkGuid] = (e, isChunk, isCas);
                                         }
                                     }
-                                    if ((chunkGuid.ToByteArray()[3] & 1) == 1)
+                                    if ((chunkGuid.ToByteArray()[15] & 1) == 1)
                                     {
                                         ActiveCatalog.Entries[Convert.ToBase64String(chunkSha.Data as byte[])].IsCompressed = true;
                                     }

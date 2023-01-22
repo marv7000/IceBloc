@@ -2,6 +2,21 @@
 
 namespace IceBlocLib.Frostbite;
 
+enum SndPlayerCodec : byte
+{
+    XAS_INT = 0x0,
+    EALAYER3_INT = 0x1,
+    SIGN16BIG_INT = 0x2,
+    EAXMA = 0x3,
+    XAS1_INT = 0x4,
+    EALAYER31_INT = 0x5,
+    EALAYER32PCM_INT = 0x6,
+    EALAYER32SPIKE_INT = 0x7,
+    GCADPCM = 0x8,
+    EASPEEX = 0x9,
+    MAX = 0xA,
+};
+
 public enum DbObjectType : byte
 {
     Eoo = 0x0,
