@@ -62,10 +62,13 @@ public class AssetListItem
                 else if (Type == "SoundWaveAsset")
                 {
                     var s = SoundWaveAsset.ConvertToInternal(in dbx);
-                    for (int i = 0; i < s.Count; i++)
+                    if (s.Count > 1)
                     {
-                        new SoundExporterWAV().Export(s[i], path + $"_var{i}");
+                        for (int i = 0; i < s.Count; i++)
+                            new SoundExporterWAV().Export(s[i], path + $"_var{i}");
                     }
+                    else
+                        new SoundExporterWAV().Export(s[0], path);
                 }
                 else
                 {
