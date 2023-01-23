@@ -3,7 +3,7 @@
 public class InternalSound
 {
     public uint LoopStart;
-    public uint LoopEnd;
+    public uint SampleCount;
     public ushort SampleRate;
     public int ChannelCount;
     public double Length;

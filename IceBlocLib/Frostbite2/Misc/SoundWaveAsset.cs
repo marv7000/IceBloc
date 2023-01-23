@@ -8,34 +8,49 @@ public class SoundWaveAsset
     public static List<InternalSound> ConvertToInternal(in Dbx dbx)
     {
         // Initialize our result and load the sound chunk from EBX.
-
         List<InternalSound> sounds = new();
-        Guid chunkGuid = (Guid)dbx.Prim["$"]["Chunks"][0]["ChunkId"].Value;
-        using var stream = new MemoryStream(IO.GetChunk(chunkGuid));
-        using var r = new BinaryReader(stream);
+
+        // Get the amount of Chunks in the EBX.
+        int chunkCount = (dbx.Prim["$"]["Chunks"].Value as Complex).Fields.Count;
+
+        // For each chunk in the EBX, append the ChunkId to the list of IDs.
+        List<Guid> chunkGuid = new List<Guid>();
+        for (int i = 0; i < chunkCount; i++)
+            chunkGuid.Add((Guid)dbx.Prim["$"]["Chunks"][i]["ChunkId"].Value);
 
         var variations = dbx.Prim["Variations"];
         var variationCount = (variations.Value as Complex).Fields.Count;
+
+        // For every sound variation in the EBX.
         for (int x = 0; x < variationCount; x++)
         {
-            List<short> soundBuffer = new List<short>();
-            float start = 0.0f;
-            float loopDuration = 0.0f;
+            // Initialize variables
+            var samples = new List<short>();
+            var internalSound = new InternalSound();
+            var start = 0f;
 
             var variation = variations[x].Link(in dbx);
-            var segments = (variation["Segments"].Value as Complex).Fields;
+            var chunkIndex = ((int)(sbyte)variation["ChunkIndex"].Value);
 
-            InternalSound internalSound = new();
-            for (int i = 0; i < segments.Count; i++)
+            using var stream = new MemoryStream(IO.GetChunk(chunkGuid[chunkIndex]));
+            using var r = new BinaryReader(stream);
+
+
+            // Get the first and last loop segment index
+            var segments = (variation["Segments"].Value as Complex).Fields;
+            var firstLoopSegmentIndex = ((uint)(sbyte)variation["FirstLoopSegmentIndex"].Value);
+            var lastLoopSegmentIndex = ((uint)(sbyte)variation["LastLoopSegmentIndex"].Value);
+
+            // Patch together all segments.
+            for (int i = 0; i <= lastLoopSegmentIndex - firstLoopSegmentIndex; i++)
             {
-                var firstLoopSegmentIndex = (uint)(sbyte)variation["FirstLoopSegmentIndex"].Value -1;
-                var lastLoopSegmentIndex = (uint)(sbyte)variation["LastLoopSegmentIndex"].Value -1;
                 var segment = segments[(int)firstLoopSegmentIndex + i];
                 var segmentLength = (float)segments[(int)firstLoopSegmentIndex + i]["SegmentLength"].Value;
                 var samplesOffset = (uint)segments[(int)firstLoopSegmentIndex + i]["SamplesOffset"].Value;
 
                 r.BaseStream.Position = samplesOffset;
-                if (r.ReadUInt16() != 0x48) return new List<InternalSound>();
+                if (r.ReadUInt16() != 0x48) 
+                    return new List<InternalSound>();
 
                 short unk1 = r.ReadInt16(true);
                 SndPlayerCodec playerCodec = (SndPlayerCodec)(r.ReadByte() & 0x0F);
@@ -47,8 +62,8 @@ public class SoundWaveAsset
 
                 if (i == firstLoopSegmentIndex && segments.Count > 1)
                 {
-                    start = soundBuffer.Count / channelCount / (float)sampleRate;
-                    internalSound.LoopStart = (uint)soundBuffer.Count;
+                    start = samples.Count / channelCount / (float)sampleRate;
+                    internalSound.LoopStart = (uint)samples.Count;
                 }
 
                 r.BaseStream.Position = samplesOffset;
@@ -59,26 +74,26 @@ public class SoundWaveAsset
                     case SndPlayerCodec.SIGN16BIG_INT:
                         {
                             short[] data = DecodeSign16Big(buffer);
-                            soundBuffer.AddRange(data);
+                            samples.AddRange(data);
                             totalSamples = (uint)data.Length;
                             break;
                         }
                     case SndPlayerCodec.XAS1_INT:
                         {
                             short[] data = DecodeXas1(buffer);
-                            soundBuffer.AddRange(data);
+                            samples.AddRange(data);
                             totalSamples = (uint)data.Length;
                             break;
                         }
                     case SndPlayerCodec.EALAYER31_INT:
                     case SndPlayerCodec.EALAYER32PCM_INT:
-                        throw new NotSupportedException();
+                        throw new NotSupportedException("SoundWaveAsset: Unsupported type EALayer3!");
                 }
 
-                if (i == (sbyte)variation["LastLoopSegmentIndex"].Value && segments.Count > 1)
+                if (i == lastLoopSegmentIndex && segments.Count > 1)
                 {
-                    loopDuration = ((soundBuffer.Count / channelCount) / (float)sampleRate) - start;
-                    internalSound.LoopEnd = (uint)soundBuffer.Count;
+                    float loopDuration = ((samples.Count / channelCount) / (float)sampleRate) - start;
+                    internalSound.SampleCount = (uint)samples.Count;
                 }
 
                 internalSound.SampleRate = sampleRate;
@@ -86,11 +101,11 @@ public class SoundWaveAsset
 
                 if (segmentLength == 0.0f)
                 {
-                    segmentLength = (soundBuffer.Count / channelCount) / (float)sampleRate;
+                    segmentLength = (samples.Count / channelCount) / (float)sampleRate;
                 }
 
-                internalSound.Length = (soundBuffer.Count / internalSound.ChannelCount) / (double)internalSound.SampleRate;
-                internalSound.Data = soundBuffer.ToArray();
+                internalSound.Length = (samples.Count / internalSound.ChannelCount) / (double)internalSound.SampleRate;
+                internalSound.Data = samples.ToArray();
             }
 
             sounds.Add(internalSound);
