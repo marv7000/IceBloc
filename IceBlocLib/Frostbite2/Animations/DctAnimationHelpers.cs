@@ -25,7 +25,7 @@ public unsafe class DctAnimDecompressor
         mDctAnim = dctAnim;
         mDofMap = dofMap;
 
-        Memory<byte> dctAnimData = dctAnim.mData;
+        Memory<byte> dctAnimData = dctAnim.Data;
         var dctAnimDataPtr = dctAnimData.Pin();
 
         mCodec = new FIXED_Decompressor((byte*)dctAnimDataPtr.Pointer, TargetEndian.TARGET_ENDIAN_BIG);

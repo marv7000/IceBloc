@@ -1,5 +1,4 @@
 ﻿using IceBlocLib.InternalFormats;
-using System.IO;
 using System.Numerics;
 
 namespace IceBlocLib.Frostbite2.Animations;
@@ -21,6 +20,7 @@ public class RawAnimation : Animation
 
         var data = gd.ReadValues(r, baseOffset, type, false);
 
+        Name = (string)data["__name"];
         NumKeys = (int)data["NumKeys"];
         FloatCount = (int)data["FloatCount"];
         Vec3Count = (int)data["Vec3Count"];
@@ -45,7 +45,7 @@ public class RawAnimation : Animation
     public InternalAnimation ConvertToInternal()
     {
         InternalAnimation ret = new InternalAnimation();
-
+        ret.Name = Name;
         ret.Frames = new InternalAnimation.Frame[NumKeys];
 
         for (int i = 0; i < NumKeys; i++)

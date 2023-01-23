@@ -1,5 +1,6 @@
 ﻿using IceBlocLib.Export;
 using IceBlocLib.Frostbite;
+using IceBlocLib.Frostbite2;
 using IceBlocLib.Frostbite2.Meshes;
 using IceBlocLib.Frostbite2.Misc;
 using IceBlocLib.Frostbite2.Textures;
@@ -56,19 +57,29 @@ public class AssetListItem
             {
                 var dbx = new Dbx(stream);
 
-                dbx.Dump(path + ".ebx");
                 if (Type == "SkeletonAsset")
-                    SkeletonAsset.ConvertToInternal(in dbx);
+                {
+                    var s = SkeletonAsset.ConvertToInternal(in dbx);
+                    Settings.CurrentSkeletonExporter.Export(s, path);
+                }
                 else if (Type == "SoundWaveAsset")
                 {
                     var s = SoundWaveAsset.ConvertToInternal(in dbx);
                     if (s.Count > 1)
                     {
                         for (int i = 0; i < s.Count; i++)
-                            new SoundExporterWAV().Export(s[i], path + $"_var{i}");
+                            Settings.CurrentSoundExporter.Export(s[i], path + $"_var{i}");
                     }
                     else
-                        new SoundExporterWAV().Export(s[0], path);
+                        Settings.CurrentSoundExporter.Export(s[0], path);
+                }
+                else if (Type == "AntPackageAsset")
+                {
+                    List<InternalAnimation> s = AntPackageAsset.ConvertToInternal(in dbx);
+                    for (int i = 0; i < s.Count; i++)
+                    {
+                        Settings.CurrentAnimationExporter.Export(s[i], path);
+                    }
                 }
                 else
                 {
@@ -82,12 +93,12 @@ public class AssetListItem
                     InternalTexture output = DxTexture.ConvertToInternal(stream);
                     Settings.CurrentTextureExporter.Export(output, path);
                 }
-                if (Type == "MeshSet")
+                else if (Type == "MeshSet")
                 {
                     List<InternalMesh> output = MeshSet.ConvertToInternal(stream);
                     for (int i = 0; i < output.Count; i++)
                     {
-                        Settings.CurrentModelExporter.Export(output[i], path);
+                        Settings.CurrentModelExporter.Export(output[i], path + $"_var{i}");
                     }
                 }
             }

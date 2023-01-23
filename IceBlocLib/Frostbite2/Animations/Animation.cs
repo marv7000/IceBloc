@@ -5,6 +5,8 @@ namespace IceBlocLib.Frostbite2.Animations;
 
 public class Animation
 {
+    public string Name;
+    
     public int CodecType;
     public int AnimId;
     public float TrimOffset;
@@ -12,10 +14,7 @@ public class Animation
     public bool Additive;
     public Guid ChannelToDofAsset;
 
-    public Animation()
-    {
-
-    }
+    public Animation() { }
 
     public Animation(Stream stream, ref GenericData gd, bool bigEndian)
     {
@@ -24,6 +23,7 @@ public class Animation
 
         var baseData = gd.ReadValues(r, base_baseOffset, base_type, false);
 
+        Name = (string)baseData["__name"];
         CodecType = (int)baseData["CodecType"];
         AnimId = (int)baseData["AnimId"];
         TrimOffset = (float)baseData["TrimOffset"];

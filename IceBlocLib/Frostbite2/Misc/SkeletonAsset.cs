@@ -13,18 +13,22 @@ public class SkeletonAsset
         var boneNames = new List<string>();
         var boneHierarchy = new List<int>();
         var modelPose = new List<Transform>();
-        var modelRotations = new List<Vector3>();
 
-        Field b = dbx.Prim["BoneNames"];
-        foreach (var name in (b.Value as Frostbite.Complex).Fields)
+        string name = (string)dbx.Prim["$"]["$"]["Name"].Value;
+
+
+        var b = dbx.Prim["BoneNames"];
+        foreach (var boneName in (b.Value as Frostbite.Complex).Fields)
         {
-            boneNames.Add((string)name.Value);
+            boneNames.Add((string)boneName.Value);
         }
+
         b = dbx.Prim["Hierarchy"];
         foreach (var index in (b.Value as Frostbite.Complex).Fields)
         {
             boneHierarchy.Add((int)index.Value);
         }
+
         for (int i = 0; i < (b.Value as Frostbite.Complex).Fields.Count; i++)
         {
             Vector3 right = new(
@@ -56,9 +60,8 @@ public class SkeletonAsset
             var transform = new Transform(trans, Quaternion.CreateFromRotationMatrix(rotation), Vector3.One);
 
             modelPose.Add(transform);
-            modelRotations.Add(transform.EulerAngles);
         }
 
-        return new InternalSkeleton(boneNames, boneHierarchy, modelPose);
+        return new InternalSkeleton(name, boneNames, boneHierarchy, modelPose);
     }
 }

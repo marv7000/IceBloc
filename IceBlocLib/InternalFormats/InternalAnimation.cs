@@ -4,7 +4,8 @@ namespace IceBlocLib.InternalFormats;
 
 public sealed class InternalAnimation
 {
-    public Frame[] Frames;
+    public string Name = "";
+    public Frame[] Frames = new Frame[0];
 
     public struct Frame
     {

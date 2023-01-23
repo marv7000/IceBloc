@@ -27,7 +27,6 @@ public partial class MainWindow : Window
     {
         CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
         Instance = this;
-        Settings.ExporterType = Exporter.GUI;
         InitializeComponent();
     }
 
@@ -103,19 +102,7 @@ public partial class MainWindow : Window
         WriteUIOutput(message + "\n");
     }
 
-    private void MeshFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (MeshFormatBox.SelectedIndex == 0)
-            Settings.CurrentModelExporter = new ModelExporterOBJ(); // OBJ
-        if (MeshFormatBox.SelectedIndex == 1)
-            Settings.CurrentModelExporter = new ModelExporterSMD(); // SMD
-    }
-
-    private void TextureFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (TextureFormatBox.SelectedIndex == 0)
-            Settings.CurrentTextureExporter = new TextureExporterDDS();
-    }
+    
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         var output = new Dictionary<(string, InternalAssetType), AssetListItem>();
@@ -155,6 +142,34 @@ public partial class MainWindow : Window
     {
         Settings.LoadMode = (AssetLoadMode)LoadTypeFormatBox.SelectedIndex;
     }
+
+    private void SkeletonFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MeshFormatBox.SelectedIndex == 0)
+            Settings.CurrentSkeletonExporter = new SkeletonExporterATF();
+    }
+    private void MeshFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (MeshFormatBox.SelectedIndex == 0)
+            Settings.CurrentModelExporter = new ModelExporterOBJ(); // OBJ
+        if (MeshFormatBox.SelectedIndex == 1)
+            Settings.CurrentModelExporter = new ModelExporterSMD(); // SMD
+        if (MeshFormatBox.SelectedIndex == 2)
+            Settings.CurrentModelExporter = new ModelExporterATF(); // ATF
+    }
+
+    private void TextureFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TextureFormatBox.SelectedIndex == 0)
+            Settings.CurrentTextureExporter = new TextureExporterDDS();
+    }
+
+    private void AnimationFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (AnimationFormatBox.SelectedIndex == 0)
+            Settings.CurrentAnimationExporter = new AnimationExporterATF();
+    }
 }
 
 #endregion
+

@@ -7,7 +7,7 @@ namespace IceBlocLib.Frostbite2.Animations;
 public class DctAnimation : Animation
 {
     public ushort[] KeyTimes;
-    public byte[] mData;
+    public byte[] Data;
     public ushort NumKeys;
     public ushort NumVec3;
     public ushort NumFloat;
@@ -30,8 +30,9 @@ public class DctAnimation : Animation
 
         var data = gd.ReadValues(r, baseOffset, type, false);
 
+        Name = (string)data["__name"];
         KeyTimes = data["KeyTimes"] as ushort[];
-        mData = data["Data"] as byte[];
+        Data = data["Data"] as byte[];
         NumKeys = (ushort)data["NumKeys"];
         NumVec3 = (ushort)data["NumVec3"];
         NumFloat = (ushort)data["NumFloat"];

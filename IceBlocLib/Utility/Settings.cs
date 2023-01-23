@@ -10,14 +10,16 @@ public static class Settings
     public static Game CurrentGame = Game.UnknownGame;
     public static IModelExporter CurrentModelExporter = new ModelExporterOBJ();
     public static ITextureExporter CurrentTextureExporter = new TextureExporterDDS();
-    public static IAnimationExporter CurrentAnimationExporter = new AnimationExporterSMD();
+    public static IAnimationExporter CurrentAnimationExporter = new AnimationExporterATF();
+    public static ISkeletonExporter CurrentSkeletonExporter = new SkeletonExporterATF();
+    public static ISoundExporter CurrentSoundExporter = new SoundExporterWAV();
+
     public static bool Debug = false;
     public static string GamePath = "";
     public static bool ExportRaw = false;
     public static bool ExportConverted = true;
     public static AssetLoadMode LoadMode = AssetLoadMode.All;
     public static double Progress = 0.0;
-    public static Exporter ExporterType = Exporter.CLI;
 }
 
 public enum AssetLoadMode
@@ -34,10 +36,4 @@ public enum Game
     Battlefield4,
     BattlefieldHardline,
 
-}
-
-public enum Exporter
-{
-    GUI,
-    CLI
 }

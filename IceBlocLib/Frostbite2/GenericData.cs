@@ -9,7 +9,8 @@ namespace IceBlocLib.Frostbite2;
 public class GenericData
 {
     public Dictionary<uint, GenericDataClass> Classes = new();
-    public Dictionary<Memory<byte>, bool> Data = new();
+    // True Value means that the block of memory is BigEndian.
+    public List<(Memory<byte> Bytes, bool BigEndian)> Data = new();
 
     /// <summary>
     /// Reads a GD bank from a stream.
@@ -143,7 +144,7 @@ public class GenericData
             r.BaseStream.Position = basePos + 16 + 32 + Classes[dataBlockClassType].Size;
             string fileName = r.ReadNullTerminatedString();
 
-            Data.Add(data, bigEndian);
+            Data.Add((data, bigEndian));
 
             if (exportData)
             {

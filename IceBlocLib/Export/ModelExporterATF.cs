@@ -15,8 +15,8 @@ public class ModelExporterATF : IModelExporter
         using var w = new StreamWriter(File.OpenWrite(path + ".atf"));
 
         // Meta data.
-        w.WriteLine("META,Exporter,IceBloc");
-        w.WriteLine("TYPE,MESH_RIGID");
+        w.WriteLine("// Created by IceBloc");
+        w.WriteLine("TYPE,MESH");
 
         // Write object name.
         w.WriteLine($"NAME,{mesh.Name}");
@@ -47,8 +47,8 @@ public class ModelExporterATF : IModelExporter
         using var w = new StreamWriter(File.OpenWrite(path + ".atf"));
 
         // Meta data.
-        w.WriteLine("META,Exporter,IceBloc");
-        w.WriteLine("TYPE,MESH_SKINNED");
+        w.WriteLine("// Created by IceBloc");
+        w.WriteLine("TYPE,MESH");
 
         // Write object name.
         w.WriteLine($"NAME,{mesh.Name}");
@@ -68,7 +68,7 @@ public class ModelExporterATF : IModelExporter
             // Write the bone ID data.
             w.Write($"{mesh.Vertices[i].BoneIndexA},{mesh.Vertices[i].BoneIndexB},{mesh.Vertices[i].BoneIndexC},{mesh.Vertices[i].BoneIndexD},");
             // Write the bone weight data.
-            w.Write($"{mesh.Vertices[i].TexCoordX},{mesh.Vertices[i].TexCoordY}\n");
+            w.Write($"{mesh.Vertices[i].BoneWeightA},{mesh.Vertices[i].BoneWeightB},{mesh.Vertices[i].BoneWeightC},{mesh.Vertices[i].BoneWeightD}\n");
         }
         // Loop through each face index.
         for (int i = 0; i < mesh.Faces.Count; i++)
