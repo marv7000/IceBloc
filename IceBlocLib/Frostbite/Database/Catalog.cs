@@ -6,7 +6,6 @@ namespace IceBlocLib.Frostbite.Database;
 
 public class Catalog : IDisposable
 {
-    public byte[] Key;
     public Dictionary<string, CatalogEntry> Entries = new();
     public Dictionary<int, BinaryReader> CasStreams = new();
 
@@ -58,19 +57,31 @@ public class Catalog : IDisposable
         switch (Settings.CurrentGame)
         {
             case Game.Battlefield3:
-                if (type == InternalAssetType.RES)
-                    compressed = true;
-                else if (type == InternalAssetType.EBX)
-                    compressed = false;
-                else if (type == InternalAssetType.Chunk)
-                    compressed = entry.IsCompressed;
-                break;
-        }
-
-        switch (Settings.CurrentGame)
-        {
-            case Game.Battlefield3:
                 {
+                    if (type == InternalAssetType.RES)
+                        compressed = true;
+                    else if (type == InternalAssetType.EBX)
+                        compressed = false;
+                    else if (type == InternalAssetType.Chunk)
+                        compressed = entry.IsCompressed;
+
+                    BinaryReader r = CasStreams[entry.CasFileIndex];
+                    r.BaseStream.Position = entry.Offset;
+
+                    if (compressed)
+                        return ZLibDecompress(r, entry.DataSize);
+                    else
+                        return r.ReadBytes(entry.DataSize);
+                }
+            case Game.Battlefield4:
+                {
+                    if (type == InternalAssetType.RES)
+                        compressed = true;
+                    else if (type == InternalAssetType.EBX)
+                        compressed = false;
+                    else if (type == InternalAssetType.Chunk)
+                        compressed = entry.IsCompressed;
+
                     BinaryReader r = CasStreams[entry.CasFileIndex];
                     r.BaseStream.Position = entry.Offset;
 

@@ -22,6 +22,8 @@ public class AntPackageAsset
                 result.Add(frameAnim.ConvertToInternal());
             else if (entry is RawAnimation rawAnim)
                 result.Add(rawAnim.ConvertToInternal());
+            else if (entry is DctAnimation dctAnim)
+                result.Add(dctAnim.ConvertToInternal());
         }
         return result;
     }

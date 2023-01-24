@@ -35,5 +35,7 @@ public enum Game
     Battlefield3,
     Battlefield4,
     BattlefieldHardline,
-
+    Battlefield1,
+    Battlefield5,
+    Battlefield2042
 }

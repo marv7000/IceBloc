@@ -3,7 +3,6 @@ using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2;
 using IceBlocLib.Frostbite2.Meshes;
 using IceBlocLib.Frostbite2.Misc;
-using IceBlocLib.Frostbite2.Textures;
 using IceBlocLib.InternalFormats;
 
 namespace IceBlocLib.Utility;
@@ -86,11 +85,20 @@ public class AssetListItem
                     dbx.Dump(path + ".ebx");
                 }
             }
+
+            // RES Export
             else if (AssetType == InternalAssetType.RES)
             {
                 if (Type == "DxTexture")
                 {
-                    InternalTexture output = DxTexture.ConvertToInternal(stream);
+                    InternalTexture output = new();
+                    switch (Settings.CurrentGame)
+                    {
+                        case Game.Battlefield3:
+                            output = Frostbite2.Textures.DxTexture.ConvertToInternal(stream); break;
+                        case Game.Battlefield4:
+                            output = Frostbite2013.Textures.DxTexture.ConvertToInternal(stream); break;
+                    }
                     Settings.CurrentTextureExporter.Export(output, path);
                 }
                 else if (Type == "MeshSet")

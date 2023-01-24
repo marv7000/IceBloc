@@ -67,6 +67,8 @@ public class DctAnimation : Animation
     {
         InternalAnimation ret = new();
 
+        ret.Name = Name;
+
         //var a = sizeof(FIXED_Header);
 
         //var decompressor = new DctAnimDecompressor(this, new ChannelDofMap(), new ScratchPad());

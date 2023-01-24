@@ -185,7 +185,7 @@ public class IO
 
             var item = new AssetListItem(idString, type.ToString(), InternalAssetType.EBX, size, ExportStatus.Ready, sha);
 
-            // Check if we already have an asset with that name (Some RES are defined multiple times).
+            // Check if we already have an asset with that name (Some EBX are defined multiple times).
             if (!Assets.ContainsKey((idString, InternalAssetType.EBX)))
                 Assets.Add((idString, InternalAssetType.EBX), item);
         }

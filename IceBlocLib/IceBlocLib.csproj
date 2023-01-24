@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <Folder Include="Frostbite2\Sounds\" />
-    <Folder Include="Frostbite2013\" />
   </ItemGroup>
 
 </Project>

@@ -1,11 +1,11 @@
 ﻿using IceBlocLib.Frostbite;
 using IceBlocLib.InternalFormats;
 using System.Text;
-namespace IceBlocLib.Frostbite2.Textures;
+namespace IceBlocLib.Frostbite2013.Textures;
 
 public class DxTexture
 {
-    public uint Version;
+    public uint[] MipOffsets = new uint[2];
     public TextureType TexType;
     public TextureFormat TexFormat;
     public uint Flags;
@@ -23,7 +23,7 @@ public class DxTexture
 
     public DxTexture(BinaryReader r)
     {
-        Version = r.ReadUInt32();
+        MipOffsets = r.ReadUInt32Array(2, false);
         TexType = (TextureType)r.ReadInt32();
         TexFormat = (TextureFormat)r.ReadUInt32();
         Flags = r.ReadUInt32();
