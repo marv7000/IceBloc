@@ -1,7 +1,7 @@
 ﻿using IceBlocLib.InternalFormats;
 using System.Numerics;
 
-namespace IceBlocLib.Frostbite2.Animations;
+namespace IceBlocLib.Frostbite2.Animations.Base;
 
 public class RawAnimation : Animation
 {
@@ -40,6 +40,8 @@ public class RawAnimation : Animation
         TrimOffset = (float)baseData["TrimOffset"];
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
+        ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
+        IndexData = GetChannelToDofAsset(ChannelToDofAsset);
     }
 
     public InternalAnimation ConvertToInternal()
@@ -67,6 +69,7 @@ public class RawAnimation : Animation
             ret.Frames[i].FrameIndex = KeyTimes[i];
             ret.Frames[i].Positions = positions;
             ret.Frames[i].Rotations = rotations;
+            ret.Indices = IndexData;
         }
 
         return ret;

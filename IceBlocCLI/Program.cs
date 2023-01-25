@@ -131,8 +131,35 @@ public class Program
             r.ReadGdDataHeader(v.BigEndian, out uint hash, out uint type, out uint baseOffset);
             var data = gd.ReadValues(r, baseOffset, type, v.BigEndian);
 
+
+            Dictionary<string, object> baseData = new();
+            if ((long)data["__base"] != 0)
+            {
+
+                r.BaseStream.Position = (long)data["__base"];
+                r.ReadGdDataHeader(v.BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
+                baseData = gd.ReadValues(r, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
+            }
+
             w.WriteLine($"{gd.Classes[type].Name}, {(v.BigEndian ? "BE" : "LE")}:");
             foreach (var d in data)
+            {
+                w.Write($"    {(d.Value is null ? "<Null>" : d.Value.GetType().Name)} {d.Key}");
+                if (d.Value is Array)
+                {
+                    w.Write($"[{(d.Value as Array).Length}] = ");
+                    foreach (object val in (d.Value as Array))
+                    {
+                        w.Write($"{val}, ");
+                    }
+                    w.WriteLine("");
+                }
+                else
+                {
+                    w.WriteLine(" = " + (d.Value is null ? "<Null>" : d.Value.ToString()));
+                }
+            }
+            foreach (var d in baseData)
             {
                 w.Write($"    {(d.Value is null ? "<Null>" : d.Value.GetType().Name)} {d.Key}");
                 if (d.Value is Array)

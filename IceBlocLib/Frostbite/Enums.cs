@@ -2,6 +2,14 @@
 
 namespace IceBlocLib.Frostbite;
 
+public enum StorageType
+{
+    READ = 0x0,
+    OVERWRITE = 0x1,
+    APPEND = 0x2,
+    INVALID = 0x3,
+}
+
 enum SndPlayerCodec : byte
 {
     XAS_INT = 0x0,

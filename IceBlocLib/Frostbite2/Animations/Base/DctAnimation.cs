@@ -1,20 +1,19 @@
-﻿using IceBlocLib.InternalFormats;
-using System;
-using System.IO;
+﻿using IceBlocLib.Frostbite2.Animations.DCT;
+using IceBlocLib.InternalFormats;
+using System.Text;
 
-namespace IceBlocLib.Frostbite2.Animations;
+namespace IceBlocLib.Frostbite2.Animations.Base;
 
 public class DctAnimation : Animation
 {
-    public ushort[] KeyTimes;
-    public byte[] Data;
+    public ushort[] KeyTimes = new ushort[0];
+    public byte[] Data = new byte[0];
     public ushort NumKeys;
     public ushort NumVec3;
     public ushort NumFloat;
     public int DataSize;
     public bool Cycle;
 
-    // EA::Ant::Anim::DCT::FIXED_Header
     public ushort NumFrames;
     public ushort NumQuats;
     public ushort NumFloatVec;
@@ -46,6 +45,7 @@ public class DctAnimation : Animation
         CatchAllBitCount = (byte)data["CatchAllBitCount"];
 
         byte[] dofTableDescBytes = data["DofTableDescBytes"] as byte[];
+        // Bitfield at offset 4, needs to be bitshifted right when read.
         for (int i = 0; i < dofTableDescBytes.Length; i++) { dofTableDescBytes[i] >>= 4; }
         NumSubblocks = dofTableDescBytes;
 
@@ -61,6 +61,7 @@ public class DctAnimation : Animation
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
+        IndexData = GetChannelToDofAsset(ChannelToDofAsset);
     }
 
     public unsafe InternalAnimation ConvertToInternal()
@@ -69,11 +70,10 @@ public class DctAnimation : Animation
 
         ret.Name = Name;
 
-        //var a = sizeof(FIXED_Header);
+        var a = sizeof(FIXED_Header);
 
-        //var decompressor = new DctAnimDecompressor(this, new ChannelDofMap(), new ScratchPad());
-
+        // TODO ChannelToDofAsset
+        var decompressor = new DCTAnimDecompressor(this, null);
         return ret;
     }
-
 }

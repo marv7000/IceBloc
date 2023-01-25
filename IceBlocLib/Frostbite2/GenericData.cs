@@ -1,8 +1,7 @@
 ﻿using IceBlocLib.Frostbite;
-using IceBlocLib.Frostbite2.Animations;
+using IceBlocLib.Frostbite2.Animations.Base;
 using IceBlocLib.Utility;
 using System.Text;
-using static IceBlocLib.Frostbite2.GenericData;
 
 namespace IceBlocLib.Frostbite2;
 
@@ -23,21 +22,14 @@ public class GenericData
         AntPackagingType packageType = (AntPackagingType)r.ReadInt32(true);
         int subDataCount = -1;
 
-        switch (packageType)
-        {
-            case AntPackagingType.Chunk:
-                int partitions = r.ReadInt32(true);
-                int reflType = r.ReadInt32(true);
-                subDataCount = r.ReadInt32(true);
-                int subDataCapacity = r.ReadInt32(true);
-                int ptr = r.ReadInt32(true);
-                int pad = r.ReadInt32(true);
-                break;
-            case AntPackagingType.Bundle:
-            case AntPackagingType.AnimationSet:
-                break;
-        }
+        uint dataOffset = r.ReadUInt32(true);
+        int reflType = r.ReadInt32(true);
+        subDataCount = r.ReadInt32(true);
+        int subDataCapacity = r.ReadInt32(true);
+        int ptr = r.ReadInt32(true);
+        int pad = r.ReadInt32(true);
 
+        r.BaseStream.Position = dataOffset + 4;
         // GD.STRMl block
         string strmBlock = Encoding.ASCII.GetString(r.ReadBytes(7));
         bool strmBigEndian = r.ReadByte() == 98 ? true : false; // "b" for big endian, "l" for little.
@@ -202,7 +194,8 @@ public class GenericData
             case "RawAnimationAsset":
                 deserializedData = new RawAnimation(r.BaseStream, ref gd, bigEndian); break;
             default:
-                throw new MissingMethodException($"Tried to invoke undefined behaviour for type \"{gd.Classes[type].Name}\"\nThe type is valid, but no translations for this class have been defined in IceBloc.");
+                deserializedData = new Animation(); break;
+                //throw new MissingMethodException($"Tried to invoke undefined behaviour for type \"{gd.Classes[type].Name}\"\nThe type is valid, but no translations for this class have been defined in IceBloc.");
         }
 
         return deserializedData;
@@ -450,9 +443,9 @@ public struct GenericDataField
 
 public static class GenericDataExtensions
 {
-    public static GenericDataLayoutEntry ReadGDLE(this BinaryReader r, bool bigEndian, out int fieldSize)
+    public static GenericData.GenericDataLayoutEntry ReadGDLE(this BinaryReader r, bool bigEndian, out int fieldSize)
     {
-        var gdle = new GenericDataLayoutEntry();
+        var gdle = new GenericData.GenericDataLayoutEntry();
 
         gdle.mMinSlot = r.ReadInt32(bigEndian);
         gdle.mMaxSlot = r.ReadInt32(bigEndian);
@@ -469,11 +462,11 @@ public static class GenericDataExtensions
         gdle.mHash = r.ReadUInt32(bigEndian);
 
         // Fill data entries.
-        gdle.mEntries = new GenericDataEntry[fieldSize];
+        gdle.mEntries = new GenericData.GenericDataEntry[fieldSize];
         for (int j = 0; j < fieldSize; j++)
         {
         LABEL_1:
-            GenericDataEntry entry = new();
+            GenericData.GenericDataEntry entry = new();
             entry.mLayoutHash = r.ReadUInt32(bigEndian);
             entry.mElementSize = r.ReadUInt32(bigEndian);
             entry.mOffset = r.ReadUInt32(bigEndian);

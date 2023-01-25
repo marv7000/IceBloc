@@ -1,6 +1,5 @@
 ﻿using IceBlocLib.Export;
 using IceBlocLib.Frostbite;
-using IceBlocLib.Frostbite2;
 using IceBlocLib.Frostbite2.Meshes;
 using IceBlocLib.Frostbite2.Misc;
 using IceBlocLib.InternalFormats;
@@ -107,6 +106,14 @@ public class AssetListItem
                     for (int i = 0; i < output.Count; i++)
                     {
                         Settings.CurrentModelExporter.Export(output[i], path + $"_var{i}");
+                    }
+                }
+                else if (Type == "AssetBank")
+                {
+                    List<InternalAnimation> s = AntPackageAsset.ConvertToInternal(stream);
+                    for (int i = 0; i < s.Count; i++)
+                    {
+                        Settings.CurrentAnimationExporter.Export(s[i], path);
                     }
                 }
             }

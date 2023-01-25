@@ -1,5 +1,5 @@
 ﻿using IceBlocLib.Frostbite;
-using IceBlocLib.Frostbite2.Animations;
+using IceBlocLib.Frostbite2.Animations.Base;
 using IceBlocLib.InternalFormats;
 
 namespace IceBlocLib.Frostbite2.Misc;
@@ -8,11 +8,18 @@ public class AntPackageAsset
 {
     public static List<InternalAnimation> ConvertToInternal(in Dbx dbx)
     {
-        List<InternalAnimation> result = new();
-
         Guid guid = (Guid)dbx.Prim["StreamingGuid"].Value;
+        if (guid == Guid.Empty)
+            return new List<InternalAnimation>();
+
         using var chunk = new MemoryStream(IO.GetChunk(guid));
 
+        return ConvertToInternal(chunk);
+    }
+
+    public static List<InternalAnimation> ConvertToInternal(Stream chunk)
+    {
+        List<InternalAnimation> result = new();
         GenericData gd = new(chunk);
         for (int i = 0; i < gd.Data.Count; i++)
         {

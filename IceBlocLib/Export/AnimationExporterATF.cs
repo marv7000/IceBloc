@@ -7,7 +7,8 @@ public class AnimationExporterATF : IAnimationExporter
     public void Export(InternalAnimation animation, string path)
     {
         // Start writing to disk.
-        using var w = new StreamWriter(File.OpenWrite(path + "_" + animation.Name + ".atf"));
+        Directory.CreateDirectory(path);
+        using var w = new StreamWriter(File.OpenWrite(path + "\\" + animation.Name + ".atf"));
 
         // Meta data.
         w.WriteLine("// Created by IceBloc");
