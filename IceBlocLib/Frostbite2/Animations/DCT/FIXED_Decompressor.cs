@@ -26,15 +26,15 @@ public class FIXED_Decompressor
         // Get all sizes for DCT parts.
         int headerSize = FIXED_Header.GetSerializedSize();
         int dofTableDescriptorSize = FIXED_DofTableDescriptor.GetSerializedEntrySize() * mHeader.GetNumTableEntriesPerFrame();
-        int dofTableSize = (int)FIXED_DofTableDescriptor.GetSerializedDofTableSize(in mDofTableDescriptor);
 
         mDofTableDescriptor = new FIXED_DofTableDescriptor[mHeader.GetNumTableEntriesPerFrame()];
+        int dofTableSize = (int)FIXED_DofTableDescriptor.GetSerializedDofTableSize(in mDofTableDescriptor);
         for (int i = 0; i < mHeader.GetNumTableEntriesPerFrame(); i++)
         {
-            mDofTableDescriptor[i] = UnsafeOperations.StructFromMemory<FIXED_DofTableDescriptor>(mCompressedSource_All, headerSize);
+            mDofTableDescriptor[i] = UnsafeOperations.StructFromMemory<FIXED_DofTableDescriptor>(mCompressedSource_All, headerSize + i);
         }
 
-        mDofTable = UnsafeOperations.StructFromMemory<FIXED_DofTable>(mCompressedSource_All, headerSize + dofTableSize);
+        mDofTable = UnsafeOperations.StructFromMemory<FIXED_DofTable>(mCompressedSource_All, headerSize + dofTableDescriptorSize);
 
         mCompressedData = mCompressedSource_All.Slice(headerSize + dofTableDescriptorSize + dofTableSize);
     }

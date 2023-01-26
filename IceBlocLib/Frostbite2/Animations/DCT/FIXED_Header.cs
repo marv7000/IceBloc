@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace IceBlocLib.Frostbite2.Animations.DCT;
 
-[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 13)]
+[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 12)]
 public unsafe struct FIXED_Header
 {
     [FieldOffset(0)]
@@ -20,8 +20,6 @@ public unsafe struct FIXED_Header
     public byte mQuantizeMult_Subblock;
     [FieldOffset(11)]
     public byte mCatchAllBitCount;
-    [FieldOffset(12)]
-    public FIXED_DofTableDescriptor mDofDescriptor;
 
     public static int GetSerializedSize()
     {

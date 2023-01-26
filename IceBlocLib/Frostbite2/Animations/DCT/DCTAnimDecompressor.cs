@@ -18,7 +18,7 @@ public class DCTAnimDecompressor
     {
         mDctAnim = dctAnim;
         mDofMap = dofMap;
-        mCodec = new FIXED_Decompressor(dctAnim.Data, Frostbite.TargetEndian.TARGET_ENDIAN_LITTLE);
+        mCodec = new FIXED_Decompressor(dctAnim.SourceCompressedAll, Frostbite.TargetEndian.TARGET_ENDIAN_LITTLE);
         mPrevFrameInBuffer = 0xFFFFFFFF;
         mNextFrameInBuffer = 0xFFFFFFFF;
         uint numQuats = mCodec.mHeader.mNumQuats;

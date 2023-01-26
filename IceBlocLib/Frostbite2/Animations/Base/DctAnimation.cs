@@ -1,6 +1,5 @@
 ﻿using IceBlocLib.Frostbite2.Animations.DCT;
 using IceBlocLib.InternalFormats;
-using System.Text;
 
 namespace IceBlocLib.Frostbite2.Animations.Base;
 
@@ -8,6 +7,7 @@ public class DctAnimation : Animation
 {
     public ushort[] KeyTimes = new ushort[0];
     public byte[] Data = new byte[0];
+    public byte[] SourceCompressedAll = new byte[0];
     public ushort NumKeys;
     public ushort NumVec3;
     public ushort NumFloat;
@@ -62,6 +62,32 @@ public class DctAnimation : Animation
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
         IndexData = GetChannelToDofAsset(ChannelToDofAsset);
+        SourceCompressedAll = PatchSourceChunk(r, type, in gd);
+    }
+
+    public byte[] PatchSourceChunk(BinaryReader r, uint type, in GenericData gd)
+    {
+        r.BaseStream.Position = 0;
+
+        int headerOffset = 0;
+        int dataOffset = 0;
+        foreach (var element in gd.Classes[type].Elements)
+        {
+            if (element.Name == "NumKeys") headerOffset = element.Offset;
+            else if (element.Name == "DofTableDescBytes") dataOffset = element.Offset;
+        }
+
+        r.BaseStream.Position = headerOffset + 32;
+        byte[] headerBytes = r.ReadBytes(12);
+
+
+        r.BaseStream.Position = dataOffset + 32 + 8;
+        r.BaseStream.Position = r.ReadUInt32();
+        byte[] dataBytes = r.ReadBytes(DataSize - 12);
+
+        byte[] result = headerBytes.Concat(dataBytes).ToArray();
+
+        return result;
     }
 
     public unsafe InternalAnimation ConvertToInternal()
@@ -70,10 +96,9 @@ public class DctAnimation : Animation
 
         ret.Name = Name;
 
-        var a = sizeof(FIXED_Header);
-
         // TODO ChannelToDofAsset
         var decompressor = new DCTAnimDecompressor(this, null);
+        decompressor.mCodec.GetHeader();
         return ret;
     }
 }

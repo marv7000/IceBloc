@@ -8,7 +8,7 @@ public static class UnsafeOperations
     {
         var handle = data.Pin();
         nint ptr = (nint)handle.Pointer;
-        T val = Marshal.PtrToStructure<T>(ptr);
+        T val = Marshal.PtrToStructure<T>(ptr + offset);
         handle.Dispose();
         return val;
     }
