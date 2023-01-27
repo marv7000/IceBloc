@@ -494,6 +494,7 @@ public class GenericData
 
     public static void WriteMembers(StreamWriter w, int level, Dictionary<string, object> data, GenericData gd, uint type)
     {
+        // Add tabs for each layer of recursion.
         string tab = "    ";
         for (int i = 0; i < level; i++)
         {
@@ -501,32 +502,43 @@ public class GenericData
         }
         level++;
 
+        // Loop through every field.
         for (int x = 0; x < data.Count; x++)
         {
             var d = data.ElementAt(x);
+
+            // Type name.
+            string tName = d.Value is null ? "<Null>" : gd.Classes[type].Elements[x].Type;
+
+            // If the field is an array of a non-native type, go one level deeper for every member.
             if (d.Value is Dictionary<string, object>[] dicts)
             {
-                w.WriteLine($"{tab}{(d.Value is null ? "<Null>" : gd.Classes[type].Elements[x].Type)}[{dicts.Length}]");
+                w.WriteLine($"{tab}{tName}[{dicts.Length}] {d.Key}");
                 for (int i = 0; i < dicts.Length; i++)
                 {
-                    w.WriteLine($"{tab}    [{i}] {(d.Value is null ? "<Null>" : gd.Classes[type].Elements[x].Type)} {d.Key}");
+                    w.WriteLine($"{tab}    {tName} {d.Key}[{i}]");
                     WriteMembers(w, level + 1, dicts[i], gd, gd.Classes[type].Elements[x].TypeHash);
                 }
             }
+            // If the field is a non-native type, go one level deeper for every member of that type.
             else if (d.Value is Dictionary<string, object> dict)
             {
-                w.WriteLine($"{tab}{(d.Value is null ? "<Null>" : gd.Classes[type].Elements[x].Type)} {d.Key}");
+                w.WriteLine($"{tab}{tName} {d.Key}");
                 WriteMembers(w, level, dict, gd, gd.Classes[type].Elements[x].TypeHash);
             }
             else
             {
-                w.Write($"{tab}{(d.Value is null ? "<Null>" : d.Value.GetType().Name)} {d.Key}");
+                w.Write($"{tab}{tName} {d.Key}");
                 if (d.Value is Array a)
                 {
                     w.Write($"[{a.Length}] = ");
                     for (int i = 0; i < a.Length; i++)
                     {
-                        w.Write($"{a.GetValue(i)}, ");
+                        // If we're writing the last element of the array, don't write a comma at the end.
+                        if (i == a.Length- 1)
+                            w.Write($"{a.GetValue(i)}");
+                        else
+                            w.Write($"{a.GetValue(i)}, ");
                     }
                     if ((d.Value as Array).Length == 0)
                     {
