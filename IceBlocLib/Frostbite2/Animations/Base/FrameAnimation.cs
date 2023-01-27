@@ -35,7 +35,6 @@ public class FrameAnimation : Animation
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
-        IndexData = GetChannelToDofAsset(ChannelToDofAsset);
     }
 
     public InternalAnimation ConvertToInternal()
@@ -61,9 +60,6 @@ public class FrameAnimation : Animation
         ret.Frames[0].FrameIndex = 0;
         ret.Frames[0].Positions = positions;
         ret.Frames[0].Rotations = rotations;
-
-        ret.RotationIndices = IndexData[0..QuatCount];
-        ret.PositionIndices = IndexData[QuatCount..Vec3Count];
 
 
         return ret;

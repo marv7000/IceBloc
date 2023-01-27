@@ -303,11 +303,4 @@ public static class BinaryReaderExtensions
     }
 
     #endregion
-
-    #region EBX Extensions
-
-    
-    #endregion
-
-
 }

@@ -92,6 +92,8 @@ public class GenericData
                     item.Type = glde.mName;
                     item.TypeHash = glde.mHash;
                     item.IsNative = glde.mNative;
+                    item.Size = glde.mDataSize;
+                    item.Alignment = glde.mAlignment;
                     // Go back to our original stream position.
                     r.BaseStream.Position = offset;
                     // Add the read element.
@@ -207,8 +209,9 @@ public class GenericData
     {
         Dictionary<string, object> data = new();
 
-        foreach (var field in Classes[type].Elements)
+        for (int x = 0; x < Classes[type].Elements.Count; x++)
         {
+            GenericDataField field = Classes[type].Elements[x];
             object fieldData = null;
 
             // Go to the offset of the current field.
@@ -399,7 +402,6 @@ public class GenericData
                         fieldData = r.ReadGuidArray((int)size, bigEndian);
                     }
                     break;
-                // Temp Hack TODO
                 default:
                     if (!field.IsArray)
                     {
@@ -407,14 +409,18 @@ public class GenericData
                     }
                     else
                     {
-                        File.WriteAllBytes(@"D:\aaaa.v", (r.BaseStream as MemoryStream).ToArray());
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
                         long offset = r.ReadInt64();
                         fieldData = new Dictionary<string, object>[size];
                         for (uint i = 0; i < size; i++)
                         {
-                            (fieldData as Dictionary<string, object>[])[i] = ReadValues(r, (uint)(offset), field.TypeHash, bigEndian);
+                            (fieldData as Dictionary<string, object>[])[i] = 
+                                ReadValues(
+                                    r,
+                                    (uint)(offset + GetAlignedSize(Classes[type].Elements[x].Size, (uint)Classes[type].Elements[x].Alignment) * i), 
+                                    field.TypeHash, 
+                                    bigEndian);
                         }
                     }
                     break;
@@ -422,6 +428,13 @@ public class GenericData
             data.Add(field.Name, fieldData);
         }
         return data;
+    }
+
+    private static uint GetAlignedSize(uint size, uint alignBy)
+    {
+        if (size % alignBy != 0)
+            size += alignBy - (size % alignBy);
+        return size;
     }
 
     public static void DumpAssetBank(string path)
@@ -509,6 +522,11 @@ public class GenericData
 
             // Type name.
             string tName = d.Value is null ? "<Null>" : gd.Classes[type].Elements[x].Type;
+
+            if (tName == "LayoutEntry")
+            {
+                int a = 0;
+            }
 
             // If the field is an array of a non-native type, go one level deeper for every member.
             if (d.Value is Dictionary<string, object>[] dicts)
@@ -616,6 +634,8 @@ public struct GenericDataField
     public object Data;
     public bool IsArray;
     public bool IsNative;
+    public uint Size;
+    public uint Alignment;
 
     public override string ToString()
     {

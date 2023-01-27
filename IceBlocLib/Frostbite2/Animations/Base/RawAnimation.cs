@@ -41,7 +41,6 @@ public class RawAnimation : Animation
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
-        IndexData = GetChannelToDofAsset(ChannelToDofAsset);
     }
 
     public InternalAnimation ConvertToInternal()

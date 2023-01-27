@@ -15,7 +15,7 @@ public class Animation
     public ushort EndFrame;
     public bool Additive;
     public Guid ChannelToDofAsset;
-    public byte[] IndexData;
+    public int[] BoneIndices;
 
     public Animation() { }
 
@@ -33,10 +33,10 @@ public class Animation
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
-        IndexData = GetChannelToDofAsset(ChannelToDofAsset);
+        BoneIndices = GetBoneIndicesFromDofAsset(ChannelToDofAsset);
     }
 
-    public static byte[] GetChannelToDofAsset(Guid channelToDofAsset)
+    public static Dictionary<string, object> GetChannelToDofAsset(Guid channelToDofAsset)
     {
         if (Settings.CurrentGame == Game.Battlefield3)
         {
@@ -53,10 +53,15 @@ public class Animation
 
                 if ((Guid)values["__guid"] == channelToDofAsset)
                 {
-                    return values["IndexData"] as byte[];
+                    return values;
                 }
             }
         }
+        return null;
+    }
+
+    public static int[] GetBoneIndicesFromDofAsset(Guid channelToDofAsset)
+    {
         return null;
     }
 }

@@ -61,10 +61,12 @@ public class DctAnimation : Animation
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
-        IndexData = GetChannelToDofAsset(ChannelToDofAsset);
         SourceCompressedAll = PatchSourceChunk(r, type, in gd);
     }
 
+    /// <summary>
+    /// Rearrange the data so that it matches what the <see cref="FIXED_Header"/> expects.
+    /// </summary>
     public byte[] PatchSourceChunk(BinaryReader r, uint type, in GenericData gd)
     {
         r.BaseStream.Position = 0;
