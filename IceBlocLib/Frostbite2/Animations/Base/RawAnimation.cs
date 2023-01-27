@@ -69,7 +69,6 @@ public class RawAnimation : Animation
             ret.Frames[i].FrameIndex = KeyTimes[i];
             ret.Frames[i].Positions = positions;
             ret.Frames[i].Rotations = rotations;
-            ret.Indices = IndexData;
         }
 
         return ret;

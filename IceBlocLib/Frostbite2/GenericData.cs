@@ -350,6 +350,14 @@ public class GenericData
                     {
                         fieldData = r.ReadInt64(bigEndian);
                     }
+                    else
+                    {
+                        uint size = r.ReadUInt32(bigEndian);
+                        uint capacity = r.ReadUInt32(bigEndian);
+                        long offset = r.ReadInt64();
+                        r.BaseStream.Position = offset;
+                        fieldData = r.ReadGuidArray((int)size, bigEndian);
+                    }
                     break;
                 case "String":
                     if (!field.IsArray)
@@ -365,6 +373,14 @@ public class GenericData
                     if (!field.IsArray)
                     {
                         fieldData = r.ReadGuid(bigEndian);
+                    }
+                    else
+                    {
+                        uint size = r.ReadUInt32(bigEndian);
+                        uint capacity = r.ReadUInt32(bigEndian);
+                        long offset = r.ReadInt64();
+                        r.BaseStream.Position = offset;
+                        fieldData = r.ReadGuidArray((int)size, bigEndian);
                     }
                     break;
             }

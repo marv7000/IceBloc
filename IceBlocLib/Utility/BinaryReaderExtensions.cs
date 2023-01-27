@@ -265,6 +265,17 @@ public static class BinaryReaderExtensions
 
         return array;
     }
+    public static Guid[] ReadGuidArray(this BinaryReader r, int count, bool bigEndian)
+    {
+        Guid[] array = new Guid[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadGuid(bigEndian);
+        }
+
+        return array;
+    }
 
     #endregion
 

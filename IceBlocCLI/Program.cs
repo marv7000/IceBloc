@@ -149,6 +149,10 @@ public class Program
             r.ReadGdDataHeader(v.BigEndian, out uint hash, out uint type, out uint baseOffset);
             var data = gd.ReadValues(r, baseOffset, type, v.BigEndian);
 
+            if (type == 148713787U)
+            {
+                Console.WriteLine($"{data["__name"]} of type LayoutHierarchyAsset!");
+            }
 
             Dictionary<string, object> baseData = new();
             if ((long)data["__base"] != 0)
@@ -158,6 +162,7 @@ public class Program
                 r.ReadGdDataHeader(v.BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
                 baseData = gd.ReadValues(r, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
             }
+
 
             w.WriteLine($"{gd.Classes[type].Name}, {(v.BigEndian ? "BE" : "LE")}:");
             foreach (var d in data)
@@ -169,6 +174,10 @@ public class Program
                     foreach (object val in (d.Value as Array))
                     {
                         w.Write($"{val}, ");
+                    }
+                    if ((d.Value as Array).Length == 0)
+                    {
+                        w.Write("<Empty>");
                     }
                     w.WriteLine("");
                 }

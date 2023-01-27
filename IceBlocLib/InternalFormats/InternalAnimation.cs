@@ -6,7 +6,8 @@ public sealed class InternalAnimation
 {
     public string Name = "";
     public Frame[] Frames = new Frame[0];
-    public byte[] Indices = new byte[0];
+    public byte[] RotationIndices = new byte[0];
+    public byte[] PositionIndices = new byte[0];
 
     public struct Frame
     {

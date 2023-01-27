@@ -61,7 +61,10 @@ public class FrameAnimation : Animation
         ret.Frames[0].FrameIndex = 0;
         ret.Frames[0].Positions = positions;
         ret.Frames[0].Rotations = rotations;
-        ret.Indices = IndexData;
+
+        ret.RotationIndices = IndexData[0..QuatCount];
+        ret.PositionIndices = IndexData[QuatCount..Vec3Count];
+
 
         return ret;
     }
