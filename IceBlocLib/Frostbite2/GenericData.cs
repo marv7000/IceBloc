@@ -8,7 +8,7 @@ namespace IceBlocLib.Frostbite2;
 public class GenericData
 {
     public Dictionary<uint, GenericDataClass> Classes = new();
-    // True Value means that the block of memory is BigEndian.
+
     public List<(Memory<byte> Bytes, bool BigEndian)> Data = new();
 
     /// <summary>
