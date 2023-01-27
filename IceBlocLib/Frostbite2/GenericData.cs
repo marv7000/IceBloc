@@ -500,11 +500,6 @@ public class GenericData
             tab += "    ";
         }
         level++;
-        
-        if (gd.Classes[type].Name == "FpsLocoControllerAsset")
-        {
-            Console.WriteLine("A");
-        }
 
         for (int x = 0; x < data.Count; x++)
         {
@@ -515,7 +510,7 @@ public class GenericData
                 for (int i = 0; i < dicts.Length; i++)
                 {
                     w.WriteLine($"{tab}    [{i}] {(d.Value is null ? "<Null>" : gd.Classes[type].Elements[x].Type)} {d.Key}");
-                    WriteMembers(w, level, dicts[i], gd, gd.Classes[type].Elements[x].TypeHash);
+                    WriteMembers(w, level + 1, dicts[i], gd, gd.Classes[type].Elements[x].TypeHash);
                 }
             }
             else if (d.Value is Dictionary<string, object> dict)
@@ -535,7 +530,7 @@ public class GenericData
                     }
                     if ((d.Value as Array).Length == 0)
                     {
-                        w.WriteLine($"    {tab}<Empty>");
+                        w.Write($"<Empty>");
                     }
                     w.WriteLine("");
                 }
