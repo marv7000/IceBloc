@@ -1,6 +1,7 @@
 ﻿using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2.Animations.Base;
 using IceBlocLib.Utility;
+using System;
 using System.Text;
 
 namespace IceBlocLib.Frostbite2;
@@ -10,6 +11,8 @@ public class GenericData
     public Dictionary<uint, GenericDataClass> Classes = new();
 
     public List<(Memory<byte> Bytes, bool BigEndian)> Data = new();
+
+    public Dictionary<Guid, int> DataMap = new();
 
     /// <summary>
     /// Reads a GD bank from a stream.
@@ -157,7 +160,7 @@ public class GenericData
     /// <summary>
     /// Deserializes a GD.DATA block into native classes with defined behaviour. Endianess is guessed from the context.
     /// </summary>
-    public object Deserialize(Stream stream)
+    public object Deserialize(Stream stream, int index)
     {
         using var r = new BinaryReader(stream);
 
@@ -171,13 +174,13 @@ public class GenericData
         }
         r.BaseStream.Position = 0;
 
-        return Deserialize(stream, bigEndian);
+        return Deserialize(stream, index, bigEndian);
     }
 
     /// <summary>
     /// Deserializes a GD.DATA block into native classes with defined behaviour.
     /// </summary>
-    public object Deserialize(Stream stream, bool bigEndian)
+    public object Deserialize(Stream stream, int index, bool bigEndian)
     {
         using var r = new BinaryReader(stream);
 
@@ -192,11 +195,11 @@ public class GenericData
         switch (gd.Classes[type].Name)
         {
             case "FrameAnimationAsset":
-                deserializedData = new FrameAnimation(r.BaseStream, ref gd, bigEndian); break;
+                deserializedData = new FrameAnimation(r.BaseStream, index, ref gd, bigEndian); break;
             case "DctAnimationAsset":
-                deserializedData = new DctAnimation(r.BaseStream, ref gd, bigEndian); break;
+                deserializedData = new DctAnimation(r.BaseStream, index, ref gd, bigEndian); break;
             case "RawAnimationAsset":
-                deserializedData = new RawAnimation(r.BaseStream, ref gd, bigEndian); break;
+                deserializedData = new RawAnimation(r.BaseStream, index, ref gd, bigEndian); break;
             default:
                 deserializedData = new Animation(); break;
                 //throw new MissingMethodException($"Tried to invoke undefined behaviour for type \"{gd.Classes[type].Name}\"\nThe type is valid, but no translations for this class have been defined in IceBloc.");
@@ -205,7 +208,7 @@ public class GenericData
         return deserializedData;
     }
 
-    public Dictionary<string, object> ReadValues(BinaryReader r, uint baseOffset, uint type, bool bigEndian)
+    public Dictionary<string, object> ReadValues(BinaryReader r, int index, uint baseOffset, uint type, bool bigEndian)
     {
         Dictionary<string, object> data = new();
 
@@ -405,7 +408,7 @@ public class GenericData
                 default:
                     if (!field.IsArray)
                     {
-                        fieldData = ReadValues(r, (uint)(field.Offset + baseOffset), field.TypeHash, bigEndian);
+                        fieldData = ReadValues(r, index, (uint)(field.Offset + baseOffset), field.TypeHash, bigEndian);
                     }
                     else
                     {
@@ -417,7 +420,7 @@ public class GenericData
                         {
                             (fieldData as Dictionary<string, object>[])[i] = 
                                 ReadValues(
-                                    r,
+                                    r, index,
                                     (uint)(offset + GetAlignedSize(Classes[type].Elements[x].Size, (uint)Classes[type].Elements[x].Alignment) * i), 
                                     field.TypeHash, 
                                     bigEndian);
@@ -427,7 +430,61 @@ public class GenericData
             }
             data.Add(field.Name, fieldData);
         }
+
+        data.TryGetValue("__guid", out object guid);
+        if (guid != null)
+            DataMap.TryAdd((Guid)guid, index);
         return data;
+    }
+
+    public Dictionary<string, object> this[Guid guid]
+    {
+        get 
+        {
+            for (int i = 0; i < Data.Count; i++)
+            {
+                using var s = new MemoryStream(Data[i].Bytes.ToArray());
+                using var r = new BinaryReader(s);
+                r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
+                var values = ReadValues(r, i, base_baseOffset, base_type, false);
+
+                if ((Guid)values["__guid"] == guid)
+                {
+                    return values;
+                }
+            }
+            return null; 
+        }
+    }
+
+    /// <summary>
+    /// Gets the first field of <paramref name="name"/> with value <paramref name="guid"/>
+    /// </summary>
+    public Dictionary<string, object> this[string name, Guid guid]
+    {
+        get 
+        {
+            for (int i = 0; i < Data.Count; i++)
+            {
+                using var s = new MemoryStream(Data[i].Bytes.ToArray());
+                using var r = new BinaryReader(s);
+                r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
+                var values = ReadValues(r, i, base_baseOffset, base_type, false);
+
+                for (int x = 0; x < values.Count; x++)
+                {
+                    values.TryGetValue(name, out var g);
+                    if (g != null)
+                    {
+                        if ((Guid)g == guid)
+                        {
+                            return values;
+                        }
+                    }
+                }
+            }
+            return null; 
+        }
     }
 
     private static uint GetAlignedSize(uint size, uint alignBy)
@@ -463,12 +520,13 @@ public class GenericData
         }
 
         w.WriteLine("\n// DATA\n");
-        foreach (var v in gd.Data)
+        for (int i = 0; i < gd.Data.Count; i++)
         {
+            (Memory<byte> Bytes, bool BigEndian) v = gd.Data[i];
             using var s = new MemoryStream(v.Bytes.ToArray());
             using var r = new BinaryReader(s);
             r.ReadGdDataHeader(v.BigEndian, out uint hash, out uint type, out uint baseOffset);
-            var data = gd.ReadValues(r, baseOffset, type, v.BigEndian);
+            var data = gd.ReadValues(r, i, baseOffset, type, v.BigEndian);
 
             uint base_type = 0;
 
@@ -477,7 +535,7 @@ public class GenericData
             {
                 r.BaseStream.Position = (long)data["__base"];
                 r.ReadGdDataHeader(v.BigEndian, out uint base_hash, out base_type, out uint base_baseOffset);
-                baseData = gd.ReadValues(r, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
+                baseData = gd.ReadValues(r, i, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
             }
 
             w.WriteLine($"{gd.Classes[type].Name}, Type = {type}, Base = {base_type}, {(v.BigEndian ? "BE" : "LE")}:");

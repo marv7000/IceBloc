@@ -1,5 +1,6 @@
 ﻿using IceBlocLib.Frostbite2.Animations.DCT;
 using IceBlocLib.InternalFormats;
+using System;
 
 namespace IceBlocLib.Frostbite2.Animations.Base;
 
@@ -22,14 +23,15 @@ public class DctAnimation : Animation
     public byte CatchAllBitCount;
     public byte[] NumSubblocks; // Bitfield at offset 4, needs to be bitshifted right when read.
 
-    public DctAnimation(Stream stream, ref GenericData gd, bool bigEndian)
+    public DctAnimation(Stream stream, int index, ref GenericData gd, bool bigEndian)
     {
         using var r = new BinaryReader(stream);
         r.ReadGdDataHeader(bigEndian, out uint hash, out uint type, out uint baseOffset);
 
-        var data = gd.ReadValues(r, baseOffset, type, false);
+        var data = gd.ReadValues(r, index, baseOffset, type, false);
 
         Name = (string)data["__name"];
+        ID = (Guid)data["__guid"];
         KeyTimes = data["KeyTimes"] as ushort[];
         Data = data["Data"] as byte[];
         NumKeys = (ushort)data["NumKeys"];
@@ -53,7 +55,7 @@ public class DctAnimation : Animation
         r.BaseStream.Position = (long)data["__base"];
         r.ReadGdDataHeader(bigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
 
-        var baseData = gd.ReadValues(r, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
+        var baseData = gd.ReadValues(r, index, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
 
         CodecType = (int)baseData["CodecType"];
         AnimId = (int)baseData["AnimId"];
@@ -62,6 +64,7 @@ public class DctAnimation : Animation
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
         SourceCompressedAll = PatchSourceChunk(r, type, in gd);
+        Channels = GetChannels(ChannelToDofAsset);
     }
 
     /// <summary>

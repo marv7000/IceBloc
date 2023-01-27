@@ -1,6 +1,7 @@
 ﻿using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2.Animations.Base;
 using IceBlocLib.InternalFormats;
+using IceBlocLib.Utility;
 
 namespace IceBlocLib.Frostbite2.Misc;
 
@@ -24,13 +25,15 @@ public class AntPackageAsset
         for (int i = 0; i < gd.Data.Count; i++)
         {
             using var stream = new MemoryStream(gd.Data[i].Bytes.ToArray());
-            object entry = gd.Deserialize(stream);
+            object entry = gd.Deserialize(stream, i);
             if (entry is FrameAnimation frameAnim)
                 result.Add(frameAnim.ConvertToInternal());
             else if (entry is RawAnimation rawAnim)
                 result.Add(rawAnim.ConvertToInternal());
             else if (entry is DctAnimation dctAnim)
                 result.Add(dctAnim.ConvertToInternal());
+
+            Settings.Progress = (double)(i / (gd.Data.Count - 1));
         }
         return result;
     }
