@@ -177,6 +177,31 @@ public static class BinaryReaderExtensions
         else
             return r.ReadDouble();
     }
+
+    public static sbyte[] ReadInt8Array(this BinaryReader r, int count)
+    {
+        sbyte[] array = new sbyte[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadSByte();
+        }
+
+        return array;
+    }
+    
+    public static byte[] ReadUInt8Array(this BinaryReader r, int count)
+    {
+        byte[] array = new byte[count];
+
+        for (int i = 0; i < count; i++)
+        {
+            array[i] = r.ReadByte();
+        }
+
+        return array;
+    }
+
     public static short[] ReadInt16Array(this BinaryReader r, int count, bool bigEndian)
     {
         short[] array = new short[count];
