@@ -149,10 +149,6 @@ public class Program
             r.ReadGdDataHeader(v.BigEndian, out uint hash, out uint type, out uint baseOffset);
             var data = gd.ReadValues(r, baseOffset, type, v.BigEndian);
 
-            if (type == 148713787U)
-            {
-                Console.WriteLine($"{data["__name"]} of type LayoutHierarchyAsset!");
-            }
 
             Dictionary<string, object> baseData = new();
             if ((long)data["__base"] != 0)
