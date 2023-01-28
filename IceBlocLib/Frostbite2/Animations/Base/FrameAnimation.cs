@@ -64,6 +64,7 @@ public class FrameAnimation : Animation
             {
                 posChannels.Add(Channels[i].Replace(".t", ""));
                 positions.Add(new Vector3(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
+                dataIndex++;
             }
         }
 
@@ -76,6 +77,7 @@ public class FrameAnimation : Animation
         ret.Frames.Add(frame);
         ret.PositionChannels = posChannels;
         ret.RotationChannels = rotChannels;
+        ret.Additive = Additive;
 
         return ret;
     }

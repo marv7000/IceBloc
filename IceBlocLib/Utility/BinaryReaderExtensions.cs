@@ -1,5 +1,6 @@
 ﻿using System.Buffers.Binary;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using IceBlocLib.Frostbite.Database;
 using IceBlocLib.Frostbite2.Meshes;
 

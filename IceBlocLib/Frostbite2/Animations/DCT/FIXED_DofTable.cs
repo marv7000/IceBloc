@@ -16,6 +16,11 @@ public unsafe struct FIXED_DofTable
         return (uint)(8 + 2 * NumSubblocks);
     }
 
+    public static FIXED_DofTable GetNextEntry(FIXED_DofTable dofTable, byte mNumSubblocks)
+    {
+        throw new NotImplementedException();
+    }
+
     public uint ComputeSum_BitsPerSubblock(byte StartSubblock, byte EndSubblock, byte aCatchAllBitCount)
     {
         uint TotalBits = 0;

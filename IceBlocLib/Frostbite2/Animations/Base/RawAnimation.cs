@@ -49,7 +49,46 @@ public class RawAnimation : Animation
     public InternalAnimation ConvertToInternal()
     {
         InternalAnimation ret = new InternalAnimation();
+
+        List<string> posChannels = new();
+        List<string> rotChannels = new();
+
+        var frame = new InternalAnimation.Frame();
+
+        // Get all names.
+        for (int i = 0; i < Channels.Length; i++)
+        {
+            if (Channels[i].EndsWith(".q"))
+                rotChannels.Add(Channels[i].Replace(".q", ""));
+            else if (Channels[i].EndsWith(".t"))
+                posChannels.Add(Channels[i].Replace(".t", ""));
+        }
+
+        int dataIndex = 0;
+        for (int frameIndex = 0; frameIndex < KeyTimes.Length; frameIndex++)
+        {
+            List<Vector3> positions = new();
+            List<Quaternion> rotations = new();
+
+            for (int i = 0; i < Channels.Length; i++)
+            {
+                if (Channels[i].EndsWith(".q"))
+                    rotations.Add(new Quaternion(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
+                else if (Channels[i].EndsWith(".t"))
+                    positions.Add(new Vector3(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
+            }
+
+            frame.FrameIndex = KeyTimes[frameIndex];
+            frame.Positions = positions;
+            frame.Rotations = rotations;
+            ret.Frames.Add(frame);
+        }
+
+        // FrameAnimations are like RawAnimations but with one fixed frame.
         ret.Name = Name;
+        ret.PositionChannels = posChannels;
+        ret.RotationChannels = rotChannels;
+        ret.Additive = Additive;
 
         return ret;
     }

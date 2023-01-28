@@ -73,6 +73,7 @@ public class Animation
             {
                 var layoutAsset = gd[assets[i]];
                 var entries = layoutAsset["Slots"] as Dictionary<string, object>[];
+
                 for (int x = 0; x < entries.Length; x++)
                 {
                     channelNames.Add((string)entries[x]["Name"]);
