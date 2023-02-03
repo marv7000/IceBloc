@@ -1,6 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
-
-namespace IceBlocLib.Frostbite2.Animations.DCT;
+﻿namespace IceBlocLib.Frostbite2.Animations.DCT;
 
 public class DofTable
 {

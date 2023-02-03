@@ -1,6 +1,11 @@
 ﻿using IceBlocLib.Frostbite2.Animations.DCT;
+using IceBlocLib.Frostbite2.Animations.Misc;
 using IceBlocLib.InternalFormats;
-using System;
+using System.Numerics;
+using static IceBlocLib.InternalFormats.InternalAnimation;
+using IceBlocLib.Frostbite;
+using IceBlocLib.Utility;
+using System.Reflection.Metadata.Ecma335;
 
 namespace IceBlocLib.Frostbite2.Animations.Base;
 
@@ -8,20 +13,31 @@ public class DctAnimation : Animation
 {
     public ushort[] KeyTimes = new ushort[0];
     public byte[] Data = new byte[0];
-    public byte[] SourceCompressedAll = new byte[0];
     public ushort NumKeys;
     public ushort NumVec3;
     public ushort NumFloat;
     public int DataSize;
     public bool Cycle;
 
-    public ushort NumFrames;
     public ushort NumQuats;
     public ushort NumFloatVec;
-    public ushort QuantizeMult_Block;
-    public byte QuantizeMult_Subblock;
+    public ushort QuantizeMultBlock;
+    public byte QuantizeMultSubblock;
     public byte CatchAllBitCount;
-    public byte[] NumSubblocks; // Bitfield at offset 4, needs to be bitshifted right when read.
+    public byte[] DofTableDescBytes;
+    public short[] DeltaBaseX;
+    public short[] DeltaBaseY;
+    public short[] DeltaBaseZ;
+    public short[] DeltaBaseW;
+    public ushort[] BitsPerSubblock;
+
+    private uint TotalSubBlocks = 0;
+    private DofTable[] Tables = new DofTable[0];
+    private List<Vector4> DecompressedData = new();
+    private uint NextBitOffset = 0;
+
+    // TODO Remove when done with testing.
+    private uint a = 0;
 
     public DctAnimation(Stream stream, int index, ref GenericData gd, bool bigEndian)
     {
@@ -42,14 +58,19 @@ public class DctAnimation : Animation
 
         NumQuats = (ushort)data["NumQuats"];
         NumFloatVec = (ushort)data["NumFloatVec"];
-        QuantizeMult_Block = (ushort)data["QuantizeMultBlock"];
-        QuantizeMult_Subblock = (byte)data["QuantizeMultSubblock"];
+        QuantizeMultBlock = (ushort)data["QuantizeMultBlock"];
+        QuantizeMultSubblock = (byte)data["QuantizeMultSubblock"];
         CatchAllBitCount = (byte)data["CatchAllBitCount"];
 
-        byte[] dofTableDescBytes = data["DofTableDescBytes"] as byte[];
-        // Bitfield at offset 4, needs to be bitshifted right when read.
-        for (int i = 0; i < dofTableDescBytes.Length; i++) { dofTableDescBytes[i] >>= 4; }
-        NumSubblocks = dofTableDescBytes;
+        DofTableDescBytes = data["DofTableDescBytes"] as byte[];
+
+        DeltaBaseX = data["DeltaBaseX"] as short[];
+        DeltaBaseY = data["DeltaBaseY"] as short[];
+        DeltaBaseZ = data["DeltaBaseZ"] as short[];
+        DeltaBaseW = data["DeltaBaseW"] as short[];
+        BitsPerSubblock = data["BitsPerSubblock"] as ushort[];
+
+
 
         // Read the Base class (Animation).
         r.BaseStream.Position = (long)data["__base"];
@@ -63,47 +84,474 @@ public class DctAnimation : Animation
         EndFrame = (ushort)baseData["EndFrame"];
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
-        SourceCompressedAll = PatchSourceChunk(r, type, in gd);
         Channels = GetChannels(ChannelToDofAsset);
     }
 
-    /// <summary>
-    /// Rearrange the data so that it matches what the <see cref="FIXED_Header"/> expects.
-    /// </summary>
-    public byte[] PatchSourceChunk(BinaryReader r, uint type, in GenericData gd)
-    {
-        r.BaseStream.Position = 0;
-
-        int headerOffset = 0;
-        int dataOffset = 0;
-        foreach (var element in gd.Classes[type].Elements)
-        {
-            if (element.Name == "NumKeys") headerOffset = element.Offset;
-            else if (element.Name == "DofTableDescBytes") dataOffset = element.Offset;
-        }
-
-        r.BaseStream.Position = headerOffset + 32;
-        byte[] headerBytes = r.ReadBytes(12);
-
-
-        r.BaseStream.Position = dataOffset + 32 + 8;
-        r.BaseStream.Position = r.ReadUInt32();
-        byte[] dataBytes = r.ReadBytes(DataSize - 12);
-
-        byte[] result = headerBytes.Concat(dataBytes).ToArray();
-
-        return result;
-    }
-
-    public unsafe InternalAnimation ConvertToInternal()
+    public InternalAnimation ConvertToInternal()
     {
         InternalAnimation ret = new();
 
-        ret.Name = Name;
+        List<string> posChannels = new();
+        List<string> rotChannels = new();
 
-        // TODO ChannelToDofAsset
-        var decompressor = new DCTAnimDecompressor(this, null);
-        decompressor.mCodec.GetHeader();
+        // Get all names.
+        for (int i = 0; i < Channels.Length; i++)
+        {
+            if (Channels[i].EndsWith(".q"))
+                rotChannels.Add(Channels[i].Replace(".q", ""));
+            else if (Channels[i].EndsWith(".t"))
+                posChannels.Add(Channels[i].Replace(".t", ""));
+        }
+
+        // Decompress the animation.
+        Decompress();
+
+        // Assign values to Channels.
+        for (int i = 0; i < KeyTimes.Length / 8; i++)
+        {
+            Frame[] frames = new Frame[8] { new(), new(), new(), new(), new(), new(), new(), new()};
+
+            for (int channelIdx = 0; channelIdx < rotChannels.Count; channelIdx++)
+            {
+                for (int blockIdx = 0; blockIdx < 8; i++)
+                {
+                    Vector4 element = DecompressedData[(int)(i * GetNumTableEntriesPerFrame() + channelIdx)];
+                    frames[blockIdx].Rotations.Add(Quaternion.Normalize(new Quaternion(element.X, element.Y, element.Z, element.W)));
+
+                    frames[blockIdx].FrameIndex = KeyTimes[(KeyTimes.Length * 8) + blockIdx];
+                }
+            }
+            for (int j = 0; j < posChannels.Count; j++)
+            {
+                Vector4 element = DecompressedData[(int)(i * GetNumTableEntriesPerFrame() + rotChannels.Count + j)];
+                frames[blockIdx].Positions.Add(new Vector3(element.X, element.Y, element.Z));
+            }
+
+            ret.Frames.AddRange(frames);
+        }
+        // Do the remainder.
+        {
+
+        }
+
+        ret.Name = Name;
+        ret.PositionChannels = posChannels;
+        ret.RotationChannels = rotChannels;
+        ret.Additive = Additive;
         return ret;
     }
+
+    #region DCT Decompression
+
+    public static float[] Dct3Coeff = new float[64] {
+             0.250000f,  0.490393f,  0.461940f,  0.415735f,  0.353553f,  0.277785f,  0.191342f,  0.097545f,
+             0.250000f,  0.415735f,  0.191342f, -0.097545f, -0.353553f, -0.490393f, -0.461940f, -0.277785f,
+             0.250000f,  0.277785f, -0.191342f, -0.490393f, -0.353553f,  0.097545f,  0.461940f,  0.415735f,
+             0.250000f,  0.097545f, -0.461940f, -0.277785f,  0.353553f,  0.415735f, -0.191342f, -0.490393f,
+             0.250000f, -0.097545f, -0.461940f,  0.277785f,  0.353553f, -0.415735f, -0.191342f,  0.490393f,
+             0.250000f, -0.277785f, -0.191342f,  0.490393f, -0.353553f, -0.097545f,  0.461940f, -0.415735f,
+             0.250000f, -0.415735f,  0.191342f,  0.097545f, -0.353553f,  0.490393f, -0.461940f,  0.277785f,
+             0.250000f, -0.490393f,  0.461940f, -0.415735f,  0.353554f, -0.277785f,  0.191342f, -0.097545f,
+        };
+
+    public void Decompress()
+    {
+        BuildDofTables();
+
+        for (ushort i = 0; i < NumKeys; i++)
+        {
+            NextBitOffset = Decompress_NextColumn(NextBitOffset);
+        }
+    }
+    private void BuildDofTables()
+    {
+        uint dofCount = GetNumTableEntriesPerFrame();
+        Tables = new DofTable[dofCount];
+
+        for (int i = 0; i < dofCount; i++)
+        {
+            var subBlockCount = (byte)((DofTableDescBytes[i] >> 4) & 0xF);
+
+            var table = new DofTable(subBlockCount);
+            table.DeltaBase = new short[4]
+            {
+                DeltaBaseX[i],
+                DeltaBaseY[i],
+                DeltaBaseZ[i],
+                DeltaBaseW[i],
+            };
+
+            table.BitsPerSubBlock = new DofTable.BitsPerComponent[table.SubBlockCount];
+
+            for (var j = 0; j < table.SubBlockCount; j++)
+            {
+                table.BitsPerSubBlock[j] = new DofTable.BitsPerComponent(BitsPerSubblock[TotalSubBlocks + j]);
+            }
+
+            Tables[i] = table;
+            TotalSubBlocks += subBlockCount;
+        }
+    }
+    public uint Decompress_NextColumn(uint bitOffset)
+    {
+        var bitstream = new BitReader(new MemoryStream(Data), false);
+        bitstream.Position = bitOffset;
+        uint offset = bitOffset;
+
+        var output = new MemoryStream(DataSize * 16);
+
+        CombineUnquantizeDCT3_N8((float)QuantizeMultBlock, (float)QuantizeMultSubblock * 0.1f, out var dctTable);
+
+        for (uint x = 0; x < NumQuats; x++)
+        {
+            var dofTable = Tables[x];
+
+            Vector4i[] vec = new Vector4i[8];
+            MemoryStream quatStream = new();
+            UnpackV4Block(ref bitstream, offset, dofTable, ref quatStream);
+            vec[0] = GetDeltaFromStream(ref quatStream);
+            vec[0][0] += dofTable.DeltaBase[0];
+            vec[0][1] += dofTable.DeltaBase[1];
+            vec[0][2] += dofTable.DeltaBase[2];
+            vec[0][3] += dofTable.DeltaBase[3];
+
+            List<short> shorts = new();
+
+            for (int i = 0; i < 8; i++)
+                shorts.AddRange(vec[i].AsShortList());
+
+            Unquantize_TransformDct3_N8(shorts, ref output, in dctTable);
+            output.Position += 16 * 8; // sizeof(__m128) * blockSize
+        }
+
+        for (uint x = 0; x < NumVec3; x++)
+        {
+            var dofTable = Tables[NumQuats + x];
+
+            Vector4i[] vec = new Vector4i[8];
+            MemoryStream vecStream = new();
+            UnpackV4Block(ref bitstream, bitOffset, dofTable, ref vecStream);
+            vec[0] = GetDeltaFromStream(ref vecStream);
+            vec[0][0] += dofTable.DeltaBase[0];
+            vec[0][1] += dofTable.DeltaBase[1];
+            vec[0][2] += dofTable.DeltaBase[2];
+            vec[0][3] += dofTable.DeltaBase[3];
+
+            List<short> shorts = new();
+
+            for (int i = 0; i < 8; i++)
+                shorts.AddRange(vec[i].AsShortList());
+
+            Unquantize_TransformDct3_N8(shorts, ref output, in dctTable);
+            output.Position += 16 * 8;
+        }
+
+        for (uint x = 0; x < NumFloatVec; x++)
+        {
+            var dofTable = Tables[NumQuats + NumVec3 + x];
+
+            Vector4i[] vec = new Vector4i[8];
+            MemoryStream floatStream = new();
+            UnpackV4Block(ref bitstream, bitOffset, dofTable, ref floatStream);
+            vec[0] = GetDeltaFromStream(ref floatStream);
+            vec[0][0] += dofTable.DeltaBase[0];
+            vec[0][1] += dofTable.DeltaBase[1];
+            vec[0][2] += dofTable.DeltaBase[2];
+            vec[0][3] += dofTable.DeltaBase[3];
+
+            List<short> shorts = new();
+
+            for (int i = 0; i < 8; i++)
+                shorts.AddRange(vec[i].AsShortList());
+
+            Unquantize_TransformDct3_N8(shorts, ref output, in dctTable);
+            output.Position += 16 * 8;
+        }
+
+        // Write everything to DecompressedData.
+        var r = new BinaryReader(output);
+        output.Position = 0;
+
+        // 8 Frames per block.
+        for (int i = 0; i < GetNumTableEntriesPerFrame() * 8; i++)
+        {
+            // Read Vec.
+            var x = r.ReadSingle();
+            var y = r.ReadSingle();
+            var z = r.ReadSingle();
+            var w = r.ReadSingle();
+
+            DecompressedData.Add(new Vector4(x, y, z, w));
+        }
+        File.WriteAllBytes($@"D:\test\{Name}_Block_{a++}", output.ToArray());
+
+        return (uint)bitstream.Position;
+    }
+    public void UnpackV4Block(ref BitReader r, uint whichBlock, DofTable dofTable, ref MemoryStream data)
+    {
+        List<short> block = new();
+
+        byte[] componentBits = new byte[4];
+
+        ushort subBlock = 0;
+
+        if (0 == whichBlock)
+        {
+            block.Add(0);
+            block.Add(0);
+            block.Add(0);
+            block.Add(0);
+
+            subBlock = 1;
+        }
+
+        for (; subBlock < dofTable.SubBlockCount; subBlock++)
+        {
+            componentBits[0] = (byte)dofTable.BitsPerSubBlock[subBlock].SafeBitsX(CatchAllBitCount);
+            componentBits[1] = (byte)dofTable.BitsPerSubBlock[subBlock].SafeBitsY(CatchAllBitCount);
+            componentBits[2] = (byte)dofTable.BitsPerSubBlock[subBlock].SafeBitsZ(CatchAllBitCount);
+            componentBits[3] = (byte)dofTable.BitsPerSubBlock[subBlock].SafeBitsW(CatchAllBitCount);
+
+            block.Add(ExtractComponent(ref r, componentBits[0]));
+            block.Add(ExtractComponent(ref r, componentBits[1]));
+            block.Add(ExtractComponent(ref r, componentBits[2]));
+            block.Add(ExtractComponent(ref r, componentBits[3]));
+        }
+
+        for (; subBlock < 8; subBlock++)
+        {
+            block.Add(0);
+            block.Add(0);
+            block.Add(0);
+            block.Add(0);
+        }
+
+        // Convert short array to MemoryStream.
+        var pos = data.Position;
+        using var w = new BinaryWriter(data, System.Text.Encoding.ASCII, true);
+        foreach (var sh in block)
+        {
+            w.Write(sh);
+        }
+        data.Position = pos;
+    }
+    #endregion
+
+    #region DCT Helpers
+
+    /// <summary>
+    /// Convert 8 bytes from the stream to a Vector4i.
+    /// </summary>
+    private Vector4i GetDeltaFromStream(ref MemoryStream stream)
+    {
+        using var r = new BinaryReader(stream, System.Text.Encoding.ASCII, true);
+
+        stream.Position = 0;
+        var x = r.ReadInt16();
+        var y = r.ReadInt16();
+        var z = r.ReadInt16();
+        var w = r.ReadInt16();
+        stream.Position = 0;
+
+        return new Vector4i(x, y, z, w);
+    }
+
+    public void CombineUnquantizeDCT3_N8(float BlockMultiplier, float SubblockMultiplier, out Vector4[,] unquantizeDCT3Combined)
+    {
+        unquantizeDCT3Combined = new Vector4[8, 8];
+
+        CombineUnquantized_Dct3_N8(0, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+        CombineUnquantized_Dct3_N8(1, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+        CombineUnquantized_Dct3_N8(2, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+        CombineUnquantized_Dct3_N8(3, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+        CombineUnquantized_Dct3_N8(4, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+        CombineUnquantized_Dct3_N8(5, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+        CombineUnquantized_Dct3_N8(6, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+        CombineUnquantized_Dct3_N8(7, SubblockMultiplier, BlockMultiplier, ref unquantizeDCT3Combined);
+    }
+
+    public void Unquantize_TransformDct3_N8(List<short> Src, ref MemoryStream Dest, in Vector4[,] unquantizeDCT3Combined)
+    {
+        Vector4[] srcVec = new Vector4[8]
+        {
+            new Vector4(Src[ 0], Src[ 1], Src[ 2], Src[ 3]),
+            new Vector4(Src[ 4], Src[ 5], Src[ 6], Src[ 7]),
+            new Vector4(Src[ 8], Src[ 9], Src[10], Src[11]),
+            new Vector4(Src[12], Src[13], Src[14], Src[15]),
+            new Vector4(Src[16], Src[17], Src[18], Src[19]),
+            new Vector4(Src[20], Src[21], Src[22], Src[23]),
+            new Vector4(Src[24], Src[25], Src[26], Src[27]),
+            new Vector4(Src[28], Src[29], Src[30], Src[31]),
+        };
+        
+        Unquantize_TransformDct3_N8(srcVec, ref Dest, in unquantizeDCT3Combined);
+    }
+
+    public void Unquantize_TransformDct3_N8(Vector4[] Src, ref MemoryStream Dest, in Vector4[,] dctCombined)
+    {
+        Vector4 var0 = Unquantize_Dct3_N8(Src, in dctCombined, 0);
+        Vector4 var1 = Unquantize_Dct3_N8(Src, in dctCombined, 1);
+        Vector4 var2 = Unquantize_Dct3_N8(Src, in dctCombined, 2);
+        Vector4 var3 = Unquantize_Dct3_N8(Src, in dctCombined, 3);
+        Vector4 var4 = Unquantize_Dct3_N8(Src, in dctCombined, 4);
+        Vector4 var5 = Unquantize_Dct3_N8(Src, in dctCombined, 5);
+        Vector4 var6 = Unquantize_Dct3_N8(Src, in dctCombined, 6);
+        Vector4 var7 = Unquantize_Dct3_N8(Src, in dctCombined, 7);
+
+        using var w = new BinaryWriter(Dest, System.Text.Encoding.ASCII, true);
+
+        var pos = Dest.Position;
+
+        w.Write(var0);
+        w.Write(var1);
+        w.Write(var2);
+        w.Write(var3);
+        w.Write(var4);
+        w.Write(var5);
+        w.Write(var6);
+        w.Write(var7);
+
+        Dest.Position = pos;
+    }
+
+    private Vector4 Unquantize_Dct3_N8(Vector4[] Src, in Vector4[,] dct3Combined, int k)
+    {
+        Vector4 var = Src[0] * dct3Combined[k,0];
+        var += Src[1] * dct3Combined[k,1];
+        var += Src[2] * dct3Combined[k,2];
+        var += Src[3] * dct3Combined[k,3];
+        var += Src[4] * dct3Combined[k,4];
+        var += Src[5] * dct3Combined[k,5];
+        var += Src[6] * dct3Combined[k,6];
+        var += Src[7] * dct3Combined[k,7];
+
+        return var;
+    }
+
+    private void CombineUnquantized_Dct3_N8(int k, float SubblockMultiplier, float BlockMultiplier, ref Vector4[,] unquantizeDCT3Combined)
+    {
+        float quantize = (1.0f + SubblockMultiplier * (float)k) / BlockMultiplier;
+        unquantizeDCT3Combined[0,k] = quantize * new Vector4(Dct3Coeff[(0 * 8) + k]);
+        unquantizeDCT3Combined[1,k] = quantize * new Vector4(Dct3Coeff[(1 * 8) + k]);
+        unquantizeDCT3Combined[2,k] = quantize * new Vector4(Dct3Coeff[(2 * 8) + k]);
+        unquantizeDCT3Combined[3,k] = quantize * new Vector4(Dct3Coeff[(3 * 8) + k]);
+        unquantizeDCT3Combined[4,k] = quantize * new Vector4(Dct3Coeff[(4 * 8) + k]);
+        unquantizeDCT3Combined[5,k] = quantize * new Vector4(Dct3Coeff[(5 * 8) + k]);
+        unquantizeDCT3Combined[6,k] = quantize * new Vector4(Dct3Coeff[(6 * 8) + k]);
+        unquantizeDCT3Combined[7,k] = quantize * new Vector4(Dct3Coeff[(7 * 8) + k]);
+    }
+
+    private int SignExtend(int src, int srcBitCount)
+    {
+        return ((src) << (32 - (srcBitCount))) >> (32 - (srcBitCount));
+    }
+    private short ExtractComponent(ref BitReader r, byte component)
+    {
+        if (component != 0)
+        {
+            return (short)SignExtend(r.ReadBits(component), component);
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    private bool HasNoCatchAllExceptions()
+    {
+        return CatchAllBitCount <= 0xF;
+    }
+    private uint GetNumTableEntriesPerFrame()
+    {
+        return (uint)(NumQuats + NumVec3 + NumFloatVec);
+    }
+    private uint GetBitLength_Column0Subblock0()
+    {
+        if (HasNoCatchAllExceptions())
+            return GetBitLength_Column0Subblock0_NoExceptions();
+        else
+            return GetBitLength_Column0Subblock0_WithExceptions();
+    }
+    private uint GetColumnBitLength()
+    {
+        if (HasNoCatchAllExceptions())
+            return GetColumnBitLength_NoExceptions();
+        else
+            return GetColumnBitLength_WithExceptions();
+    }
+    private uint GetBitLength_Column0Subblock0_NoExceptions()
+    {
+        uint Column0BitCount = 0;
+        uint NumTableEntries = GetNumTableEntriesPerFrame();
+
+        for (ushort Entry = 0; Entry<NumTableEntries; Entry++)
+        {
+            DofTable dofTable = Tables[Entry];
+            if (Tables[Entry].SubBlockCount != 0)
+            {
+                Column0BitCount += (uint)(dofTable.BitsPerSubBlock[0].BitsX + dofTable.BitsPerSubBlock[0].BitsY + dofTable.BitsPerSubBlock[0].BitsZ + dofTable.BitsPerSubBlock[0].BitsW);
+            }
+        }
+
+        return Column0BitCount;
+    }
+    private uint GetBitLength_Column0Subblock0_WithExceptions()
+    {
+        uint Column0BitCount = 0;
+        uint NumTableEntries = GetNumTableEntriesPerFrame();
+
+        for (ushort Entry = 0; Entry < NumTableEntries; Entry++)
+        {
+            DofTable dofTable = Tables[Entry];
+            if (Tables[Entry].SubBlockCount != 0)
+            {
+                Column0BitCount += (uint) (
+                        dofTable.BitsPerSubBlock[0].SafeBitsX(CatchAllBitCount) +
+                        dofTable.BitsPerSubBlock[0].SafeBitsY(CatchAllBitCount) +
+                        dofTable.BitsPerSubBlock[0].SafeBitsZ(CatchAllBitCount) +
+                        dofTable.BitsPerSubBlock[0].SafeBitsW(CatchAllBitCount)
+                    );
+            }
+        }
+
+        return Column0BitCount;
+    }
+    private uint GetColumnBitLength_NoExceptions()
+    {
+        uint Column0BitCount = 0;
+        uint NumTableEntries = GetNumTableEntriesPerFrame();
+
+        for (ushort Entry = 0; Entry < NumTableEntries; Entry++)
+        {
+            DofTable dofTable = Tables[Entry];
+            for (ushort subBlock = 0; subBlock < Tables[Entry].SubBlockCount; subBlock++)
+            {
+                Column0BitCount += (uint)(dofTable.BitsPerSubBlock[subBlock].BitsX + dofTable.BitsPerSubBlock[subBlock].BitsY + dofTable.BitsPerSubBlock[subBlock].BitsZ + dofTable.BitsPerSubBlock[subBlock].BitsW);
+            }
+        }
+
+        return Column0BitCount;
+    }
+    private uint GetColumnBitLength_WithExceptions()
+    {
+        uint Column0BitCount = 0;
+        uint NumTableEntries = GetNumTableEntriesPerFrame();
+
+        for (ushort Entry = 0; Entry < NumTableEntries; Entry++)
+        {
+            DofTable dofTable = Tables[Entry];
+            for (ushort subBlock = 0; subBlock < Tables[Entry].SubBlockCount; subBlock++)
+            {
+                Column0BitCount += (uint)(
+                        dofTable.BitsPerSubBlock[subBlock].SafeBitsX(CatchAllBitCount) +
+                        dofTable.BitsPerSubBlock[subBlock].SafeBitsY(CatchAllBitCount) +
+                        dofTable.BitsPerSubBlock[subBlock].SafeBitsZ(CatchAllBitCount) +
+                        dofTable.BitsPerSubBlock[subBlock].SafeBitsW(CatchAllBitCount)
+                    );
+            }
+        }
+
+        return Column0BitCount;
+    }
+    #endregion
+    
 }
