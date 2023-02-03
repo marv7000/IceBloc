@@ -236,7 +236,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadUInt8Array((int)size);
                     }
@@ -250,7 +250,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadInt8Array((int)size);
                     }
@@ -264,7 +264,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadInt16Array((int)size, bigEndian);
                     }
@@ -278,7 +278,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadInt32Array((int)size, bigEndian);
                     }
@@ -292,7 +292,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadInt64Array((int)size, bigEndian);
                     }
@@ -306,7 +306,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadUInt16Array((int)size, bigEndian);
                     }
@@ -320,7 +320,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadUInt32Array((int)size, bigEndian);
                     }
@@ -334,7 +334,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadUInt64Array((int)size, bigEndian);
                     }
@@ -348,7 +348,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadSingleArray((int)size, bigEndian);
                     }
@@ -362,7 +362,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadDoubleArray((int)size, bigEndian);
                     }
@@ -376,7 +376,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadGuidArray((int)size, bigEndian);
                     }
@@ -386,7 +386,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = Encoding.ASCII.GetString(r.ReadBytes((int)size)).Replace("\0", "");
                     }
@@ -400,7 +400,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         r.BaseStream.Position = offset;
                         fieldData = r.ReadGuidArray((int)size, bigEndian);
                     }
@@ -414,7 +414,7 @@ public class GenericData
                     {
                         uint size = r.ReadUInt32(bigEndian);
                         uint capacity = r.ReadUInt32(bigEndian);
-                        long offset = r.ReadInt64();
+                        long offset = r.ReadInt64(bigEndian);
                         fieldData = new Dictionary<string, object>[size];
                         for (uint i = 0; i < size; i++)
                         {

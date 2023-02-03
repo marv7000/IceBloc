@@ -303,5 +303,13 @@ public static class BinaryReaderExtensions
         return array;
     }
 
+    public static void Write(this BinaryWriter w, Vector4 vector)
+    {
+        w.Write(vector.X);
+        w.Write(vector.Y);
+        w.Write(vector.Z);
+        w.Write(vector.W);
+    }
+
     #endregion
 }

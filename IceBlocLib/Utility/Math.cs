@@ -48,31 +48,16 @@ public struct Vector4i
             }
         }
     }
-}
 
-[StructLayout(LayoutKind.Explicit, Pack = 1, Size = 16)]
-public unsafe struct M128
-{
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-    public float[] m128_f32;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public ulong[] m128_u64;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public sbyte[] m128_i8;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-    public short[] m128_i16;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-    public int[] m128_i32;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public long[] m128_i64;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public byte[] m128_u8;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
-    public ushort[] m128_u16;
-    [FieldOffset(0), MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-    public uint[] m128_u32;
-
-    public M128()
+    public List<short> AsShortList()
     {
+        var list = new List<short>();
+
+        list.Add(X);
+        list.Add(Y);
+        list.Add(Z);
+        list.Add(W);
+
+        return list;
     }
 }

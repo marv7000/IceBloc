@@ -59,14 +59,20 @@ public class Animation
 
     public string[] GetChannels(Guid channelToDofAsset)
     {
+        // Get the ChannelToDofAsset referenced by the Animation.
         var dof = GetDofAsset(channelToDofAsset, out GenericData gd);
+        // Find the ClipControllerAsset which references the Animation.
         var clipController = gd["Anim", ID];
+        // Set FPS
         FPS = (float)clipController["FPS"];
+        // Get the LayoutHierarchyAsset Guid from the ClipController.
         clipController.TryGetValue("Target", out var guid);
+        // Get the LayoutAssets from the LayoutHierarchyAsset.
         var layoutAssets = gd[(Guid)guid]["LayoutAssets"];
 
         List<string> channelNames = new();
 
+        // Loop through all LayoutAssets and append them.
         if (layoutAssets is Guid[] assets)
         {
             for (int i = 0; i < assets.Length; i++)
@@ -88,6 +94,8 @@ public class Animation
         {
             output[i] = channelNames[data[i]];
         }
+
+        //File.WriteAllLines(@$"D:\channelMap_{Name}.bin", output);
 
         return output;
     }

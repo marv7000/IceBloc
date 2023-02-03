@@ -16,14 +16,16 @@ public class SkeletonExporterATF : ISkeletonExporter
         // Write object name.
         w.WriteLine($"NAME,{skel.Name}");
 
+        w.WriteLine("BONES");
         // Loop through each vertex.
         for (int i = 0; i < skel.BoneTransforms.Count; i++)
         {
-            // Type,Id,ParentId,Name,PositionX,PositionY,PositionZ,RotationX,RotationY,RotationZ,RotationW,ScaleX,ScaleY,ScaleZ
             w.Write($"BONE,{i},{skel.BoneParents[i]},{skel.BoneNames[i]},");
             w.Write($"{skel.BoneTransforms[i].Position.X},{skel.BoneTransforms[i].Position.Y},{skel.BoneTransforms[i].Position.Z},");
             w.Write($"{skel.BoneTransforms[i].Rotation.X},{skel.BoneTransforms[i].Rotation.Y},{skel.BoneTransforms[i].Rotation.Z},{skel.BoneTransforms[i].Rotation.W},");
-            w.Write($"{skel.BoneTransforms[i].Scale.X},{skel.BoneTransforms[i].Scale.Y},{skel.BoneTransforms[i].Scale.Z}\n");
+            w.Write($"{skel.LocalTransforms[i].Position.X},{skel.LocalTransforms[i].Position.Y},{skel.LocalTransforms[i].Position.Z},");
+            w.Write($"{skel.LocalTransforms[i].Rotation.X},{skel.LocalTransforms[i].Rotation.Y},{skel.LocalTransforms[i].Rotation.Z},{skel.LocalTransforms[i].Rotation.W}\n");
         }
+        w.WriteLine("END");
     }
 }
