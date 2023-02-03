@@ -70,8 +70,6 @@ public class DctAnimation : Animation
         DeltaBaseW = data["DeltaBaseW"] as short[];
         BitsPerSubblock = data["BitsPerSubblock"] as ushort[];
 
-
-
         // Read the Base class (Animation).
         r.BaseStream.Position = (long)data["__base"];
         r.ReadGdDataHeader(bigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
@@ -85,6 +83,9 @@ public class DctAnimation : Animation
         Additive = (bool)baseData["Additive"];
         ChannelToDofAsset = (Guid)baseData["ChannelToDofAsset"];
         Channels = GetChannels(ChannelToDofAsset);
+
+        // Decompress the animation.
+        Decompress();
     }
 
     public InternalAnimation ConvertToInternal()
@@ -103,35 +104,31 @@ public class DctAnimation : Animation
                 posChannels.Add(Channels[i].Replace(".t", ""));
         }
 
-        // Decompress the animation.
-        Decompress();
-
         // Assign values to Channels.
-        for (int i = 0; i < KeyTimes.Length / 8; i++)
+        for (int i = 0; i < KeyTimes.Length; i++)
         {
-            Frame[] frames = new Frame[8] { new(), new(), new(), new(), new(), new(), new(), new()};
+            Frame frame = new Frame();
 
             for (int channelIdx = 0; channelIdx < rotChannels.Count; channelIdx++)
             {
-                for (int blockIdx = 0; blockIdx < 8; i++)
-                {
-                    Vector4 element = DecompressedData[(int)(i * GetNumTableEntriesPerFrame() + channelIdx)];
-                    frames[blockIdx].Rotations.Add(Quaternion.Normalize(new Quaternion(element.X, element.Y, element.Z, element.W)));
-
-                    frames[blockIdx].FrameIndex = KeyTimes[(KeyTimes.Length * 8) + blockIdx];
-                }
+                int pos = (int)(i * GetNumTableEntriesPerFrame() + channelIdx);
+                Vector4 element = DecompressedData[pos];
+                frame.Rotations.Add(Quaternion.Normalize(new Quaternion(element.X, element.Y, element.Z, element.W)));
             }
-            for (int j = 0; j < posChannels.Count; j++)
+            for (int channelIdx = 0; channelIdx < posChannels.Count; channelIdx++)
             {
-                Vector4 element = DecompressedData[(int)(i * GetNumTableEntriesPerFrame() + rotChannels.Count + j)];
-                frames[blockIdx].Positions.Add(new Vector3(element.X, element.Y, element.Z));
+                int pos = (int)(i * GetNumTableEntriesPerFrame() + NumQuats + channelIdx);
+                Vector4 element = DecompressedData[pos];
+                frame.Positions.Add(new Vector3(element.X, element.Y, element.Z));
             }
-
-            ret.Frames.AddRange(frames);
+            ret.Frames.Add(frame);
         }
-        // Do the remainder.
-        {
 
+        for (int i = 0; i < KeyTimes.Length - KeyTimes.Length % 8; i++)
+        {
+            Frame f = ret.Frames[i];
+            f.FrameIndex = KeyTimes[i];
+            ret.Frames[i] = f;
         }
 
         ret.Name = Name;
@@ -158,7 +155,7 @@ public class DctAnimation : Animation
     {
         BuildDofTables();
 
-        for (ushort i = 0; i < NumKeys; i++)
+        for (ushort i = 0; i < NumKeys / 8 + NumKeys % 8; i++)
         {
             NextBitOffset = Decompress_NextColumn(NextBitOffset);
         }
@@ -194,7 +191,7 @@ public class DctAnimation : Animation
     }
     public uint Decompress_NextColumn(uint bitOffset)
     {
-        var bitstream = new BitReader(new MemoryStream(Data), false);
+        var bitstream = new BitReader(new MemoryStream(Data), true);
         bitstream.Position = bitOffset;
         uint offset = bitOffset;
 
@@ -206,10 +203,10 @@ public class DctAnimation : Animation
         {
             var dofTable = Tables[x];
 
-            Vector4i[] vec = new Vector4i[8];
             MemoryStream quatStream = new();
             UnpackV4Block(ref bitstream, offset, dofTable, ref quatStream);
-            vec[0] = GetDeltaFromStream(ref quatStream);
+            var vec = GetDeltaFromStream(ref quatStream);
+            
             vec[0][0] += dofTable.DeltaBase[0];
             vec[0][1] += dofTable.DeltaBase[1];
             vec[0][2] += dofTable.DeltaBase[2];
@@ -228,10 +225,9 @@ public class DctAnimation : Animation
         {
             var dofTable = Tables[NumQuats + x];
 
-            Vector4i[] vec = new Vector4i[8];
             MemoryStream vecStream = new();
             UnpackV4Block(ref bitstream, bitOffset, dofTable, ref vecStream);
-            vec[0] = GetDeltaFromStream(ref vecStream);
+            var vec = GetDeltaFromStream(ref vecStream);
             vec[0][0] += dofTable.DeltaBase[0];
             vec[0][1] += dofTable.DeltaBase[1];
             vec[0][2] += dofTable.DeltaBase[2];
@@ -250,10 +246,9 @@ public class DctAnimation : Animation
         {
             var dofTable = Tables[NumQuats + NumVec3 + x];
 
-            Vector4i[] vec = new Vector4i[8];
             MemoryStream floatStream = new();
             UnpackV4Block(ref bitstream, bitOffset, dofTable, ref floatStream);
-            vec[0] = GetDeltaFromStream(ref floatStream);
+            var vec = GetDeltaFromStream(ref floatStream);
             vec[0][0] += dofTable.DeltaBase[0];
             vec[0][1] += dofTable.DeltaBase[1];
             vec[0][2] += dofTable.DeltaBase[2];
@@ -273,6 +268,7 @@ public class DctAnimation : Animation
         output.Position = 0;
 
         // 8 Frames per block.
+        List<Vector4> temp = new();
         for (int i = 0; i < GetNumTableEntriesPerFrame() * 8; i++)
         {
             // Read Vec.
@@ -281,8 +277,17 @@ public class DctAnimation : Animation
             var z = r.ReadSingle();
             var w = r.ReadSingle();
 
-            DecompressedData.Add(new Vector4(x, y, z, w));
+            temp.Add(new Vector4(x, y, z, w));
         }
+        // Reorder.
+        for (int i = 0; i < 8; i++)
+        {
+            for (int k = 0; k < GetNumTableEntriesPerFrame(); k++)
+            {
+                DecompressedData.Add(temp[i + (k * 8)]);
+            }
+        }
+
         File.WriteAllBytes($@"D:\test\{Name}_Block_{a++}", output.ToArray());
 
         return (uint)bitstream.Position;
@@ -327,33 +332,47 @@ public class DctAnimation : Animation
         }
 
         // Convert short array to MemoryStream.
-        var pos = data.Position;
+        data.Position = 0;
         using var w = new BinaryWriter(data, System.Text.Encoding.ASCII, true);
         foreach (var sh in block)
         {
             w.Write(sh);
         }
-        data.Position = pos;
+        data.Position = 0;
     }
     #endregion
 
     #region DCT Helpers
 
     /// <summary>
-    /// Convert 8 bytes from the stream to a Vector4i.
+    /// Convert 32 shorts from the stream to a Vector4i.
     /// </summary>
-    private Vector4i GetDeltaFromStream(ref MemoryStream stream)
+    private Vector4i[] GetDeltaFromStream(ref MemoryStream stream)
     {
         using var r = new BinaryReader(stream, System.Text.Encoding.ASCII, true);
 
+        Vector4i[] ret = new Vector4i[8];
+
         stream.Position = 0;
+
         var x = r.ReadInt16();
         var y = r.ReadInt16();
         var z = r.ReadInt16();
         var w = r.ReadInt16();
+        ret[0] = new Vector4i(x, y, z, w);
+
+        for (int i = 1; i < 8; i++)
+        {
+            x = r.ReadInt16();
+            y = r.ReadInt16();
+            z = r.ReadInt16();
+            w = r.ReadInt16();
+            ret[i] = new Vector4i(x, y, z, w);
+        }
+
         stream.Position = 0;
 
-        return new Vector4i(x, y, z, w);
+        return ret;
     }
 
     public void CombineUnquantizeDCT3_N8(float BlockMultiplier, float SubblockMultiplier, out Vector4[,] unquantizeDCT3Combined)
@@ -389,27 +408,15 @@ public class DctAnimation : Animation
 
     public void Unquantize_TransformDct3_N8(Vector4[] Src, ref MemoryStream Dest, in Vector4[,] dctCombined)
     {
-        Vector4 var0 = Unquantize_Dct3_N8(Src, in dctCombined, 0);
-        Vector4 var1 = Unquantize_Dct3_N8(Src, in dctCombined, 1);
-        Vector4 var2 = Unquantize_Dct3_N8(Src, in dctCombined, 2);
-        Vector4 var3 = Unquantize_Dct3_N8(Src, in dctCombined, 3);
-        Vector4 var4 = Unquantize_Dct3_N8(Src, in dctCombined, 4);
-        Vector4 var5 = Unquantize_Dct3_N8(Src, in dctCombined, 5);
-        Vector4 var6 = Unquantize_Dct3_N8(Src, in dctCombined, 6);
-        Vector4 var7 = Unquantize_Dct3_N8(Src, in dctCombined, 7);
-
         using var w = new BinaryWriter(Dest, System.Text.Encoding.ASCII, true);
 
         var pos = Dest.Position;
 
-        w.Write(var0);
-        w.Write(var1);
-        w.Write(var2);
-        w.Write(var3);
-        w.Write(var4);
-        w.Write(var5);
-        w.Write(var6);
-        w.Write(var7);
+        for (int i = 0; i < 8; i++)
+        {
+            Vector4 vec = Unquantize_Dct3_N8(Src, in dctCombined, i);
+            w.Write(vec);
+        }
 
         Dest.Position = pos;
     }
@@ -431,17 +438,17 @@ public class DctAnimation : Animation
     private void CombineUnquantized_Dct3_N8(int k, float SubblockMultiplier, float BlockMultiplier, ref Vector4[,] unquantizeDCT3Combined)
     {
         float quantize = (1.0f + SubblockMultiplier * (float)k) / BlockMultiplier;
-        unquantizeDCT3Combined[0,k] = quantize * new Vector4(Dct3Coeff[(0 * 8) + k]);
-        unquantizeDCT3Combined[1,k] = quantize * new Vector4(Dct3Coeff[(1 * 8) + k]);
-        unquantizeDCT3Combined[2,k] = quantize * new Vector4(Dct3Coeff[(2 * 8) + k]);
-        unquantizeDCT3Combined[3,k] = quantize * new Vector4(Dct3Coeff[(3 * 8) + k]);
-        unquantizeDCT3Combined[4,k] = quantize * new Vector4(Dct3Coeff[(4 * 8) + k]);
-        unquantizeDCT3Combined[5,k] = quantize * new Vector4(Dct3Coeff[(5 * 8) + k]);
-        unquantizeDCT3Combined[6,k] = quantize * new Vector4(Dct3Coeff[(6 * 8) + k]);
-        unquantizeDCT3Combined[7,k] = quantize * new Vector4(Dct3Coeff[(7 * 8) + k]);
+        unquantizeDCT3Combined[0,k] = quantize * new Vector4(Dct3Coeff[(0 << 3) + k]);
+        unquantizeDCT3Combined[1,k] = quantize * new Vector4(Dct3Coeff[(1 << 3) + k]);
+        unquantizeDCT3Combined[2,k] = quantize * new Vector4(Dct3Coeff[(2 << 3) + k]);
+        unquantizeDCT3Combined[3,k] = quantize * new Vector4(Dct3Coeff[(3 << 3) + k]);
+        unquantizeDCT3Combined[4,k] = quantize * new Vector4(Dct3Coeff[(4 << 3) + k]);
+        unquantizeDCT3Combined[5,k] = quantize * new Vector4(Dct3Coeff[(5 << 3) + k]);
+        unquantizeDCT3Combined[6,k] = quantize * new Vector4(Dct3Coeff[(6 << 3) + k]);
+        unquantizeDCT3Combined[7,k] = quantize * new Vector4(Dct3Coeff[(7 << 3) + k]);
     }
 
-    private int SignExtend(int src, int srcBitCount)
+    private uint SignExtend(uint src, byte srcBitCount)
     {
         return ((src) << (32 - (srcBitCount))) >> (32 - (srcBitCount));
     }
@@ -449,7 +456,7 @@ public class DctAnimation : Animation
     {
         if (component != 0)
         {
-            return (short)SignExtend(r.ReadBits(component), component);
+            return (short)SignExtend((uint)r.ReadBits(component), component);
         }
         else
         {

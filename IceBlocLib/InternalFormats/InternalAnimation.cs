@@ -16,11 +16,10 @@ public sealed class InternalAnimation
         public List<Vector3> Positions = new();
         public List<Quaternion> Rotations = new();
 
-        public Frame(int frameIndex, List<Vector3> positions, List<Quaternion> rotations)
+        public Frame()
         {
-            FrameIndex = frameIndex;
-            Positions = positions;
-            Rotations = rotations;
+            Positions = new();
+            Rotations = new();
         }
     }
 }
