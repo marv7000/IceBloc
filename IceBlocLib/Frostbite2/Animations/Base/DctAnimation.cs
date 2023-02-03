@@ -438,14 +438,11 @@ public class DctAnimation : Animation
     private void CombineUnquantized_Dct3_N8(int k, float SubblockMultiplier, float BlockMultiplier, ref Vector4[,] unquantizeDCT3Combined)
     {
         float quantize = (1.0f + SubblockMultiplier * (float)k) / BlockMultiplier;
-        unquantizeDCT3Combined[0,k] = quantize * new Vector4(Dct3Coeff[(0 << 3) + k]);
-        unquantizeDCT3Combined[1,k] = quantize * new Vector4(Dct3Coeff[(1 << 3) + k]);
-        unquantizeDCT3Combined[2,k] = quantize * new Vector4(Dct3Coeff[(2 << 3) + k]);
-        unquantizeDCT3Combined[3,k] = quantize * new Vector4(Dct3Coeff[(3 << 3) + k]);
-        unquantizeDCT3Combined[4,k] = quantize * new Vector4(Dct3Coeff[(4 << 3) + k]);
-        unquantizeDCT3Combined[5,k] = quantize * new Vector4(Dct3Coeff[(5 << 3) + k]);
-        unquantizeDCT3Combined[6,k] = quantize * new Vector4(Dct3Coeff[(6 << 3) + k]);
-        unquantizeDCT3Combined[7,k] = quantize * new Vector4(Dct3Coeff[(7 << 3) + k]);
+
+        for (int i = 0; i < 8; i++)
+        {
+            unquantizeDCT3Combined[i, k] = quantize * new Vector4(Dct3Coeff[(i << 3) + k]);
+        }
     }
 
     private uint SignExtend(uint src, byte srcBitCount)
