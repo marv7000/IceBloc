@@ -95,8 +95,10 @@ public class Program
                         FixupAnimation(cmd[1], skel);
                     }
                     else
+                    {
                         Console.WriteLine("Fixes an animation using a skeleton");
                         Console.WriteLine("Usage: anim <path to animation> <path to target skeleton>");
+                    }
                     break;
                 default: break;
             }

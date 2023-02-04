@@ -65,17 +65,20 @@ public class RawAnimation : Animation
         }
 
         int dataIndex = 0;
+
+        // For each frame.
         for (int frameIndex = 0; frameIndex < KeyTimes.Length; frameIndex++)
         {
             List<Vector3> positions = new();
             List<Quaternion> rotations = new();
 
-            for (int i = 0; i < Channels.Length; i++)
+            for (int i = 0; i < QuatCount; i++)
             {
-                if (Channels[i].EndsWith(".q"))
-                    rotations.Add(new Quaternion(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
-                else if (Channels[i].EndsWith(".t"))
-                    positions.Add(new Vector3(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
+                rotations.Add(new Quaternion(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
+            }
+            for (int i = 0; i < Vec3Count; i++)
+            {
+                positions.Add(new Vector3(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
             }
 
             frame.FrameIndex = KeyTimes[frameIndex];
@@ -84,7 +87,6 @@ public class RawAnimation : Animation
             ret.Frames.Add(frame);
         }
 
-        // FrameAnimations are like RawAnimations but with one fixed frame.
         ret.Name = Name;
         ret.PositionChannels = posChannels;
         ret.RotationChannels = rotChannels;
