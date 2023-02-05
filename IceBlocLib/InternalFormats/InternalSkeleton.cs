@@ -1,4 +1,5 @@
 ﻿using IceBlocLib.Utility;
+using System.Numerics;
 
 namespace IceBlocLib.InternalFormats;
 
@@ -17,5 +18,13 @@ public sealed class InternalSkeleton
         BoneParents = boneParents;
         BoneTransforms = boneTransforms;
         LocalTransforms = localTranforms;
+    }
+
+    public Transform GetLocalTransform(int i)
+    {
+        if (i > 0)
+            return GetLocalTransform(BoneParents[i]) + LocalTransforms[i] - BoneTransforms[i];
+        else
+            return LocalTransforms[i];
     }
 }

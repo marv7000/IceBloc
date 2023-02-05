@@ -30,8 +30,7 @@ public class AssetListItem
         {
             using var stream = new MemoryStream(IO.ActiveCatalog.Extract(sha, true, InternalAssetType.EBX));
             var dbx = new Dbx(stream);
-            int n = dbx.Instances[dbx.PrimaryInstanceGuid].Desc.Name;
-            Type = Ebx.StringTable[n];
+            Type = dbx.PrimType;
             Ebx.LinkTargets.TryAdd(dbx.FileGuid, sha);
         }
     }
@@ -68,7 +67,7 @@ public class AssetListItem
                     if (s.Count > 1)
                     {
                         for (int i = 0; i < s.Count; i++)
-                            Settings.CurrentSoundExporter.Export(s[i], path + $"_var{i}");
+                            Settings.CurrentSoundExporter.Export(s[i], path + $"_v{i}");
                     }
                     else
                         Settings.CurrentSoundExporter.Export(s[0], path);
@@ -108,9 +107,9 @@ public class AssetListItem
                     for (int i = 0; i < output.Count; i++)
                     {
                         if (LastSkeleton == null)
-                            Settings.CurrentModelExporter.Export(output[i], path + $"_var{i}");
+                            Settings.CurrentModelExporter.Export(output[i], path + $"_{output[i].Name}");
                         else
-                            Settings.CurrentModelExporter.Export(output[i], LastSkeleton, path + $"_var{i}");
+                            Settings.CurrentModelExporter.Export(output[i], LastSkeleton, path + $"_{output[i].Name}");
                     }
                 }
                 else if (Type == "AssetBank")

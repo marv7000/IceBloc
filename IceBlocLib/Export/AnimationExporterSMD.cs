@@ -37,19 +37,20 @@ public class AnimationExporterSMD : IAnimationExporter
                     var rotationIndex = animation.RotationChannels.IndexOf(skeleton.BoneNames[i]);
                     var positionIndex = animation.PositionChannels.IndexOf(skeleton.BoneNames[i]);
 
-                    Quaternion rotChannel = Quaternion.Identity;
+                    Vector3 rot = Vector3.Zero;
                     Vector3 pos = Vector3.Zero;
 
                     if (rotationIndex != -1)
                     {
-                        rotChannel = GetLocalTransform(skeleton, i).Rotation + animation.Frames[x].Rotations[rotationIndex];
+                        var rotOffset = Transform.ToEulerAngles(skeleton.GetLocalTransform(i).Rotation);
+                        rot = rotOffset + Transform.ToEulerAngles(animation.Frames[x].Rotations[rotationIndex]);
                     }
                     if (positionIndex != -1)
                     {
-                        pos = GetLocalTransform(skeleton, i).Position + animation.Frames[x].Positions[positionIndex];
+                        pos = 
+                            skeleton.GetLocalTransform(i).Position + 
+                            animation.Frames[x].Positions[positionIndex];
                     }
-
-                    var rot = Transform.ToEulerAngles(rotChannel);
 
                     w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X.DegRad()} {rot.Y.DegRad()} {rot.Z.DegRad()}");
                 }
@@ -58,15 +59,5 @@ public class AnimationExporterSMD : IAnimationExporter
         }
     }
 
-    private Transform GetLocalTransform(InternalSkeleton skeleton, int i)
-    {
-        if (skeleton.BoneParents[i] != -1)
-        {
-            return skeleton.LocalTransforms[skeleton.BoneParents[i]] + (skeleton.LocalTransforms[i] - skeleton.BoneTransforms[i]);
-        }
-        else
-        {
-            return skeleton.LocalTransforms[i] - skeleton.BoneTransforms[i];
-        }
-    }
+    
 }

@@ -41,8 +41,8 @@ public class Animation
     {
         if (Settings.CurrentGame == Game.Battlefield3)
         {
-            var sha = IO.Assets[("animations/antanimations/s_basicassets", InternalAssetType.RES)].MetaData;
-            using var stream = new MemoryStream(IO.ActiveCatalog.Extract(sha, true, InternalAssetType.RES));
+            var data = IO.ActiveCatalog.Extract(IO.Assets[("animations/antanimations/s_basicassets", InternalAssetType.RES)].MetaData, true, InternalAssetType.RES);
+            using var stream = new MemoryStream(data);
             gd = new GenericData(stream);
 
             var dof = gd[channelToDofAsset];

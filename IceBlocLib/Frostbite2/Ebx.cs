@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Numerics;
+using System.Text;
 namespace IceBlocLib.Frostbite;
 
 public static class Ebx
@@ -295,6 +296,7 @@ public class Field
 
 public class Dbx
 {
+    public string PrimType = "";
     public string TrueFileName = "";
     public string EbxRoot = "";
     public bool BigEndian = false;
@@ -419,6 +421,8 @@ public class Dbx
 
         if (TrueFileName == "")
             TrueFileName = Path.GetRelativePath((r.BaseStream as FileStream).Name, "").Replace("\\", "/");
+
+        PrimType = Ebx.StringTable[Prim.Desc.Name];
     }
     public static Dbx Import(string path)
     {

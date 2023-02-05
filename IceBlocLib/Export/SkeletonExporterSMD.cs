@@ -24,8 +24,8 @@ public class SkeletonExporterSMD : ISkeletonExporter
 
         for (int i = 0; i < skeleton.LocalTransforms.Count; i++)
         {
-            var pos = skeleton.LocalTransforms[i].Position;
-            var rot = skeleton.LocalTransforms[i].EulerAngles;
+            var pos = skeleton.GetLocalTransform(i).Position;
+            var rot = skeleton.GetLocalTransform(i).EulerAngles;
             w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X.DegRad()} {rot.Y.DegRad()} {rot.Z.DegRad()}");
         }
 
