@@ -8,7 +8,6 @@ namespace IceBlocLib.InternalFormats;
 public sealed class InternalMesh
 {
     public string Name = "";
-    public bool IsSkinned;
     public List<Vertex> Vertices = new();
     public List<(int A, int B, int C)> Faces = new();
     public InternalSkeleton Skeleton;
@@ -29,10 +28,10 @@ public struct Vertex
     public float NormalZ;
     public float TexCoordX;
     public float TexCoordY;
-    public float BoneIndexA;
-    public float BoneIndexB;
-    public float BoneIndexC;
-    public float BoneIndexD;
+    public int BoneIndexA;
+    public int BoneIndexB;
+    public int BoneIndexC;
+    public int BoneIndexD;
     public float BoneWeightA;
     public float BoneWeightB;
     public float BoneWeightC;

@@ -5,7 +5,7 @@ namespace IceBlocLib.Export;
 
 public class AnimationExporterATF : IAnimationExporter
 {
-    public void Export(InternalAnimation animation, string path)
+    public void Export(InternalAnimation animation, InternalSkeleton skeleton, string path)
     {
         // Start writing to disk.
         Directory.CreateDirectory(path);
@@ -20,21 +20,16 @@ public class AnimationExporterATF : IAnimationExporter
         {
             for (int k = 0; k < animation.Frames[i].Rotations.Count; k++)
             {
-                Quaternion rotChannel = animation.Frames[i].Rotations[k];
+                Quaternion rotChannel = skeleton.LocalTransforms[k].Rotation + animation.Frames[i].Rotations[k];
                 string channelName = animation.RotationChannels[k];
                 w.Write($"KEY,ROT,{animation.Frames[i].FrameIndex},{channelName},{rotChannel.X},{rotChannel.Y},{rotChannel.Z},{rotChannel.W}\n");
             }
             for (int k = 0; k < animation.Frames[i].Positions.Count; k++)
             {
-                Vector3 posChannel = animation.Frames[i].Positions[k];
+                Vector3 posChannel = skeleton.LocalTransforms[k].Position + animation.Frames[i].Positions[k];
                 string channelName = animation.PositionChannels[k];
                 w.Write($"KEY,POS,{animation.Frames[i].FrameIndex},{channelName},{posChannel.X},{posChannel.Y},{posChannel.Z}\n");
             }
         }
-    }
-
-    public void Export(InternalAnimation animation, InternalSkeleton skeleton, string path)
-    {
-        throw new NotImplementedException();
     }
 }

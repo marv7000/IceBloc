@@ -16,9 +16,9 @@ public struct MeshSetLayout
     public int TotalSubsetCount = 0;
     public Vector4 BoundBoxMin = new();
     public Vector4 BoundBoxMax = new();
-    public RelocPtr<MeshLayout>[] LOD = new RelocPtr<MeshLayout>[5];
-    public RelocPtr<string> Name = new();
-    public RelocPtr<string> ShortName = new();
+    public RelocPtr[] LOD = new RelocPtr[5];
+    public RelocPtr Name = new();
+    public RelocPtr ShortName = new();
     public int NameHash = 0;
 
     public MeshSetLayout() { }

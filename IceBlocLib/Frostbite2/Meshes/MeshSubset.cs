@@ -6,8 +6,8 @@ namespace IceBlocLib.Frostbite2.Meshes;
 [StructLayout(LayoutKind.Sequential, Size = 0x94)]
 public unsafe struct MeshSubset
 {
-    public RelocPtr<int> GeometryDeclarations = new(); // int
-    public RelocPtr<string> MaterialName = new(); // string
+    public RelocPtr GeometryDeclarations = new(); // int
+    public RelocPtr MaterialName = new(); // string
     public int MaterialIndex = 0;
     public int PrimitiveCount = 0;
     public int StartIndex = 0;
@@ -17,7 +17,7 @@ public unsafe struct MeshSubset
     public PrimitiveType PrimitiveType = 0;
     public byte BonesPerVertex = 0;
     public byte BoneCount = 0;
-    public RelocPtr<short> BoneIndices = new(); // short
+    public RelocPtr BoneIndices = new(); // short
     public GeometryDeclarationDesc GeoDecls = new();
     public float[] TexCoordRatios = new float[6];
 

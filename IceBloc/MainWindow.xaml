@@ -30,8 +30,8 @@
                 <GroupBox x:Name="ModelExportBox" Header="Model Export" VerticalAlignment="Top" Margin="10,80,0,0" HorizontalAlignment="Left">
                     <Grid>
                         <ComboBox x:Name="MeshFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="MeshFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
-                            <System:String>.obj</System:String>
                             <System:String>.smd</System:String>
+                            <System:String>.obj</System:String>
                             <System:String>.atf</System:String>
                         </ComboBox>
                     </Grid>
@@ -39,6 +39,7 @@
                 <GroupBox x:Name="SkeletonExportBox" Header="Skeleton Export" VerticalAlignment="Top" Margin="180,220,0,0" HorizontalAlignment="Left">
                     <Grid>
                         <ComboBox x:Name="SkeletonFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="SkeletonFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
+                            <System:String>.smd</System:String>
                             <System:String>.atf</System:String>
                         </ComboBox>
                     </Grid>
@@ -46,6 +47,7 @@
                 <GroupBox x:Name="AnimationExportBox" Header="Animation Export" VerticalAlignment="Top" Margin="180,80,0,0" HorizontalAlignment="Left">
                     <Grid>
                         <ComboBox x:Name="AnimationFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="AnimationFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
+                            <System:String>.smd</System:String>
                             <System:String>.atf</System:String>
                         </ComboBox>
                     </Grid>

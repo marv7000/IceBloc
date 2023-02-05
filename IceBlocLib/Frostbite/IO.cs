@@ -2,7 +2,6 @@
 using IceBlocLib.Frostbite.Database;
 using IceBlocLib.Utility;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace IceBlocLib.Frostbite;
@@ -183,7 +182,7 @@ public class IO
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
-            var item = new AssetListItem(idString, type.ToString(), InternalAssetType.EBX, size, ExportStatus.Ready, sha);
+            var item = new AssetListItem(idString, type.ToString(), InternalAssetType.EBX, size, sha);
 
             // Check if we already have an asset with that name (Some EBX are defined multiple times).
             if (!Assets.ContainsKey((idString, InternalAssetType.EBX)))
@@ -208,7 +207,7 @@ public class IO
             if (data is int var) size = (int)data;
             else if (data is long var1) size = (long)data;
 
-            var item = new AssetListItem(idString, type.ToString(), InternalAssetType.RES, size, ExportStatus.Ready, sha);
+            var item = new AssetListItem(idString, type.ToString(), InternalAssetType.RES, size, sha);
 
             // Check if we already have an asset with that name (Some RES are defined multiple times).
             item.GetHashCode();

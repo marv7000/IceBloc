@@ -8,8 +8,8 @@ public struct MeshLayout
 {
     public MeshType Type = 0;
     public int SubCount = 0;
-    public RelocPtr<MeshSubset> SubSets = new(); // MeshSubset
-    public RelocArray<byte>[] CategorySubsetIndices = new RelocArray<byte>[4]; // byte
+    public RelocPtr SubSets = new(); // MeshSubset
+    public RelocArray[] CategorySubsetIndices = new RelocArray[4]; // byte
     public MeshLayoutFlags Flags = 0;
     public IndexBufferFormat IndexBufferFormat = 0;
     public int IndexDataSize = 0;
@@ -17,16 +17,16 @@ public struct MeshLayout
     public int EdgeDataSize = 0;
     public Guid DataChunkID = new();
     public int AuxVertexIndexDataOffset = 0;
-    public RelocPtr<byte[]> EmbeddedEdgeData = new();
-    public RelocPtr<string> ShaderDebugName = new();
-    public RelocPtr<string> Name = new();
-    public RelocPtr<string> ShortName = new();
+    public RelocPtr EmbeddedEdgeData = new();
+    public RelocPtr ShaderDebugName = new();
+    public RelocPtr Name = new();
+    public RelocPtr ShortName = new();
     public int NameHash = 0;
-    public RelocPtr<int> Data = new();
+    public RelocPtr Data = new();
     public int u17 = 0;
     public long u18 = 0;
     public long u19 = 0;
-    public RelocPtr<short> SubsetPartIndices = new();
+    public RelocPtr SubsetPartIndices = new();
 
     public MeshLayout()
     {

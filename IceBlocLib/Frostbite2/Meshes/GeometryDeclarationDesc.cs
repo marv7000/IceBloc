@@ -1,7 +1,4 @@
-﻿using System;
-using System.IO;
-using System.Numerics;
-using System.Reflection;
+﻿using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace IceBlocLib.Frostbite2.Meshes;
@@ -67,11 +64,23 @@ public struct GeometryDeclarationDesc
                     }
                 case VertexElementFormat.Byte4:
                     {
-                        var casted = MemoryMarshal.Cast<byte, byte>(data);
+                        var casted = MemoryMarshal.Cast<byte, sbyte>(data);
                         r.BaseStream.Position = currentPosition;
                         return new(casted[0], casted[1], casted[2], casted[3]);
                     }
                 case VertexElementFormat.Byte4N:
+                    {
+                        var casted = MemoryMarshal.Cast<byte, sbyte>(data);
+                        r.BaseStream.Position = currentPosition;
+                        return new(casted[0] / 255.0f, casted[1] / 255.0f, casted[2] / 255.0f, casted[3] / 255.0f);
+                    }
+                case VertexElementFormat.UByte4:
+                    {
+                        var casted = MemoryMarshal.Cast<byte, byte>(data);
+                        r.BaseStream.Position = currentPosition;
+                        return new(casted[0], casted[1], casted[2], casted[3]);
+                    }
+                case VertexElementFormat.UByte4N:
                     {
                         var casted = MemoryMarshal.Cast<byte, byte>(data);
                         r.BaseStream.Position = currentPosition;

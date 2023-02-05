@@ -17,7 +17,7 @@ public class MeshSet
 
         for (int i = 0; i < msl.LodCount; i++)
         {
-            ml[i] = msl.LOD[i].Value;
+            ml[i] = (MeshLayout)msl.LOD[i].Value;
         }
 
         for (int i = 0; i < msl.LodCount; i++)
@@ -56,7 +56,7 @@ public class MeshSet
                 stream = new MemoryStream(chunk);
             }
             else
-                stream = new MemoryStream(meshSet.Layout[i].EmbeddedEdgeData.Value);
+                stream = new MemoryStream(meshSet.Layout[i].EmbeddedEdgeData.Value as byte[]);
 
             using var cr = new BinaryReader(stream);
 
@@ -66,8 +66,7 @@ public class MeshSet
                 InternalMesh mesh = new();
                 MeshSubset sub = meshSet.Subsets[i][j];
 
-                mesh.Name = sub.MaterialName.Value + "_LOD" + i + "_" + j;
-                mesh.IsSkinned = false; // TODO
+                mesh.Name = (string) sub.MaterialName.Value;
 
                 var indexStartOffset = meshSet.Layout[i].VertexDataSize;
 
@@ -81,10 +80,14 @@ public class MeshSet
                     var posElement = sub.GeoDecls.GetByUsage(VertexElementUsage.Pos);
                     var norElement = sub.GeoDecls.GetByUsage(VertexElementUsage.Normal);
                     var uv0Element = sub.GeoDecls.GetByUsage(VertexElementUsage.TexCoord0);
+                    var boneIndexElement = sub.GeoDecls.GetByUsage(VertexElementUsage.BoneIndices);
+                    var boneWeightElement = sub.GeoDecls.GetByUsage(VertexElementUsage.BoneWeights);
 
                     var position = posElement.Read(cr, sub.VertexStride);
                     var normals = norElement.Read(cr, sub.VertexStride);
                     var texcoord = uv0Element.Read(cr, sub.VertexStride);
+                    var boneIndex = boneIndexElement.Read(cr, sub.VertexStride);
+                    var boneWeight = boneWeightElement.Read(cr, sub.VertexStride);
 
                     // We're done reading the current vertex, move up the stream.
                     cr.BaseStream.Position += sub.VertexStride;
@@ -97,6 +100,16 @@ public class MeshSet
                     vert.NormalZ = normals.Z;
                     vert.TexCoordX = texcoord.X;
                     vert.TexCoordY = 1.0f - texcoord.Y;
+
+                    var bIdx = sub.BoneIndices.Value as List<object>;
+                    vert.BoneIndexA = (int)(short)bIdx[(int)boneIndex.X];
+                    vert.BoneIndexB = (int)(short)bIdx[(int)boneIndex.Y];
+                    vert.BoneIndexC = (int)(short)bIdx[(int)boneIndex.Z];
+                    vert.BoneIndexD = (int)(short)bIdx[(int)boneIndex.W];
+                    vert.BoneWeightA = boneWeight.X;
+                    vert.BoneWeightB = boneWeight.Y;
+                    vert.BoneWeightC = boneWeight.Z;
+                    vert.BoneWeightD = boneWeight.W;
 
                     mesh.Vertices.Add(vert);
                 }
@@ -212,7 +225,7 @@ public static class MeshSetExtensions
         subset.PrimitiveType = (PrimitiveType)r.ReadByte();
         subset.BonesPerVertex = r.ReadByte();
         subset.BoneCount = r.ReadByte();
-        subset.BoneIndices = r.ReadRelocPtr<short>();
+        subset.BoneIndices = r.ReadRelocPtr<short>(subset.BoneCount);
         subset.GeoDecls = r.ReadGeometryDeclarationDesc();
         for (int i = 0; i < 6; i++)
         {

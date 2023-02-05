@@ -12,17 +12,18 @@ public class AssetListItem
     public string Type { get; set; }
     public InternalAssetType AssetType { get; set; }
     public long Size { get; set; }
-    public ExportStatus Status { get; set; }
 
     public byte[] MetaData;
 
-    public AssetListItem(string name, string type, InternalAssetType iaType, long size, ExportStatus status, byte[] sha)
+    public static InternalSkeleton LastSkeleton { get; set; }
+    public static InternalMesh LastMesh { get; set; }
+
+    public AssetListItem(string name, string type, InternalAssetType iaType, long size, byte[] sha)
     {
         Name = name;
         Type = type;
         AssetType = iaType;
         Size = size;
-        Status = status;
         MetaData = sha;
 
         if (type == "EBX")
@@ -58,6 +59,7 @@ public class AssetListItem
                 if (Type == "SkeletonAsset")
                 {
                     var s = SkeletonAsset.ConvertToInternal(in dbx);
+                    LastSkeleton = s;
                     Settings.CurrentSkeletonExporter.Export(s, path);
                 }
                 else if (Type == "SoundWaveAsset")
@@ -76,7 +78,7 @@ public class AssetListItem
                     List<InternalAnimation> s = AntPackageAsset.ConvertToInternal(in dbx);
                     for (int i = 0; i < s.Count; i++)
                     {
-                        Settings.CurrentAnimationExporter.Export(s[i], path);
+                        Settings.CurrentAnimationExporter.Export(s[i], LastSkeleton, path);
                     }
                 }
                 else
@@ -105,7 +107,10 @@ public class AssetListItem
                     List<InternalMesh> output = MeshSet.ConvertToInternal(stream);
                     for (int i = 0; i < output.Count; i++)
                     {
-                        Settings.CurrentModelExporter.Export(output[i], path + $"_var{i}");
+                        if (LastSkeleton == null)
+                            Settings.CurrentModelExporter.Export(output[i], path + $"_var{i}");
+                        else
+                            Settings.CurrentModelExporter.Export(output[i], LastSkeleton, path + $"_var{i}");
                     }
                 }
                 else if (Type == "AssetBank")
@@ -113,13 +118,12 @@ public class AssetListItem
                     List<InternalAnimation> s = AntPackageAsset.ConvertToInternal(stream);
                     for (int i = 0; i < s.Count; i++)
                     {
-                        Settings.CurrentAnimationExporter.Export(s[i], path);
+                        Settings.CurrentAnimationExporter.Export(s[i], LastSkeleton, path);
                     }
                 }
             }
         }
         Console.WriteLine($"Exported {Name}...");
-        Status = ExportStatus.Exported;
     }
 }
 

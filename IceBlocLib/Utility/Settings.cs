@@ -8,10 +8,10 @@ namespace IceBlocLib.Utility;
 public static class Settings
 {
     public static Game CurrentGame = Game.UnknownGame;
-    public static IModelExporter CurrentModelExporter = new ModelExporterOBJ();
+    public static IModelExporter CurrentModelExporter = new ModelExporterSMD();
     public static ITextureExporter CurrentTextureExporter = new TextureExporterDDS();
-    public static IAnimationExporter CurrentAnimationExporter = new AnimationExporterATF();
-    public static ISkeletonExporter CurrentSkeletonExporter = new SkeletonExporterATF();
+    public static IAnimationExporter CurrentAnimationExporter = new AnimationExporterSMD();
+    public static ISkeletonExporter CurrentSkeletonExporter = new SkeletonExporterSMD();
     public static ISoundExporter CurrentSoundExporter = new SoundExporterWAV();
 
     public static bool Debug = false;
