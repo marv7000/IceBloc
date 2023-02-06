@@ -20,11 +20,4 @@ public sealed class InternalSkeleton
         LocalTransforms = localTranforms;
     }
 
-    public Transform GetLocalTransform(int i)
-    {
-        if (i > 0)
-            return GetLocalTransform(BoneParents[i]) + LocalTransforms[i] - BoneTransforms[i];
-        else
-            return LocalTransforms[i];
-    }
 }

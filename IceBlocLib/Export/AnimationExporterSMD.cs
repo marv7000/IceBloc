@@ -10,7 +10,7 @@ public class AnimationExporterSMD : IAnimationExporter
     {
         // Start writing to disk.
         Directory.CreateDirectory(path);
-        using var w = new StreamWriter(File.OpenWrite(path + "\\" + animation.Name + ".smd"));
+        using var w = new StreamWriter(File.Open(path + "\\" + animation.Name + ".smd", FileMode.Create));
 
         // Write version header.
         w.WriteLine("version 1");
@@ -27,30 +27,48 @@ public class AnimationExporterSMD : IAnimationExporter
 
             w.WriteLine("end");
 
-            w.WriteLine("skeleton");
+            w.WriteLine("skeleton\ntime 0");
 
             for (int x = 0; x < animation.Frames.Count; x++)
             {
-                w.WriteLine($"time {x}");
+                if (animation.Frames.Count >= 2 && x >= 1)
+                {
+                    for (int y = 0; y < animation.Frames[x].FrameIndex - animation.Frames[x - 1].FrameIndex; y++)
+                    {
+                        w.WriteLine($"time {animation.Frames[x - 1].FrameIndex + y + 1}");
+                    }
+                }
+
                 for (int i = 0; i < skeleton.BoneNames.Count; i++)
                 {
                     var rotationIndex = animation.RotationChannels.IndexOf(skeleton.BoneNames[i]);
                     var positionIndex = animation.PositionChannels.IndexOf(skeleton.BoneNames[i]);
 
-                    Vector3 rot = Vector3.Zero;
-                    Vector3 pos = Vector3.Zero;
+                    Matrix4x4 mat = Matrix4x4.Identity; 
+                    var mParent = Matrix4x4.Identity;
+                    if (rotationIndex > 0) mParent = skeleton.BoneTransforms[skeleton.BoneParents[i]].Matrix;
+                    var mBone = skeleton.BoneTransforms[i].Matrix;
+                    var lBone = skeleton.LocalTransforms[i].Matrix;
+
+                    Matrix4x4.Invert(mParent * mBone, out var invertMat);
+
+                    mat *= lBone;
+                    mat *= invertMat;
 
                     if (rotationIndex != -1)
                     {
-                        var rotOffset = Transform.ToEulerAngles(skeleton.GetLocalTransform(i).Rotation);
-                        rot = rotOffset + Transform.ToEulerAngles(animation.Frames[x].Rotations[rotationIndex]);
+                        var aRot = Matrix4x4.CreateFromQuaternion(animation.Frames[x].Rotations[rotationIndex]);
+                        mat *= aRot;
                     }
                     if (positionIndex != -1)
                     {
-                        pos = 
-                            skeleton.GetLocalTransform(i).Position + 
-                            animation.Frames[x].Positions[positionIndex];
+                        var aPos = Matrix4x4.CreateTranslation(animation.Frames[x].Positions[positionIndex]);
+                        mat *= aPos;
                     }
+
+                    var t = new Transform(mat);
+                    var pos = t.Position;
+                    var rot = t.EulerAngles;
 
                     w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X.DegRad()} {rot.Y.DegRad()} {rot.Z.DegRad()}");
                 }
@@ -58,6 +76,4 @@ public class AnimationExporterSMD : IAnimationExporter
             w.WriteLine("end");
         }
     }
-
-    
 }
