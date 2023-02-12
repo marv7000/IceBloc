@@ -20,14 +20,14 @@ Supported EBX types:
 | Type | Formats |
 | --- | --- |
 | SoundWaveAsset | .wav  .flac |
-| SkeletonAsset | .atf |
+| SkeletonAsset | .smd |
 
 Supported AssetBank types:
 | Type | Formats |
 | --- | --- |
-| FrameAnimation | .atf |
-| RawAnimation | .atf |
-| FrameAnimation | .atf |
+| FrameAnimation | .smd |
+| RawAnimation | .smd |
+| DctAnimation | .smd |
 
 # Usage
 - Open the program and click the Load Game button on the bottom right.
