@@ -13,7 +13,7 @@ namespace IceBlocCLI;
 
 public class Program
 {
-    public static AssetListItem Selection = new("No selection", "AssetBank", InternalAssetType.Unknown, 0, ExportStatus.Error, null);
+    public static AssetListItem Selection = new("No selection", "AssetBank", InternalAssetType.Unknown, 0, null);
 
     static void Main(string[] args)
     {
@@ -134,7 +134,7 @@ public class Program
         IO.Assets.TryGetValue((asset, InternalAssetType.RES), out Selection);
         if (Selection is null)
         {
-            Selection = new("Invalid selection", "AssetBank", InternalAssetType.Unknown, 0, ExportStatus.Error, null);
+            Selection = new("Invalid selection", "AssetBank", InternalAssetType.Unknown, 0, null);
         }
     }
 

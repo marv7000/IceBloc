@@ -1,4 +1,5 @@
 ﻿using IceBlocLib.InternalFormats;
+using IceBlocLib.Utility;
 using System.Numerics;
 
 namespace IceBlocLib.Export;
@@ -20,13 +21,13 @@ public class AnimationExporterATF : IAnimationExporter
         {
             for (int k = 0; k < animation.Frames[i].Rotations.Count; k++)
             {
-                Quaternion rotChannel = skeleton.LocalTransforms[k].Rotation + animation.Frames[i].Rotations[k];
+                Vector3 rotChannel = Transform.ToEulerAngles(animation.Frames[i].Rotations[k]);
                 string channelName = animation.RotationChannels[k];
-                w.Write($"KEY,ROT,{animation.Frames[i].FrameIndex},{channelName},{rotChannel.X},{rotChannel.Y},{rotChannel.Z},{rotChannel.W}\n");
+                w.Write($"KEY,ROT,{animation.Frames[i].FrameIndex},{channelName},{rotChannel.X},{rotChannel.Y},{rotChannel.Z}\n");
             }
             for (int k = 0; k < animation.Frames[i].Positions.Count; k++)
             {
-                Vector3 posChannel = skeleton.LocalTransforms[k].Position + animation.Frames[i].Positions[k];
+                Vector3 posChannel = animation.Frames[i].Positions[k];
                 string channelName = animation.PositionChannels[k];
                 w.Write($"KEY,POS,{animation.Frames[i].FrameIndex},{channelName},{posChannel.X},{posChannel.Y},{posChannel.Z}\n");
             }

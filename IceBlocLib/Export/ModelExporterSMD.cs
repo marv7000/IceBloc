@@ -48,6 +48,24 @@ public class ModelExporterSMD : IModelExporter
 
             w.WriteLine("end");
         }
+        else
+        {
+            w.WriteLine("nodes");
+
+            w.WriteLine($"0 \"Root\" -1");
+
+            w.WriteLine("end");
+            w.WriteLine("skeleton\ntime 0");
+
+            for (int i = 0; i < skeleton.BoneTransforms.Count; i++)
+            {
+                var pos = skeleton.LocalTransforms[i].Position;
+                var rot = skeleton.LocalTransforms[i].EulerAngles;
+                w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X.DegRad()} {rot.Y.DegRad()} {rot.Z.DegRad()}");
+            }
+
+            w.WriteLine("end");
+        }
 
         w.WriteLine("triangles");
         // Loop through each vertex.

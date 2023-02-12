@@ -17,6 +17,8 @@ public class Animation
     public string[] Channels;
     public float FPS;
 
+    public static GenericData BasicAssets = null;
+
     public Animation() { }
 
     public Animation(Stream stream, int index, ref GenericData gd, bool bigEndian)
@@ -37,21 +39,17 @@ public class Animation
         Channels = GetChannels(ChannelToDofAsset);
     }
 
-    private static Dictionary<string, object> GetDofAsset(Guid channelToDofAsset, out GenericData gd)
+    private Dictionary<string, object> GetDofAsset(Guid channelToDofAsset)
     {
         if (Settings.CurrentGame == Game.Battlefield3)
         {
-            var data = IO.ActiveCatalog.Extract(IO.Assets[("animations/antanimations/s_basicassets", InternalAssetType.RES)].MetaData, true, InternalAssetType.RES);
-            using var stream = new MemoryStream(data);
-            gd = new GenericData(stream);
-
-            var dof = gd[channelToDofAsset];
-
-            return dof;
-        }
-        else
-        {
-            gd = null;
+            if (BasicAssets == null)
+            {
+                var data = IO.ActiveCatalog.Extract(IO.Assets[("animations/antanimations/s_basicassets", InternalAssetType.RES)].MetaData, true, InternalAssetType.RES);
+                using var stream = new MemoryStream(data);
+                BasicAssets = new GenericData(stream);
+            }
+            return BasicAssets[channelToDofAsset];
         }
 
         return null;
@@ -60,15 +58,15 @@ public class Animation
     public string[] GetChannels(Guid channelToDofAsset)
     {
         // Get the ChannelToDofAsset referenced by the Animation.
-        var dof = GetDofAsset(channelToDofAsset, out GenericData gd);
+        var dof = GetDofAsset(channelToDofAsset);
         // Find the ClipControllerAsset which references the Animation.
-        var clipController = gd["Anim", ID];
+        var clipController = BasicAssets["Anim", ID];
         // Set FPS
         FPS = (float)clipController["FPS"];
         // Get the LayoutHierarchyAsset Guid from the ClipController.
         clipController.TryGetValue("Target", out var guid);
         // Get the LayoutAssets from the LayoutHierarchyAsset.
-        var layoutAssets = gd[(Guid)guid]["LayoutAssets"];
+        var layoutAssets = BasicAssets[(Guid)guid]["LayoutAssets"];
 
         List<string> channelNames = new();
 
@@ -77,7 +75,7 @@ public class Animation
         {
             for (int i = 0; i < assets.Length; i++)
             {
-                var layoutAsset = gd[assets[i]];
+                var layoutAsset = BasicAssets[assets[i]];
                 var entries = layoutAsset["Slots"] as Dictionary<string, object>[];
 
                 for (int x = 0; x < entries.Length; x++)
@@ -94,8 +92,6 @@ public class Animation
         {
             output[i] = channelNames[data[i]];
         }
-
-        //File.WriteAllLines(@$"D:\channelMap_{Name}.bin", output);
 
         return output;
     }
