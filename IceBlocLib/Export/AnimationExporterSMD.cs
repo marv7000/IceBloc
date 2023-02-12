@@ -56,7 +56,7 @@ public class AnimationExporterSMD : IAnimationExporter
                         pos = animation.Frames[x].Positions[positionIndex];
                     }
 
-                    w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X.DegRad()} {rot.Y.DegRad()} {rot.Z.DegRad()}");
+                    w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X} {rot.Y} {rot.Z}");
                 }
             }
             w.WriteLine("end");

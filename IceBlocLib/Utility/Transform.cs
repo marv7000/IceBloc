@@ -51,31 +51,28 @@ public struct Transform
         return new Transform(a.Position * b, a.Rotation * b, a.Scale * b);
     }
 
-    public static Vector3 ToEulerAngles(Quaternion q)
+    public static Vector3 ToEulerAngles(Quaternion quaternion)
     {
-        Vector3 angles = new();
+        Vector3 result = new();
 
-        // roll / x
-        float sinr_cosp = 2 * (q.W * q.X + q.Y * q.Z);
-        float cosr_cosp = 1 - 2 * (q.X * q.X + q.Y * q.Y);
-        angles.X = (float)MathF.Atan2(sinr_cosp, cosr_cosp) * (180.0f / MathF.PI);
+        float t0 = 2.0f * (quaternion.W * quaternion.X + quaternion.Y * quaternion.Z);
+        float t1 = 1.0f - 2.0f * (quaternion.X * quaternion.X + quaternion.Y * quaternion.Y);
 
-        // pitch / y
-        float sinp = 2 * (q.W * q.Y - q.Z * q.X);
-        if (MathF.Abs(sinp) >= 1)
-        {
-            angles.Y = (float)MathF.CopySign(MathF.PI / 2, sinp) * (180.0f / MathF.PI);
-        }
-        else
-        {
-            angles.Y = (float)MathF.Asin(sinp) * (180.0f / MathF.PI);
-        }
+        result.X = MathF.Atan2(t0, t1);
 
-        // yaw / z
-        float siny_cosp = 2 * (q.W * q.Z + q.X * q.Y);
-        float cosy_cosp = 1 - 2 * (q.Y * q.Y + q.Z * q.Z);
-        angles.Z = (float)MathF.Atan2(siny_cosp, cosy_cosp) * (180.0f / MathF.PI);
 
-        return angles;
+        float t2 = 2.0f * (quaternion.W * quaternion.Y - quaternion.Z * quaternion.X);
+
+        t2 = t2 > 1.0f ? 1.0f : t2;
+        t2 = t2 < -1.0f ? -1.0f : t2;
+        result.Y = MathF.Asin(t2);
+
+
+        float t3 = +2.0f * (quaternion.W * quaternion.Z + quaternion.X * quaternion.Y);
+        float t4 = +1.0f - 2.0f * (quaternion.Y * quaternion.Y + quaternion.Z * quaternion.Z);
+
+        result.Z = MathF.Atan2(t3, t4);
+
+        return result;
     }
 }
