@@ -36,6 +36,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\IceBlocLib.Frostbite2\IceBlocLib.Frostbite2.csproj" />
+    <ProjectReference Include="..\IceBlocLib.Utility\IceBlocLib.Utility.csproj" />
     <ProjectReference Include="..\IceBlocLib\IceBlocLib.csproj" />
   </ItemGroup>
 

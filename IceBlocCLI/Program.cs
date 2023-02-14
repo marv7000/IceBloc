@@ -1,4 +1,5 @@
-﻿using IceBlocLib.Frostbite;
+﻿using IceBlocLib;
+using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2;
 using IceBlocLib.Frostbite2.Textures;
 using IceBlocLib.Utility;

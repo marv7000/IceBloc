@@ -8,10 +8,12 @@ using System.Globalization;
 using System.Threading;
 
 using IceBloc.Utility;
-using IceBlocLib.Export;
 using System.Threading.Tasks;
-using IceBlocLib.Frostbite;
 using IceBlocLib.Utility;
+using IceBlocLib.Frostbite2;
+using IceBlocLib.Export;
+using IceBlocLib;
+using System.Linq;
 
 namespace IceBloc;
 
@@ -43,7 +45,17 @@ public partial class MainWindow : Window
                 Instance.GameName.Content = Settings.CurrentGame;
             });
         }
+
+        for (int i = 0; i < IO.Assets.Count; i++)
+        {
+            if (IO.Assets.ElementAt(i).Key.Item2 == InternalAssetType.EBX)
+            {
+                IO.Assets.ElementAt(i).Value.LinkEbx();
+            }
+        }
+
         Instance.Dispatcher.Invoke(UpdateItems);
+
     }
 
     #endregion
@@ -77,6 +89,7 @@ public partial class MainWindow : Window
         }
         Thread thr = new Thread(LoadAssets);
         thr.Start();
+        
     }
 
     private void ExportAsset_Click(object sender, RoutedEventArgs e)
