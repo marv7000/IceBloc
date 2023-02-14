@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.WindowsAPICodePack.Dialogs;
@@ -10,7 +9,6 @@ using System.Threading;
 using IceBloc.Utility;
 using System.Threading.Tasks;
 using IceBlocLib.Utility;
-using IceBlocLib.Frostbite2;
 using IceBlocLib.Export;
 using IceBlocLib;
 using System.Linq;
@@ -36,13 +34,12 @@ public partial class MainWindow : Window
 
     public static void LoadAssets()
     {
-        var t = Task.Run(IO.LoadGame);
+        var t = Task.Run(Extractor.LoadGame);
         while(!t.IsCompleted)
         {
             Instance.Dispatcher.Invoke(() =>
             {
                 Instance.ProgressBar.Value = Settings.Progress;
-                Instance.GameName.Content = Settings.CurrentGame;
             });
         }
         Instance.Dispatcher.Invoke(() =>
@@ -59,20 +56,25 @@ public partial class MainWindow : Window
             });
         }
 
+        Instance.Dispatcher.Invoke(() =>
+        {
+            Instance.GameName.Content = Settings.CurrentGame;
+        });
         Instance.Dispatcher.Invoke(UpdateItems);
     }
 
     public static async Task LinkAllEbx()
     {
-        for (int i = 0; i < IO.Assets.Count; i++)
+        var assets = Settings.IOClass.GetAssets();
+        for (int i = 0; i < assets.Count; i++)
         {
-            if (IO.Assets.ElementAt(i).Key.Item2 == InternalAssetType.EBX)
+            if (assets.ElementAt(i).Key.Item2 == InternalAssetType.EBX)
             {
                 Instance.Dispatcher.Invoke(() =>
                 {
-                    Settings.Progress = ((double)i / (double)IO.Assets.Count) * 100.0;
+                    Settings.Progress = ((double)i / (double)assets.Count) * 100.0;
                 });
-                IO.Assets.ElementAt(i).Value.LinkEbx();
+                assets.ElementAt(i).Value.LinkEbx();
             }
         }
     }
@@ -85,9 +87,8 @@ public partial class MainWindow : Window
     {
         Instance.Dispatcher.Invoke(() =>
         {
-            //Instance.AssetGrid.ItemsSource = null;
-            Instance.LoadedAssets.Content = "Loaded Assets: " + IO.Assets.Count;
-            Instance.AssetGrid.ItemsSource = IO.Assets.Values;
+            Instance.LoadedAssets.Content = "Loaded Assets: " + Settings.IOClass.GetAssets().Count;
+            Instance.AssetGrid.ItemsSource = Settings.IOClass.GetAssets().Values;
             Instance.AssetGrid.Refresh();
         });
     }
@@ -119,7 +120,6 @@ public partial class MainWindow : Window
         }
         string word = Instance.AssetGrid.SelectedItems.Count == 1 ? "Asset" : "Assets";
         MessageBox.Show($"Exported {Instance.AssetGrid.SelectedItems.Count} {word}.", "Success", MessageBoxButton.OK);
-        UpdateItems();
     }
 
     public static void WriteUIOutput(string message)
@@ -140,7 +140,11 @@ public partial class MainWindow : Window
         var output = new Dictionary<(string, InternalAssetType), AssetListItem>();
         if (SearchBox.Text != "")
         {
-            foreach (var item in IO.Assets)
+            switch (Settings.CurrentGame)
+            {
+
+            }
+            foreach (var item in Settings.IOClass.GetAssets())
             {
                 if (item.Key.Item1.Contains(SearchBox.Text))
                 {

@@ -7,6 +7,7 @@ namespace IceBlocLib.Utility;
 /// </summary>
 public static class Settings
 {
+    public static IOInterface IOClass;
     public static Game CurrentGame = Game.UnknownGame;
     public static IModelExporter CurrentModelExporter = new ModelExporterSMD();
     public static ITextureExporter CurrentTextureExporter = new TextureExporterDDS();

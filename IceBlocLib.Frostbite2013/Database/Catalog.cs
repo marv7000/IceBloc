@@ -1,9 +1,9 @@
-﻿using IceBlocLib.Frostbite2013;
+﻿using IceBlocLib.Frostbite;
 using IceBlocLib.Utility;
 using System.IO.Compression;
 using System.Text;
 
-namespace IceBlocLib.Frostbite.Database;
+namespace IceBlocLib.Frostbite2013.Database;
 
 public class Catalog : IDisposable
 {
@@ -16,28 +16,18 @@ public class Catalog : IDisposable
 
         // Use the cached file for further operations.
         using var r = new BinaryReader(File.OpenRead($"Cache\\{Settings.CurrentGame}\\{Path.GetFileName(path)}"));
-        switch (Settings.CurrentGame)
+        r.BaseStream.Position += 16;
+        while (r.BaseStream.Position < r.BaseStream.Length)
         {
-            case Game.Battlefield3:
-            case Game.Battlefield4:
-                {
-                    r.BaseStream.Position += 16;
-                    while (r.BaseStream.Position < r.BaseStream.Length)
-                    {
-                        CatalogEntry catEntry = r.ReadCatalogEntry();
-                        Entries[Convert.ToBase64String(catEntry.SHA)] = catEntry;
-                    }
-                    foreach (var file in Directory.EnumerateFiles(Settings.GamePath + "\\Data", "*.cas"))
-                    {
-                        // Get the index number of the cas archive by removing "cas_" and the file extension.
-                        int index = int.Parse(Path.GetFileNameWithoutExtension(file).Replace("cas_", ""));
-                        // Open the file corresponding to the cas archive index.
-                        CasStreams.Add(index, new(File.OpenRead(file), Encoding.ASCII, true));
-                    }
-                }
-                break;
-            default:
-                break;
+            CatalogEntry catEntry = r.ReadCatalogEntry();
+            Entries[Convert.ToBase64String(catEntry.SHA)] = catEntry;
+        }
+        foreach (var file in Directory.EnumerateFiles(Settings.GamePath + "\\Data", "*.cas"))
+        {
+            // Get the index number of the cas archive by removing "cas_" and the file extension.
+            int index = int.Parse(Path.GetFileNameWithoutExtension(file).Replace("cas_", ""));
+            // Open the file corresponding to the cas archive index.
+            CasStreams.Add(index, new(File.OpenRead(file), Encoding.ASCII, true));
         }
     }
 
@@ -57,23 +47,6 @@ public class Catalog : IDisposable
 
         switch (Settings.CurrentGame)
         {
-            case Game.Battlefield3:
-                {
-                    if (type == InternalAssetType.RES)
-                        compressed = true;
-                    else if (type == InternalAssetType.EBX)
-                        compressed = false;
-                    else if (type == InternalAssetType.Chunk)
-                        compressed = entry.IsCompressed;
-
-                    BinaryReader r = CasStreams[entry.CasFileIndex];
-                    r.BaseStream.Position = entry.Offset;
-
-                    if (compressed)
-                        return ZLibDecompress(r, entry.DataSize);
-                    else
-                        return r.ReadBytes(entry.DataSize);
-                }
             case Game.Battlefield4:
                 {
                     if (type == InternalAssetType.RES)

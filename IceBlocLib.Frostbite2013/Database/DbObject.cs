@@ -1,9 +1,9 @@
 ﻿using System.Numerics;
 using System.Text;
-using IceBlocLib.Frostbite2013;
+using IceBlocLib.Frostbite;
 using IceBlocLib.Utility;
 
-namespace IceBlocLib.Frostbite.Database;
+namespace IceBlocLib.Frostbite2013.Database;
 
 public class DbObject
 {

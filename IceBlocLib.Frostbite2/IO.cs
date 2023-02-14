@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace IceBlocLib.Frostbite2;
 
-public class IO
+public class IO : IOInterface
 {
     public static Dictionary<string, bool> DataBaseObjects = new();
     public static DbObject ActiveDataBaseObject;
@@ -225,52 +225,44 @@ public class IO
         {
             try
             {
-                switch (Settings.CurrentGame)
-                {
-                    case Game.Battlefield3:
-                    case Game.Battlefield4:
-                        {
-                            Guid chunkGuid = (Guid)chunks[i].GetField("id").Data;
+                Guid chunkGuid = (Guid)chunks[i].GetField("id").Data;
 
-                            if (isCas)
+                if (isCas)
+                {
+                    var chunkSha = chunks[i].GetField("sha1");
+                    if (chunkSha is not null)
+                    {
+                        // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
+                        // In this case, check if the new one is larger. If yes, replace it.
+                        CatalogEntry e = new();
+                        e.SHA = chunkSha.Data as byte[];
+                        if (!ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas)))
+                        {
+                            if (ActiveCatalog.GetEntry(chunkSha.Data as byte[]).DataSize >
+                                ChunkTranslations[chunkGuid].Entry.DataSize)
                             {
-                                var chunkSha = chunks[i].GetField("sha1");
-                                if (chunkSha is not null)
-                                {
-                                    // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
-                                    // In this case, check if the new one is larger. If yes, replace it.
-                                    CatalogEntry e = new();
-                                    e.SHA = chunkSha.Data as byte[];
-                                    if (!ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas)))
-                                    {
-                                        if (ActiveCatalog.GetEntry(chunkSha.Data as byte[]).DataSize >
-                                            ChunkTranslations[chunkGuid].Entry.DataSize)
-                                        {
-                                            ChunkTranslations[chunkGuid] = (e, isChunk, isCas);
-                                        }
-                                    }
-                                    if ((chunkGuid.ToByteArray()[15] & 1) == 1)
-                                    {
-                                        ActiveCatalog.Entries[Convert.ToBase64String(chunkSha.Data as byte[])].IsCompressed = true;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                var chunkOffset = chunks[i].GetField("offset");
-                                var chunkSize = chunks[i].GetField("size");
-                                if (chunkOffset is not null)
-                                {
-                                    // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
-                                    // In this case, check if the new one is larger. If yes, replace it.
-                                    CatalogEntry e = new();
-                                    e.Offset = (uint)(long)chunkOffset.Data;
-                                    e.DataSize = (int)chunkSize.Data;
-                                    ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas));
-                                }
+                                ChunkTranslations[chunkGuid] = (e, isChunk, isCas);
                             }
                         }
-                        break;
+                        if ((chunkGuid.ToByteArray()[15] & 1) == 1)
+                        {
+                            ActiveCatalog.Entries[Convert.ToBase64String(chunkSha.Data as byte[])].IsCompressed = true;
+                        }
+                    }
+                }
+                else
+                {
+                    var chunkOffset = chunks[i].GetField("offset");
+                    var chunkSize = chunks[i].GetField("size");
+                    if (chunkOffset is not null)
+                    {
+                        // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
+                        // In this case, check if the new one is larger. If yes, replace it.
+                        CatalogEntry e = new();
+                        e.Offset = (uint)(long)chunkOffset.Data;
+                        e.DataSize = (int)chunkSize.Data;
+                        ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas));
+                    }
                 }
             }
             catch (Exception e)
@@ -332,10 +324,6 @@ public class IO
         // Find the game name and set it.
         if (Settings.GamePath.Contains("Battlefield 3"))
             Settings.CurrentGame = Game.Battlefield3;
-        else if (Settings.GamePath.Contains("Battlefield 4"))
-            Settings.CurrentGame = Game.Battlefield4;
-        else if (Settings.GamePath.Contains("BFH"))
-            Settings.CurrentGame = Game.BattlefieldHardline;
         else
         {
             Console.WriteLine("Error: Tried to load an unsupported game!");
@@ -389,31 +377,8 @@ public class IO
         return input.Count(ch => ch == '\t');
     }
 
-    public static bool GetEbxCachedName(byte[] sha, out string s)
+    public Dictionary<(string, InternalAssetType), AssetListItem> GetAssets()
     {
-        var path = $"Cache\\{Settings.CurrentGame}\\EbxNameCache.txt";
-        if (Path.Exists(path))
-        {
-            string[] lines = File.ReadAllLines(path);
-            string base64 = Convert.ToBase64String(sha);
-            foreach (var l in lines)
-            {
-                if (l.Contains(base64))
-                {
-                    s = l.Split(";")[1];
-                    return true;
-                }
-            }
-        }
-        s = string.Empty;
-        return false;
-    }
-
-    public static void AppendEbxCachedName(byte[] sha, string v)
-    {
-        var path = $"Cache\\{Settings.CurrentGame}\\EbxNameCache.txt";
-        if (!Path.Exists(path))
-            File.WriteAllText(path, "");
-        File.AppendAllText(path, $"{Convert.ToBase64String(sha)};{v}\n");
+        return Assets;
     }
 }

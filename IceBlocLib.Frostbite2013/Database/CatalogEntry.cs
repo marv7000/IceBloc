@@ -1,4 +1,4 @@
-﻿namespace IceBlocLib.Frostbite.Database;
+﻿namespace IceBlocLib.Frostbite2013.Database;
 
 public class CatalogEntry
 {

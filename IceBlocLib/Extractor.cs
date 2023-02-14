@@ -1,8 +1,4 @@
-﻿using IceBlocLib.Frostbite;
-using IceBlocLib.Frostbite2;
-using IceBlocLib.Frostbite2.Meshes;
-using IceBlocLib.Frostbite2.Misc;
-using IceBlocLib.InternalFormats;
+﻿using IceBlocLib.InternalFormats;
 using IceBlocLib.Utility;
 
 namespace IceBlocLib;
@@ -13,10 +9,45 @@ public static class Extractor
     {
         if (assetListItem.Type == "EBX")
         {
-            using var stream = new MemoryStream(IO.ActiveCatalog.Extract(assetListItem.MetaData, true, InternalAssetType.EBX));
-            var dbx = new Dbx(stream);
-            assetListItem.Type = dbx.PrimType;
-            Ebx.LinkTargets.TryAdd(dbx.FileGuid, assetListItem.MetaData);
+            switch (Settings.CurrentGame)
+            {
+                case Game.Battlefield3:
+                    {
+                        using var stream = new MemoryStream(Frostbite2.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, InternalAssetType.EBX));
+                        var dbx = new Frostbite2.Dbx(stream);
+                        assetListItem.Type = dbx.PrimType;
+                        Frostbite2.Ebx.LinkTargets.TryAdd(dbx.FileGuid, assetListItem.MetaData);
+                    } break;
+                case Game.Battlefield4:
+                    {
+                        using var stream = new MemoryStream(Frostbite2013.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, InternalAssetType.EBX));
+                        var dbx = new Frostbite2013.Dbx(stream);
+                        assetListItem.Type = dbx.PrimType;
+                        Frostbite2013.Ebx.LinkTargets.TryAdd(dbx.FileGuid, assetListItem.MetaData);
+                    } break;
+            }
+        }
+    }
+
+    public static async Task LoadGame()
+    {
+        if (Settings.GamePath.Contains("Battlefield 3"))
+        {
+            Settings.CurrentGame = Game.Battlefield3;
+            Settings.IOClass = new Frostbite2.IO();
+            Frostbite2.IO.LoadGame();
+        }
+        if (Settings.GamePath.Contains("Battlefield 4"))
+        {
+            Settings.CurrentGame = Game.Battlefield3;
+            Settings.IOClass = new Frostbite2013.IO();
+            Frostbite2013.IO.LoadGame();
+        }
+        if (Settings.GamePath.Contains("BFH"))
+        {
+            Settings.CurrentGame = Game.BattlefieldHardline;
+            Settings.IOClass = new Frostbite2013.IO();
+            Frostbite2013.IO.LoadGame();
         }
     }
 
@@ -25,7 +56,14 @@ public static class Extractor
         string path = $"Output\\{Settings.CurrentGame}\\{assetListItem.Name}";
         Directory.CreateDirectory(Path.GetDirectoryName(path)); // Make sure the output directory exists.
 
-        byte[] data = IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType);
+        byte[] data = null;
+        switch (Settings.CurrentGame)
+        {
+            case Game.Battlefield3:
+                data = Frostbite2.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType); break;
+            case Game.Battlefield4:
+                data = Frostbite2013.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType); break;
+        }
 
         // If the user wants to export the raw RES.
         if (Settings.ExportRaw)
@@ -58,7 +96,14 @@ public static class Extractor
                 }
                 else if (assetListItem.Type == "MeshSet")
                 {
-                    List<InternalMesh> output = MeshSet.ConvertToInternal(stream);
+                    List<InternalMesh> output = new(); 
+                    switch (Settings.CurrentGame)
+                    {
+                        case Game.Battlefield3:
+                            output = Frostbite2.Meshes.MeshSet.ConvertToInternal(stream); break;
+                        case Game.Battlefield4:
+                            output = Frostbite2013.Meshes.MeshSet.ConvertToInternal(stream); break;
+                    }
                     for (int i = 0; i < output.Count; i++)
                     {
                         if (AssetListItem.LastSkeleton is null)
@@ -69,7 +114,7 @@ public static class Extractor
                 }
                 else if (assetListItem.Type == "AssetBank")
                 {
-                    List<InternalAnimation> s = AntPackageAsset.ConvertToInternal(stream);
+                    List<InternalAnimation> s = Frostbite2.Misc.AntPackageAsset.ConvertToInternal(stream);
                     for (int i = 0; i < s.Count; i++)
                     {
                         Settings.CurrentAnimationExporter.Export(s[i], AssetListItem.LastSkeleton, path);
@@ -89,13 +134,13 @@ public static class Extractor
                     var dbx = new Frostbite2.Dbx(stream);
                     if (assetListItem.Type == "SkeletonAsset")
                     {
-                        var s = SkeletonAsset.ConvertToInternal(in dbx);
+                        var s = Frostbite2.Misc.SkeletonAsset.ConvertToInternal(in dbx);
                         AssetListItem.LastSkeleton = s;
                         Settings.CurrentSkeletonExporter.Export(s, path);
                     }
                     else if (assetListItem.Type == "SoundWaveAsset")
                     {
-                        var s = SoundWaveAsset.ConvertToInternal(in dbx);
+                        var s = Frostbite2.Misc.SoundWaveAsset.ConvertToInternal(in dbx);
                         if (s.Count > 1)
                         {
                             for (int i = 0; i < s.Count; i++)
@@ -106,7 +151,7 @@ public static class Extractor
                     }
                     else if (assetListItem.Type == "AntPackageAsset")
                     {
-                        List<InternalAnimation> s = AntPackageAsset.ConvertToInternal(in dbx);
+                        List<InternalAnimation> s = Frostbite2.Misc.AntPackageAsset.ConvertToInternal(in dbx);
                         for (int i = 0; i < s.Count; i++)
                         {
                             Settings.CurrentAnimationExporter.Export(s[i], AssetListItem.LastSkeleton, path);
