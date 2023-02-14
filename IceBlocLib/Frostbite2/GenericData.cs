@@ -158,26 +158,6 @@ public class GenericData
     }
 
     /// <summary>
-    /// Deserializes a GD.DATA block into native classes with defined behaviour. Endianess is guessed from the context.
-    /// </summary>
-    public object Deserialize(Stream stream, int index)
-    {
-        using var r = new BinaryReader(stream);
-
-        bool bigEndian = false;
-
-        // If first 4 bytes are 0, we likely have a BE long.
-        // TODO: Find more reliable method to determine endianess.
-        if (r.ReadInt32() == 0)
-        {
-            bigEndian = true;
-        }
-        r.BaseStream.Position = 0;
-
-        return Deserialize(stream, index, bigEndian);
-    }
-
-    /// <summary>
     /// Deserializes a GD.DATA block into native classes with defined behaviour.
     /// </summary>
     public object Deserialize(Stream stream, int index, bool bigEndian)
@@ -535,7 +515,7 @@ public class GenericData
             {
                 r.BaseStream.Position = (long)data["__base"];
                 r.ReadGdDataHeader(v.BigEndian, out uint base_hash, out base_type, out uint base_baseOffset);
-                baseData = gd.ReadValues(r, i, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
+                baseData = gd.ReadValues(r, i, (uint)((long)data["__base"] + base_baseOffset), base_type, v.BigEndian);
             }
 
             w.WriteLine($"{gd.Classes[type].Name}, Type = {type}, Base = {base_type}, {(v.BigEndian ? "BE" : "LE")}:");

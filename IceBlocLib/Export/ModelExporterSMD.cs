@@ -23,8 +23,6 @@ public class ModelExporterSMD : IModelExporter
         // Write version header.
         w.WriteLine("version 1");
 
-        //TODO
-
         // Export any nodes.
         if (skeleton != null)
         {
@@ -42,8 +40,8 @@ public class ModelExporterSMD : IModelExporter
             for (int i = 0; i < skeleton.BoneTransforms.Count; i++)
             {
                 var pos = skeleton.LocalTransforms[i].Position;
-                var rot = skeleton.LocalTransforms[i].EulerAngles;
-                w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X.DegRad()} {rot.Y.DegRad()} {rot.Z.DegRad()}");
+                var rot = Transform.ToEulerAngles(skeleton.LocalTransforms[i].Rotation);
+                w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X} {rot.Y} {rot.Z}");
             }
 
             w.WriteLine("end");
@@ -57,12 +55,7 @@ public class ModelExporterSMD : IModelExporter
             w.WriteLine("end");
             w.WriteLine("skeleton\ntime 0");
 
-            for (int i = 0; i < skeleton.BoneTransforms.Count; i++)
-            {
-                var pos = skeleton.LocalTransforms[i].Position;
-                var rot = skeleton.LocalTransforms[i].EulerAngles;
-                w.WriteLine($"{i} {pos.X} {pos.Y} {pos.Z} {rot.X.DegRad()} {rot.Y.DegRad()} {rot.Z.DegRad()}");
-            }
+            w.WriteLine("0 0 0 0 0 0 0");
 
             w.WriteLine("end");
         }

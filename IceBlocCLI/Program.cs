@@ -1,13 +1,8 @@
-﻿using IceBloc;
-using IceBloc.Utility;
-using IceBlocLib.Frostbite;
+﻿using IceBlocLib.Frostbite;
 using IceBlocLib.Frostbite2;
-using IceBlocLib.Frostbite2.Animations.Base;
 using IceBlocLib.Frostbite2.Textures;
 using IceBlocLib.Utility;
 using System.Globalization;
-using System.Numerics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace IceBlocCLI;
 
@@ -87,46 +82,11 @@ public class Program
                     break;
                 case "decrypt":
                     IO.DecryptAndCache(cmd[1]); break;
-                case "anim":
-                    if (cmd.Length == 3)
-                    {
-                        var skel = new Dbx(cmd[2]);
-
-                        FixupAnimation(cmd[1], skel);
-                    }
-                    else
-                    {
-                        Console.WriteLine("Fixes an animation using a skeleton");
-                        Console.WriteLine("Usage: anim <path to animation> <path to target skeleton>");
-                    }
-                    break;
                 default: break;
             }
             return cmd[0];
         }
         return "";
-    }
-
-    public static void FixupAnimation(string anim, Dbx dbx)
-    {
-        var boneNames = new List<string>();
-        var boneHierarchy = new List<int>();
-        var localPose = new List<Transform>();
-
-        string name = (string)dbx.Prim["$"]["$"]["Name"].Value;
-        var b = dbx.Prim["BoneNames"];
-        foreach (var boneName in (b.Value as IceBlocLib.Frostbite.Complex).Fields)
-        {
-            boneNames.Add((string)boneName.Value);
-        }
-
-        b = dbx.Prim["Hierarchy"];
-        foreach (var index in (b.Value as IceBlocLib.Frostbite.Complex).Fields)
-        {
-            boneHierarchy.Add((int)index.Value);
-        }
-
-        
     }
 
     public static void SelectAsset(string asset)
