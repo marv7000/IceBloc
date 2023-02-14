@@ -45,17 +45,36 @@ public partial class MainWindow : Window
                 Instance.GameName.Content = Settings.CurrentGame;
             });
         }
+        Instance.Dispatcher.Invoke(() =>
+        {
+            Instance.LoadedAssets.Content = "Linking all EBX...";
+        });
 
+        var a = Task.Run(LinkAllEbx);
+        while (!a.IsCompleted)
+        {
+            Instance.Dispatcher.Invoke(() =>
+            {
+                Instance.ProgressBar.Value = Settings.Progress;
+            });
+        }
+
+        Instance.Dispatcher.Invoke(UpdateItems);
+    }
+
+    public static async Task LinkAllEbx()
+    {
         for (int i = 0; i < IO.Assets.Count; i++)
         {
             if (IO.Assets.ElementAt(i).Key.Item2 == InternalAssetType.EBX)
             {
+                Instance.Dispatcher.Invoke(() =>
+                {
+                    Settings.Progress = ((double)i / (double)IO.Assets.Count) * 100.0;
+                });
                 IO.Assets.ElementAt(i).Value.LinkEbx();
             }
         }
-
-        Instance.Dispatcher.Invoke(UpdateItems);
-
     }
 
     #endregion
