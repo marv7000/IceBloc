@@ -1,6 +1,6 @@
 ﻿using IceBlocLib.InternalFormats;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 public class SkeletonExporterATF : ISkeletonExporter
 {

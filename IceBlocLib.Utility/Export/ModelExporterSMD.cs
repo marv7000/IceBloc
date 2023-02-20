@@ -1,8 +1,7 @@
 ﻿using System.IO;
 using IceBlocLib.InternalFormats;
-using IceBlocLib.Utility;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 /// <summary>
 /// Exports <see cref="InternalMesh"/> objects to the .SMD format.

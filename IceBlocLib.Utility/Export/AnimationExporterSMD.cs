@@ -1,8 +1,7 @@
 ﻿using IceBlocLib.InternalFormats;
-using IceBlocLib.Utility;
 using System.Numerics;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 public class AnimationExporterSMD : IAnimationExporter
 {
@@ -11,6 +10,12 @@ public class AnimationExporterSMD : IAnimationExporter
         // Start writing to disk.
         Directory.CreateDirectory(path);
         using var w = new StreamWriter(File.Open(path + "\\" + animation.Name + ".smd", FileMode.Create));
+
+        w.WriteLine($"// {Settings.CurrentGame}");
+        w.WriteLine($"// {animation.Name}");
+        w.WriteLine($"// Additive: {animation.Additive}");
+        w.WriteLine($"// Frame Count: {animation.Frames.Count}");
+        w.WriteLine($"// Type: {animation.AnimType}");
 
         // Write version header.
         w.WriteLine("version 1");

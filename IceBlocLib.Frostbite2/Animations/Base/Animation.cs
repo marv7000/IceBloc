@@ -17,6 +17,8 @@ public class Animation
     public string[] Channels;
     public float FPS;
 
+    public StorageType StorageType;
+
     public static GenericData BasicAssets = null;
 
     public Animation() { }
@@ -59,6 +61,8 @@ public class Animation
     {
         // Get the ChannelToDofAsset referenced by the Animation.
         var dof = GetDofAsset(channelToDofAsset);
+        StorageType = (StorageType)(int)dof["StorageType"];
+
         // Find the ClipControllerAsset which references the Animation.
         var clipController = BasicAssets["Anim", ID];
         // Set FPS
@@ -76,16 +80,21 @@ public class Animation
             for (int i = 0; i < assets.Length; i++)
             {
                 var layoutAsset = BasicAssets[assets[i]];
-                var entries = layoutAsset["Slots"] as Dictionary<string, object>[];
 
-                for (int x = 0; x < entries.Length; x++)
+                string typeName = BasicAssets.Classes[BasicAssets.GetDataType(assets[i])].Name;
+                if (typeName == "LayoutAsset")
                 {
-                    channelNames.Add((string)entries[x]["Name"]);
+                    var entries = layoutAsset["Slots"] as Dictionary<string, object>[];
+
+                    for (int x = 0; x < entries.Length; x++)
+                    {
+                        channelNames.Add((string)entries[x]["Name"]);
+                    }
                 }
             }
         }
 
-        byte[] data = dof["IndexData"] as byte[];
+        byte[] data = (byte[])dof["IndexData"];
         string[] output = new string[data.Length];
 
         for (int i = 0; i < data.Length; i++)

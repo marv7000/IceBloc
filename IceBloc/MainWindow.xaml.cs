@@ -9,9 +9,9 @@ using System.Threading;
 using IceBloc.Utility;
 using System.Threading.Tasks;
 using IceBlocLib.Utility;
-using IceBlocLib.Export;
 using IceBlocLib;
 using System.Linq;
+using IceBlocLib.Utility.Export;
 
 namespace IceBloc;
 
@@ -63,7 +63,7 @@ public partial class MainWindow : Window
         Instance.Dispatcher.Invoke(UpdateItems);
     }
 
-    public static async Task LinkAllEbx()
+    public static void LinkAllEbx()
     {
         var assets = Settings.IOClass.GetAssets();
         for (int i = 0; i < assets.Count; i++)
@@ -134,7 +134,6 @@ public partial class MainWindow : Window
         WriteUIOutput(message + "\n");
     }
 
-    
     private void SearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
         var output = new Dictionary<(string, InternalAssetType), AssetListItem>();
@@ -205,7 +204,7 @@ public partial class MainWindow : Window
         if (AnimationFormatBox.SelectedIndex == 0)
             Settings.CurrentAnimationExporter = new AnimationExporterSMD();
         if (AnimationFormatBox.SelectedIndex == 1)
-            Settings.CurrentAnimationExporter = new AnimationExporterATF();
+            Settings.CurrentAnimationExporter = new AnimationExporterSEANIM();
     }
 }
 

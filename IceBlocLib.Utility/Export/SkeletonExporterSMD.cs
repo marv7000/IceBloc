@@ -1,7 +1,7 @@
 ﻿using IceBlocLib.InternalFormats;
 using IceBlocLib.Utility;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 public class SkeletonExporterSMD : ISkeletonExporter
 {

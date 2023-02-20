@@ -180,8 +180,10 @@ public class GenericData
                 deserializedData = new DctAnimation(r.BaseStream, index, ref gd, bigEndian); break;
             case "RawAnimationAsset":
                 deserializedData = new RawAnimation(r.BaseStream, index, ref gd, bigEndian); break;
+            case "CurveAnimationAsset":
+                deserializedData = new CurveAnimation(r.BaseStream, index, ref gd, bigEndian); break;
             default:
-                deserializedData = new Animation(); break;
+                return new Animation();
                 //throw new MissingMethodException($"Tried to invoke undefined behaviour for type \"{gd.Classes[type].Name}\"\nThe type is valid, but no translations for this class have been defined in IceBloc.");
         }
 
@@ -435,6 +437,42 @@ public class GenericData
             }
             return null; 
         }
+    }
+    public Dictionary<string, object> this[string name]
+    {
+        get 
+        {
+            for (int i = 0; i < Data.Count; i++)
+            {
+                using var s = new MemoryStream(Data[i].Bytes.ToArray());
+                using var r = new BinaryReader(s);
+                r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
+                var values = ReadValues(r, i, base_baseOffset, base_type, false);
+
+                if ((string)values["__name"] == name)
+                {
+                    return values;
+                }
+            }
+            return null; 
+        }
+    }
+
+    public uint GetDataType(Guid guid)
+    {
+        for (int i = 0; i < Data.Count; i++)
+        {
+            using var s = new MemoryStream(Data[i].Bytes.ToArray());
+            using var r = new BinaryReader(s);
+            r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
+            var values = ReadValues(r, i, base_baseOffset, base_type, false);
+
+            if ((Guid)values["__guid"] == guid)
+            {
+                return base_type;
+            }
+        }
+        return 0;
     }
 
     /// <summary>

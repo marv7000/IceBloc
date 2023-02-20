@@ -1,6 +1,6 @@
 ﻿using IceBlocLib.InternalFormats;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 /// <summary>
 /// Handles texture export to more a common CG format.

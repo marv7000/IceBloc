@@ -91,6 +91,7 @@ public class RawAnimation : Animation
         ret.PositionChannels = posChannels;
         ret.RotationChannels = rotChannels;
         ret.Additive = Additive;
+        ret.AnimType = OriginalAnimType.RawAnimation;
 
         return ret;
     }

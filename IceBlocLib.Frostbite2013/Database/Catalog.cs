@@ -43,31 +43,61 @@ public class Catalog : IDisposable
         // Throw an exception if we can't find a chunk with the given SHA.
         var entry = GetEntry(sha);
 
-        bool compressed = false;
-
         switch (Settings.CurrentGame)
         {
             case Game.Battlefield4:
                 {
-                    if (type == InternalAssetType.RES)
-                        compressed = true;
-                    else if (type == InternalAssetType.EBX)
-                        compressed = false;
-                    else if (type == InternalAssetType.Chunk)
-                        compressed = entry.IsCompressed;
-
                     BinaryReader r = CasStreams[entry.CasFileIndex];
                     r.BaseStream.Position = entry.Offset;
 
-                    if (compressed)
-                        return ZLibDecompress(r, entry.DataSize);
-                    else
-                        return r.ReadBytes(entry.DataSize);
-                }
+                    uint num1 = r.ReadUInt32(true);
+                    uint num2 = r.ReadUInt32(true);
+                    var dictFlag = num1 & 0xFF000000;
+                    var uncompressedSize = num1 & 0x00FFFFFF;
+                    var comType = (num2 & 0xFF000000) >> 24;
+                    var typeFlag = (num2 & 0x00F00000) >> 20;
+                    var compressedSize = num2 & 0x000FFFFF;
+
+                    switch (comType)
+                    {
+                        case 0x00:
+                            return r.ReadBytes((int)compressedSize);
+                        case 0x02:
+                            return ZLibDecompress(r, (int)compressedSize);
+                        case 0x09:
+                            return LZ4Decompress(r, (int)compressedSize, (int)uncompressedSize);
+                        case 0x0F:
+                            return ZStdDecompress(r, (int)compressedSize, (int)uncompressedSize);
+                        case 0x15:
+                            return OodleDecompress(r, (int)compressedSize, (int)uncompressedSize);
+                    }
+                } break;
         }
         return null;
     }
 
+    private byte[] OodleDecompress(BinaryReader r, int compressedSize, int uncompressedSize)
+    {
+        throw new NotImplementedException();
+    }
+
+    private byte[] ZStdDecompress(BinaryReader r, int compressedSize, int uncompressedSize)
+    {
+        throw new NotImplementedException();
+    }
+
+    private unsafe byte[] LZ4Decompress(BinaryReader r, int compressedSize, int uncompressedSize)
+    {
+        Memory<byte> srcBuf = r.ReadBytes(compressedSize);
+        Memory<byte> destBuf = new byte[uncompressedSize];
+
+        nint srcPtr = (nint)srcBuf.Pin().Pointer;
+        nint destPtr = (nint)destBuf.Pin().Pointer;
+
+        Compression.Lz4DecompressSafePartial(srcPtr, destPtr, compressedSize, uncompressedSize, uncompressedSize);
+
+        return destBuf.ToArray();
+    }
 
     private byte[] ZLibDecompress(BinaryReader r, int size)
     {
@@ -78,7 +108,8 @@ public class Catalog : IDisposable
         while (r.BaseStream.Position < startOffset + size - 8)
         {
             int uSize = r.ReadInt32(true);
-            int cSize = r.ReadInt32(true);
+            //int cSize = r.ReadInt32(true);
+            int cSize = size;
 
             using var memory = new MemoryStream(r.ReadBytes(cSize));
             using var deflator = new ZLibStream(memory, CompressionMode.Decompress);

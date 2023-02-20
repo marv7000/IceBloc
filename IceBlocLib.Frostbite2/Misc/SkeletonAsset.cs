@@ -1,5 +1,4 @@
-﻿using IceBlocLib.Frostbite;
-using IceBlocLib.InternalFormats;
+﻿using IceBlocLib.InternalFormats;
 using IceBlocLib.Utility;
 using System.Numerics;
 

@@ -78,6 +78,7 @@ public class FrameAnimation : Animation
         ret.PositionChannels = posChannels;
         ret.RotationChannels = rotChannels;
         ret.Additive = Additive;
+        ret.AnimType = OriginalAnimType.FrameAnimation;
 
         return ret;
     }

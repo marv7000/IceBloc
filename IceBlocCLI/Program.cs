@@ -18,12 +18,12 @@ public class Program
         while(command != "exit")
         {
             Console.Write("> ");
-            command = ParseCommand();
+            command = ParseCommandAsync().Result;
         }
         Environment.Exit(0);
     }
 
-    public static string ParseCommand()
+    public static async Task<string> ParseCommandAsync()
     {
         string[] cmd = IO.SplitLiteral(Console.ReadLine());
         for (int i = 0; i < cmd.Length; i++)
@@ -38,7 +38,7 @@ public class Program
                     if (cmd[1] == "game")
                     {
                         Settings.GamePath = cmd[2];
-                        IO.LoadGame();
+                        await Extractor.LoadGame();
                     }
                     else if (cmd[1] == "file")
                         IO.LoadSbFile(cmd[2], true);
@@ -52,7 +52,7 @@ public class Program
                     if (cmd.Length == 1)
                         Console.WriteLine("Current selection is: " + Selection.Name);
                     else
-                        SelectAsset(cmd[1]); break;
+                        SelectAsset(cmd[1], cmd[2]); break;
                 case "export":
                     Selection.Export(); break;
                 case "setgame":
@@ -83,6 +83,8 @@ public class Program
                     break;
                 case "decrypt":
                     IO.DecryptAndCache(cmd[1]); break;
+                case "link":
+                    LinkAllEbx(); break;
                 default: break;
             }
             return cmd[0];
@@ -90,9 +92,33 @@ public class Program
         return "";
     }
 
-    public static void SelectAsset(string asset)
+    public static void LinkAllEbx()
     {
-        IO.Assets.TryGetValue((asset, InternalAssetType.RES), out Selection);
+        var assets = Settings.IOClass.GetAssets();
+        int ebxCount = 0;
+        for (int i = 0; i < assets.Count; i++)
+        {
+            if (assets.ElementAt(i).Key.Item2 == InternalAssetType.EBX)
+            {
+                assets.ElementAt(i).Value.LinkEbx();
+                Console.Clear();
+                string output = $"({i} / {assets.Count}) Linked {assets.ElementAt(i).Value.Name}";
+                Console.WriteLine(output);
+                ebxCount++;
+            }
+        }
+        Console.WriteLine($"Linked all {ebxCount} EBX.");
+    }
+
+    public static void SelectAsset(string type, string asset)
+    {
+        var internalType = InternalAssetType.Unknown;
+        switch(type)
+        {
+            case "res": internalType = InternalAssetType.RES; break;
+            case "ebx": internalType = InternalAssetType.EBX; break;
+        }
+        IO.Assets.TryGetValue((asset, internalType), out Selection);
         if (Selection is null)
         {
             Selection = new("Invalid selection", "AssetBank", InternalAssetType.Unknown, 0, null);

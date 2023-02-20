@@ -1,5 +1,4 @@
-﻿using IceBlocLib.Frostbite;
-using IceBlocLib.Frostbite2.Animations.Base;
+﻿using IceBlocLib.Frostbite2.Animations.Base;
 using IceBlocLib.InternalFormats;
 using IceBlocLib.Utility;
 
@@ -32,8 +31,10 @@ public class AntPackageAsset
                 result.Add(rawAnim.ConvertToInternal());
             else if (entry is DctAnimation dctAnim)
                 result.Add(dctAnim.ConvertToInternal());
+            else if (entry is CurveAnimation curAnim)
+                result.Add(curAnim.ConvertToInternal());
 
-            Settings.Progress = (double)(i / (gd.Data.Count - 1));
+            Console.WriteLine($"Converted {i} / {gd.Data.Count}            \r");
         }
         return result;
     }

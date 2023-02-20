@@ -9,6 +9,7 @@ public sealed class InternalAnimation
     public List<string> RotationChannels = new();
     public List<string> PositionChannels = new();
     public bool Additive = false;
+    public OriginalAnimType AnimType;
 
     public struct Frame
     {
@@ -22,4 +23,14 @@ public sealed class InternalAnimation
             Rotations = new();
         }
     }
+}
+
+public enum OriginalAnimType
+{
+    None = 0,
+    FrameAnimation,
+    RawAnimation,
+    DctAnimation,
+    CurveAnimation,
+    VbrAnimation
 }

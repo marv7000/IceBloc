@@ -73,19 +73,29 @@ public class FieldDescriptor
     public int Ref;
     public int Offset;
     public int SecondaryOffset;
+    private int Version;
 
-    public FieldDescriptor(int[] varList)
+    public FieldDescriptor(int[] varList, int version)
     {
         Name = varList[0];
         Type = varList[1];
         Ref = varList[2];
         Offset = varList[3];
         SecondaryOffset = varList[4];
+        Version = version;
+
+        if (Ebx.StringTable[Name] == "$")
+        {
+            Offset -= 8;
+        }
     }
 
     public FieldType GetFieldType()
     {
-        return (FieldType)(Type >> 4 & 0x1F);
+        if (Version == 1)
+            return (FieldType)(Type >> 4 & 0x1F);
+        else
+            return (FieldType)(Type >> 5 & 0x1F);
     }
 }
 
@@ -95,7 +105,7 @@ public class ComplexDescriptor
     public int FieldStartIndex;
     public int NumField;
     public int Alignment;
-    public FieldType Type;
+    public int Type;
     public int Size;
     public int SecondarySize;
 
@@ -105,42 +115,41 @@ public class ComplexDescriptor
         FieldStartIndex = varList[1]; //the index of the first field belonging to the complex
         NumField = varList[2]; //the total number of fields belonging to the complex
         Alignment = varList[3];
-        Type = (FieldType)varList[4];
+        Type = varList[4];
         Size = varList[5]; //total length of the complex in the payload section
         SecondarySize = varList[6]; //seems deprecated
     }
 
-    public ComplexDescriptor(int name, int fieldStartIndex, int numField, int alignment, FieldType type, int size, int secondarySize)
+    public int GetAlignment()
     {
-        Name = name;
-        FieldStartIndex = fieldStartIndex;
-        NumField = numField;
-        Alignment = alignment;
-        Type = type;
-        Size = size;
-        SecondarySize = secondarySize;
+        return Alignment & 0x7f;
+    }
+
+    public int GetNumFields()
+    {
+        return NumField | ((Alignment << 1) & 0x100);
     }
 }
 
 public class InstanceRepeater
 {
-    public int Repetitions;
-    public int ComplexIndex;
+    public uint Repetitions;
+    public uint ComplexIndex;
 
-    public InstanceRepeater(int[] varList)
+    public InstanceRepeater(ushort[] varList)
     {
-        ComplexIndex = varList[1]; //index of complex used as the instance
-        Repetitions = varList[2]; //number of instance repetitions
+        ComplexIndex = varList[0]; //index of complex used as the instance
+        Repetitions = varList[1]; //number of instance repetitions
     }
 }
 
 public class ArrayRepeater
 {
-    public int Offset;
-    public int Repetitions;
-    public int ComplexIndex;
+    public uint Offset;
+    public uint Repetitions;
+    public uint ComplexIndex;
 
-    public ArrayRepeater(int[] varList)
+    public ArrayRepeater(uint[] varList)
     {
         Offset = varList[0]; //offset in array payload section
         Repetitions = varList[1]; //number of array repetitions
@@ -191,7 +200,6 @@ public class Complex
 
     public object Get(string name)
     {
-
         foreach (var field in Fields)
         {
             if (field.Desc.Name == Ebx.GetHashCode(name) && field.Desc.GetFieldType() == FieldType.Array)
@@ -362,7 +370,8 @@ public class Dbx
         Header = new EbxHeader(headerData);
         ArraySectionStart = Header.AbsStringOffset + Header.LenString + Header.LenPayload;
         FileGuid = r.ReadGuid(BigEndian);
-        PrimaryInstanceGuid = r.ReadGuid(BigEndian);
+        // Pad
+        r.Align(16);
         for (int i = 0; i < Header.NumGUID; i++)
         {
             ExternalGuids.Add((r.ReadGuid(BigEndian), r.ReadGuid(BigEndian)));
@@ -378,75 +387,74 @@ public class Dbx
         for (int i = 0; i < Header.NumField; i++)
         {
             int[] array = new int[5];
-            array[0] = r.ReadInt32(BigEndian);
-            array[1] = r.ReadInt16(BigEndian);
-            array[2] = r.ReadInt16(BigEndian);
+            array[0] = (int)r.ReadUInt32(BigEndian);
+            array[1] = r.ReadUInt16(BigEndian);
+            array[2] = r.ReadUInt16(BigEndian);
             array[3] = r.ReadInt32(BigEndian);
             array[4] = r.ReadInt32(BigEndian);
 
-            FieldDescriptors[i] = new FieldDescriptor(array);
+            FieldDescriptors[i] = new FieldDescriptor(array, Version);
         }
         ComplexDescriptors = new ComplexDescriptor[Header.NumComplex];
         for (int i = 0; i < Header.NumComplex; i++)
         {
             int[] array = new int[7];
-            array[0] = r.ReadInt32(BigEndian);
-            array[1] = r.ReadInt32(BigEndian);
+            array[0] = (int)r.ReadUInt32(BigEndian);
+            array[1] = (int)r.ReadUInt32(BigEndian);
             array[2] = r.ReadByte();
             array[3] = r.ReadByte();
-            array[4] = r.ReadInt16(BigEndian);
-            array[5] = r.ReadInt16(BigEndian);
-            array[6] = r.ReadInt16(BigEndian);
+            array[4] = r.ReadUInt16(BigEndian);
+            array[5] = r.ReadUInt16(BigEndian);
+            array[6] = r.ReadUInt16(BigEndian);
 
             ComplexDescriptors[i] = new ComplexDescriptor(array);
         }
         InstanceRepeaters = new InstanceRepeater[Header.NumInstanceRepeater];
         for (int i = 0; i < Header.NumInstanceRepeater; i++)
         {
-            int[] array = new int[3];
-            array[0] = r.ReadInt32(BigEndian);
-            array[1] = r.ReadInt32(BigEndian);
-            array[2] = r.ReadInt32(BigEndian);
-
-            InstanceRepeaters[i] = new InstanceRepeater(array);
+            InstanceRepeaters[i] = new InstanceRepeater(r.ReadUInt16Array(2, BigEndian));
         }
 
-        while (r.BaseStream.Position % 16 != 0)
-        {
-            r.BaseStream.Position += 1;
-        }
+        r.Align(16);
         ArrayRepeaters = new ArrayRepeater[Header.NumArrayRepeater];
         for (int i = 0; i < Header.NumArrayRepeater; i++)
         {
-            ArrayRepeaters[i] = new ArrayRepeater(r.ReadInt32Array(3, BigEndian));
+            ArrayRepeaters[i] = new ArrayRepeater(r.ReadUInt32Array(3, BigEndian));
         }
 
         // payload
         r.BaseStream.Position = Header.AbsStringOffset + Header.LenString;
         InternalGuids = new();
         Instances = new();
-        foreach (var instanceRepeater in InstanceRepeaters)
+
+        int nonGuidIndex = 0;
+        IsPrimaryInstance = true;
+        for (int x = 0; x < InstanceRepeaters.Length; x++)
         {
+            InstanceRepeater? instanceRepeater = InstanceRepeaters[x];
             for (int i = 0; i < instanceRepeater.Repetitions; i++)
             {
-                var instanceGuid = r.ReadGuid(BigEndian);
+                r.Align(ComplexDescriptors[instanceRepeater.ComplexIndex].GetAlignment());
+
+                Guid instanceGuid = new();
+                if (x < Header.NumGuidRepeater)
+                    instanceGuid = r.ReadGuid(BigEndian);
+                else
+                {
+                    instanceGuid = new Guid(nonGuidIndex, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+                    nonGuidIndex++;
+                }
                 InternalGuids.Add(instanceGuid);
 
-                if (instanceGuid == PrimaryInstanceGuid)
-                    IsPrimaryInstance = true;
-                else
-                    IsPrimaryInstance = false;
-                var inst = r.ReadComplex(this, instanceRepeater.ComplexIndex);
+                var inst = r.ReadComplex(this, (int)instanceRepeater.ComplexIndex, true);
                 inst.Guid = instanceGuid;
 
                 if (IsPrimaryInstance)
                     Prim = inst;
                 Instances.Add(instanceGuid, inst);
+                IsPrimaryInstance = false;
             }
         }
-
-        if (TrueFileName == "")
-            TrueFileName = Path.GetRelativePath((r.BaseStream as FileStream).Name, "").Replace("\\", "/");
 
         PrimType = Ebx.StringTable[Prim.Desc.Name];
     }
@@ -572,7 +580,6 @@ public class Dbx
         }
     }
 
-
 }
 #endregion
 
@@ -585,7 +592,7 @@ public static class EbxExtensions
         else
             return new Guid(r.ReadBytes(16));
     }
-    public static Complex ReadComplex(this BinaryReader r, in Dbx dbx, int complexIndex)
+    public static Complex ReadComplex(this BinaryReader r, in Dbx dbx, int complexIndex, bool isInstance = false)
     {
         var complexDesc = dbx.ComplexDescriptors[complexIndex];
         var cmplx = new Complex(complexDesc);
@@ -593,13 +600,16 @@ public static class EbxExtensions
         var startPos = r.BaseStream.Position;
         cmplx.Fields = new();
 
-        for (int i = complexDesc.FieldStartIndex; i < complexDesc.FieldStartIndex + complexDesc.NumField; i++)
+        int obfuscationShift = 0;
+        if (isInstance && cmplx.Desc.GetAlignment() == 4) obfuscationShift = 8;
+
+        for (int i = complexDesc.FieldStartIndex; i < complexDesc.FieldStartIndex + complexDesc.GetNumFields(); i++)
         {
-            r.BaseStream.Position = startPos + dbx.FieldDescriptors[i].Offset;
+            r.BaseStream.Position = startPos + dbx.FieldDescriptors[i].Offset - obfuscationShift;
             cmplx.Fields.Add(r.ReadField(dbx, i));
         }
 
-        r.BaseStream.Position = startPos + complexDesc.Size;
+        r.BaseStream.Position = startPos + complexDesc.Size - obfuscationShift;
         return cmplx;
     }
     public static Field ReadField(this BinaryReader r, in Dbx dbx, int fieldIndex)
@@ -612,7 +622,7 @@ public static class EbxExtensions
                     dbx.FieldDescriptors[fieldIndex].Ref,
                     dbx.FieldDescriptors[fieldIndex].Offset,
                     dbx.FieldDescriptors[fieldIndex].SecondaryOffset
-                }));
+                }, dbx.Version));
         var typ = field.Desc.GetFieldType();
 
         switch (typ)
@@ -626,7 +636,8 @@ public static class EbxExtensions
             case FieldType.Array:
                 {
                     // Array
-                    var arrayRptr = dbx.ArrayRepeaters[r.ReadUInt32(dbx.BigEndian)];
+                    uint rptrIdx = r.ReadUInt32(dbx.BigEndian);
+                    var arrayRptr = dbx.ArrayRepeaters[rptrIdx];
                     var arrayCmplxDesc = dbx.ComplexDescriptors[field.Desc.Ref];
 
                     r.BaseStream.Position = dbx.ArraySectionStart + arrayRptr.Offset;
@@ -663,7 +674,7 @@ public static class EbxExtensions
                         var enumeration = new Enumeration();
                         enumeration.Type = field.Desc.Ref;
                         enumeration.Values = new();
-                        for (int i = enumComplex.FieldStartIndex; i < enumComplex.FieldStartIndex + enumComplex.NumField; i++)
+                        for (int i = enumComplex.FieldStartIndex; i < enumComplex.FieldStartIndex + enumComplex.GetNumFields(); i++)
                             enumeration.Values[dbx.FieldDescriptors[i].Offset] = Ebx.StringTable[dbx.FieldDescriptors[i].Name];
 
                         dbx.Enumerations[field.Desc.Ref] = enumeration;

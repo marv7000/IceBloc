@@ -48,7 +48,7 @@
                     <Grid>
                         <ComboBox x:Name="AnimationFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="AnimationFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
                             <System:String>.smd</System:String>
-                            <System:String>.atf</System:String>
+                            <System:String>.seanim</System:String>
                         </ComboBox>
                     </Grid>
                 </GroupBox>

@@ -1,7 +1,7 @@
 ﻿using IceBlocLib.InternalFormats;
 using IceBloc.Utility;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 public class TextureExporterDDS : ITextureExporter
 {

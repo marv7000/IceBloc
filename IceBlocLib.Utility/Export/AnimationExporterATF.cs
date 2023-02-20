@@ -1,8 +1,7 @@
 ﻿using IceBlocLib.InternalFormats;
-using IceBlocLib.Utility;
 using System.Numerics;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 public class AnimationExporterATF : IAnimationExporter
 {

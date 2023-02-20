@@ -124,6 +124,7 @@ public partial class DctAnimation : Animation
         ret.PositionChannels = posChannels;
         ret.RotationChannels = rotChannels;
         ret.Additive = Additive;
+        ret.AnimType = OriginalAnimType.DctAnimation;
         return ret;
     }
 

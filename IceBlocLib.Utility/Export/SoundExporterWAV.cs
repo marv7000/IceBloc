@@ -1,7 +1,7 @@
 ﻿using IceBlocLib.InternalFormats;
 using System.Text;
 
-namespace IceBlocLib.Export;
+namespace IceBlocLib.Utility.Export;
 
 public class SoundExporterWAV : ISoundExporter
 {
@@ -22,8 +22,8 @@ public class SoundExporterWAV : ISoundExporter
         w.Write((short)1);
         w.Write((short)sound.ChannelCount);
         w.Write((int)sound.SampleRate);
-        w.Write((int)((sound.SampleRate * 16 * sound.ChannelCount) / 8));
-        w.Write((short)((16 * sound.ChannelCount) / 8));
+        w.Write(sound.SampleRate * 16 * sound.ChannelCount / 8);
+        w.Write((short)(16 * sound.ChannelCount / 8));
         w.Write((short)16);
         w.Write(Encoding.ASCII.GetBytes("data"));
         w.Write(data.Length);
