@@ -104,13 +104,15 @@ public static class Extractor
                         case Game.Battlefield4:
                             output = Frostbite2013.Meshes.MeshSet.ConvertToInternal(stream); break;
                     }
-                    for (int i = 0; i < output.Count; i++)
+                    if (AssetListItem.LastSkeleton is null)
                     {
-                        if (AssetListItem.LastSkeleton is null)
+                        for (int i = 0; i < output.Count; i++)
+                        {
                             Settings.CurrentModelExporter.Export(output[i], path + $"_{output[i].Name}");
-                        else
-                            Settings.CurrentModelExporter.Export(output[i], AssetListItem.LastSkeleton, path + $"_{output[i].Name}");
+                        } 
                     }
+                    else
+                        Settings.CurrentModelExporter.Export(output, AssetListItem.LastSkeleton, path);
                 }
                 else if (assetListItem.Type == "AssetBank")
                 {

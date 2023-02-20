@@ -190,7 +190,7 @@ public partial class MainWindow : Window
         if (MeshFormatBox.SelectedIndex == 1)
             Settings.CurrentModelExporter = new ModelExporterOBJ();
         if (MeshFormatBox.SelectedIndex == 2)
-            Settings.CurrentModelExporter = new ModelExporterATF();
+            Settings.CurrentModelExporter = new ModelExporterSEMODEL();
     }
 
     private void TextureFormatBox_SelectionChanged(object sender, SelectionChangedEventArgs e)

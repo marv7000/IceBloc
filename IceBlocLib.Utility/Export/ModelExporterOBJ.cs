@@ -42,4 +42,9 @@ public class ModelExporterOBJ : IModelExporter
         Export(mesh, path);
         Console.WriteLine($"Attempted to export skinned mesh \"{mesh.Name}\", but OBJ cannot store skinning information! Discarding...");
     }
+
+    public void Export(List<InternalMesh> meshes, InternalSkeleton skeleton, string path)
+    {
+        throw new NotImplementedException();
+    }
 }

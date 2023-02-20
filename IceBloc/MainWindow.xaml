@@ -32,7 +32,7 @@
                         <ComboBox x:Name="MeshFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="MeshFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
                             <System:String>.smd</System:String>
                             <System:String>.obj</System:String>
-                            <System:String>.atf</System:String>
+                            <System:String>.semodel</System:String>
                         </ComboBox>
                     </Grid>
                 </GroupBox>
@@ -40,7 +40,6 @@
                     <Grid>
                         <ComboBox x:Name="SkeletonFormatBox" HorizontalAlignment="Left" Margin="10,10,10,10" VerticalAlignment="Top" Width="120" SelectionChanged="SkeletonFormatBox_SelectionChanged" IsSynchronizedWithCurrentItem="False" SelectedIndex="0" >
                             <System:String>.smd</System:String>
-                            <System:String>.atf</System:String>
                         </ComboBox>
                     </Grid>
                 </GroupBox>

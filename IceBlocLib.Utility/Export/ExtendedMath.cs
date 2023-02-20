@@ -63,6 +63,11 @@ namespace SELib
 
         new public static readonly Vector3 Zero = new Vector3() { X = 0, Y = 0, Z = 0 };
         new public static readonly Vector3 One = new Vector3() { X = 1, Y = 1, Z = 1 };
+
+        public static implicit operator Vector3(System.Numerics.Vector3 vec)
+        {
+            return new Vector3(vec.X, vec.Y, vec.Z);
+        }
     }
 
     /// <summary>
@@ -114,5 +119,11 @@ namespace SELib
         }
 
         public static readonly Quaternion Identity = new Quaternion() { X = 0, Y = 0, Z = 0, W = 1 };
+
+
+        public static implicit operator Quaternion(System.Numerics.Quaternion vec)
+        {
+            return new Quaternion(vec.X, vec.Y, vec.Z, vec.W);
+        }
     }
 }
