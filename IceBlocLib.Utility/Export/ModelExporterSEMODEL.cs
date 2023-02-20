@@ -98,7 +98,8 @@ public class ModelExporterSEMODEL : IModelExporter
             {
                 SEModelVertex v = new();
                 v.Position = new(mesh.Vertices[i].PositionX, mesh.Vertices[i].PositionY, mesh.Vertices[i].PositionZ);
-                v.VertexNormal = System.Numerics.Vector3.Negate(new System.Numerics.Vector3(mesh.Vertices[i].NormalX, mesh.Vertices[i].NormalY, mesh.Vertices[i].NormalZ));
+                v.VertexNormal = new(mesh.Vertices[i].NormalX, mesh.Vertices[i].NormalY, mesh.Vertices[i].NormalZ);
+                v.VertexColor = new Color(255, 255, 255, 255);
                 v.UVSets.Add(new Vector2(mesh.Vertices[i].TexCoordX, 1.0f - mesh.Vertices[i].TexCoordY));
 
                 SEModelWeight w1 = new SEModelWeight();
@@ -124,7 +125,7 @@ public class ModelExporterSEMODEL : IModelExporter
 
             for (int i = 0; i < mesh.Faces.Count; i++)
             {
-                seMesh.AddFace((uint)mesh.Faces[i].A, (uint)mesh.Faces[i].B, (uint)mesh.Faces[i].C);
+                seMesh.AddFace((uint)mesh.Faces[i].A, (uint)mesh.Faces[i].C, (uint)mesh.Faces[i].B);
             }
 
             var mat = new SEModelMaterial()
