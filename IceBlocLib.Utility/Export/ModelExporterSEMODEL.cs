@@ -98,8 +98,8 @@ public class ModelExporterSEMODEL : IModelExporter
             {
                 SEModelVertex v = new();
                 v.Position = new(mesh.Vertices[i].PositionX, mesh.Vertices[i].PositionY, mesh.Vertices[i].PositionZ);
-                v.VertexNormal = new(mesh.Vertices[i].NormalX, mesh.Vertices[i].NormalY, mesh.Vertices[i].NormalZ);
-                v.UVSets.Add(new Vector2(mesh.Vertices[i].TexCoordX, mesh.Vertices[i].TexCoordY));
+                v.VertexNormal = System.Numerics.Vector3.Negate(new System.Numerics.Vector3(mesh.Vertices[i].NormalX, mesh.Vertices[i].NormalY, mesh.Vertices[i].NormalZ));
+                v.UVSets.Add(new Vector2(mesh.Vertices[i].TexCoordX, 1.0f - mesh.Vertices[i].TexCoordY));
 
                 SEModelWeight w1 = new SEModelWeight();
                 w1.BoneIndex = (uint)mesh.Vertices[i].BoneIndexA;
