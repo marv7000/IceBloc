@@ -1,6 +1,5 @@
 ﻿using IceBlocLib.InternalFormats;
 using SELib;
-using System.Numerics;
 
 namespace IceBlocLib.Utility.Export;
 
@@ -27,6 +26,8 @@ public class AnimationExporterSEANIM : IAnimationExporter
                 anim.AddRotationKey(animation.RotationChannels[i], animation.Frames[frame].FrameIndex, rot.X, rot.Y, rot.Z, rot.W);
             }
         }
+
+        anim.AnimType = animation.Additive ? AnimationType.Additive : AnimationType.Absolute;
 
         anim.Write(s, false);
     }

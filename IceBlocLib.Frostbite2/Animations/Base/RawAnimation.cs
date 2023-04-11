@@ -56,12 +56,12 @@ public class RawAnimation : Animation
         var frame = new InternalAnimation.Frame();
 
         // Get all names.
-        for (int i = 0; i < Channels.Length; i++)
+        foreach (var channel in Channels)
         {
-            if (Channels[i].EndsWith(".q"))
-                rotChannels.Add(Channels[i].Replace(".q", ""));
-            else if (Channels[i].EndsWith(".t"))
-                posChannels.Add(Channels[i].Replace(".t", ""));
+            if (channel.Value == BoneChannelType.Rotation)
+                rotChannels.Add(channel.Key.Replace(".q", ""));
+            else if (channel.Value == BoneChannelType.Position)
+                posChannels.Add(channel.Key.Replace(".t", ""));
         }
 
         int dataIndex = 0;

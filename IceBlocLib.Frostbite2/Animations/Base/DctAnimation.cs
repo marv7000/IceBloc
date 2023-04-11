@@ -83,33 +83,65 @@ public partial class DctAnimation : Animation
 
         List<string> posChannels = new();
         List<string> rotChannels = new();
+        List<string> scaleChannels = new();
+
+        if (Name == "ParachuteRight Anim")
+        {
+            Console.Write("foo");
+        }
 
         // Get all names.
-        for (int i = 0; i < Channels.Length; i++)
+        foreach (var channel in Channels)
         {
-            if (Channels[i].EndsWith(".q"))
-                rotChannels.Add(Channels[i].Replace(".q", ""));
-            else if (Channels[i].EndsWith(".t"))
-                posChannels.Add(Channels[i].Replace(".t", ""));
+            if (channel.Value == BoneChannelType.Rotation)
+                rotChannels.Add(channel.Key);
+            else if (channel.Value == BoneChannelType.Position)
+                posChannels.Add(channel.Key);
+            else if (channel.Value == BoneChannelType.Scale)
+                scaleChannels.Add(channel.Key);
         }
 
         // Assign values to Channels.
+
+        var dofCount = NumQuats + NumVec3 + NumFloatVec;
+
         for (int i = 0; i < KeyTimes.Length; i++)
         {
             Frame frame = new Frame();
 
-            for (int channelIdx = 0; channelIdx < rotChannels.Count; channelIdx++)
+            List<Quaternion> rotations = new();
+            List<Vector3> positions = new();
+            List<Vector3> scales = new();
+
+            for (int channelIdx = 0; channelIdx < NumQuats; channelIdx++)
             {
-                int pos = (int)(i * GetDofCount() + channelIdx);
+                int pos = (int)(i * dofCount + channelIdx);
                 Vector4 element = DecompressedData[pos];
-                frame.Rotations.Add(Quaternion.Normalize(new Quaternion(element.X, element.Y, element.Z, element.W)));
+
+                rotations.Add(Quaternion.Normalize(new Quaternion(element.X, element.Y, element.Z, element.W)));
             }
-            for (int channelIdx = 0; channelIdx < posChannels.Count; channelIdx++)
+            // We need to differentiate between Scale and Position.
+            for (int channelIdx = 0; channelIdx < NumVec3; channelIdx++)
             {
-                int pos = (int)(i * GetDofCount() + NumQuats + channelIdx);
+                int pos = (int)(i * dofCount + NumQuats + channelIdx);
                 Vector4 element = DecompressedData[pos];
-                frame.Positions.Add(new Vector3(element.X, element.Y, element.Z));
+
+                var a = posChannels.Exists(x => x != null);
+
+                var type = Channels[""];
+                if (type == BoneChannelType.Position)
+                {
+                    positions.Add(new Vector3(element.X, element.Y, element.Z));
+                }
+                else if (type == BoneChannelType.Scale)
+                {
+                    scales.Add(new Vector3(element.X, element.Y, element.Z));
+                }
             }
+
+            frame.Rotations = rotations;
+            frame.Positions = positions;
+
             ret.Frames.Add(frame);
         }
 
@@ -120,16 +152,18 @@ public partial class DctAnimation : Animation
             ret.Frames[i] = f;
         }
 
+        for (int r = 0; r < rotChannels.Count; r++)
+            rotChannels[r] = rotChannels[r].Replace(".q", "");
+        for (int r = 0; r < posChannels.Count; r++)
+            posChannels[r] = posChannels[r].Replace(".t", "");
+        for (int r = 0; r < scaleChannels.Count; r++)
+            scaleChannels[r] = scaleChannels[r].Replace(".s", "");
+
         ret.Name = Name;
         ret.PositionChannels = posChannels;
         ret.RotationChannels = rotChannels;
         ret.Additive = Additive;
         ret.AnimType = OriginalAnimType.DctAnimation;
         return ret;
-    }
-
-    private int GetDofCount()
-    {
-        return NumQuats + NumVec3 + NumFloatVec;
     }
 }

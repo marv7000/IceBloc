@@ -1,5 +1,7 @@
 ﻿using IceBlocLib.InternalFormats;
 using IceBlocLib.Frostbite;
+using System.Numerics;
+using IceBlocLib.Utility.Export;
 
 namespace IceBlocLib.Frostbite2.Meshes;
 
@@ -74,6 +76,8 @@ public class MeshSet
                 // Start reading vertices.
                 cr.BaseStream.Position = sub.VertexOffset;
 
+                bool isSkinned = sub.BoneCount > 0;
+
                 for (int k = 0; k < sub.VertexCount; k++)
                 {
                     Vertex vert = new();
@@ -81,15 +85,24 @@ public class MeshSet
                     var posElement = sub.GeoDecls.GetByUsage(VertexElementUsage.Pos);
                     var norElement = sub.GeoDecls.GetByUsage(VertexElementUsage.Normal);
                     var uv0Element = sub.GeoDecls.GetByUsage(VertexElementUsage.TexCoord0);
+
                     var boneIndexElement = sub.GeoDecls.GetByUsage(VertexElementUsage.BoneIndices);
                     var boneWeightElement = sub.GeoDecls.GetByUsage(VertexElementUsage.BoneWeights);
 
-                    var position = posElement.Read(cr, sub.VertexStride);
-                    var normals = norElement.Read(cr, sub.VertexStride);
-                    var texcoord = uv0Element.Read(cr, sub.VertexStride);
-                    var boneIndex = boneIndexElement.Read(cr, sub.VertexStride);
-                    var boneWeight = boneWeightElement.Read(cr, sub.VertexStride);
-
+                    Vector4 position = new();
+                    Vector4 normals = new();
+                    Vector4 texcoord = new();
+                    Vector4 boneIndex = new(-1.0f);
+                    Vector4 boneWeight = new(1.0f);
+                    position = posElement.Read(cr, sub.VertexStride);
+                    normals = norElement.Read(cr, sub.VertexStride);
+                    texcoord = uv0Element.Read(cr, sub.VertexStride);
+                    
+                    if (isSkinned)
+                    {
+                        boneIndex = boneIndexElement.Read(cr, sub.VertexStride);
+                        boneWeight = boneWeightElement.Read(cr, sub.VertexStride);
+                    }
                     // We're done reading the current vertex, move up the stream.
                     cr.BaseStream.Position += sub.VertexStride;
 
@@ -103,14 +116,28 @@ public class MeshSet
                     vert.TexCoordY = 1.0f - texcoord.Y;
 
                     var bIdx = sub.BoneIndices.Value as List<object>;
-                    vert.BoneIndexA = (int)(short)bIdx[(int)boneIndex.X];
-                    vert.BoneIndexB = (int)(short)bIdx[(int)boneIndex.Y];
-                    vert.BoneIndexC = (int)(short)bIdx[(int)boneIndex.Z];
-                    vert.BoneIndexD = (int)(short)bIdx[(int)boneIndex.W];
-                    vert.BoneWeightA = boneWeight.X;
-                    vert.BoneWeightB = boneWeight.Y;
-                    vert.BoneWeightC = boneWeight.Z;
-                    vert.BoneWeightD = boneWeight.W;
+                    if (isSkinned)
+                    {
+                        vert.BoneIndexA = (int)(short)bIdx[(int)boneIndex.X];
+                        vert.BoneIndexB = (int)(short)bIdx[(int)boneIndex.Y];
+                        vert.BoneIndexC = (int)(short)bIdx[(int)boneIndex.Z];
+                        vert.BoneIndexD = (int)(short)bIdx[(int)boneIndex.W];
+                        vert.BoneWeightA = boneWeight.X;
+                        vert.BoneWeightB = boneWeight.Y;
+                        vert.BoneWeightC = boneWeight.Z;
+                        vert.BoneWeightD = boneWeight.W;
+                    }
+                    else
+                    {
+                        vert.BoneIndexA = 0;
+                        vert.BoneIndexB = 0;
+                        vert.BoneIndexC = 0;
+                        vert.BoneIndexD = 0;
+                        vert.BoneWeightA = 0.0f;
+                        vert.BoneWeightB = 0.0f;
+                        vert.BoneWeightC = 0.0f;
+                        vert.BoneWeightD = 1.0f;
+                    }
 
                     mesh.Vertices.Add(vert);
                 }

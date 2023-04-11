@@ -1,5 +1,6 @@
 ﻿using IceBlocLib.InternalFormats;
 using IceBlocLib.Utility;
+using System.Linq;
 
 namespace IceBlocLib;
 
@@ -39,7 +40,13 @@ public static class Extractor
         }
         if (Settings.GamePath.Contains("Battlefield 4"))
         {
-            Settings.CurrentGame = Game.Battlefield3;
+            Settings.CurrentGame = Game.Battlefield4;
+            Settings.IOClass = new Frostbite2013.IO();
+            Frostbite2013.IO.LoadGame();
+        }
+        if (Settings.GamePath.Contains("Battlefield 1"))
+        {
+            Settings.CurrentGame = Game.Battlefield1;
             Settings.IOClass = new Frostbite2013.IO();
             Frostbite2013.IO.LoadGame();
         }
@@ -62,11 +69,12 @@ public static class Extractor
             case Game.Battlefield3:
                 data = Frostbite2.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType); break;
             case Game.Battlefield4:
+            case Game.BattlefieldHardline:
                 data = Frostbite2013.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType); break;
         }
 
         // If the user wants to export the raw RES.
-        if (Settings.ExportRaw)
+        if (true)
         {
             File.WriteAllBytes(path + ("_raw." + assetListItem.Type), data);
         }
@@ -82,45 +90,48 @@ public static class Extractor
             // RES Export
             else if (assetListItem.AssetType == InternalAssetType.RES)
             {
-                if (assetListItem.Type == "DxTexture")
+                switch (assetListItem.Type)
                 {
-                    InternalTexture output = new();
-                    switch (Settings.CurrentGame)
-                    {
-                        case Game.Battlefield3:
-                            output = Frostbite2.Textures.DxTexture.ConvertToInternal(stream); break;
-                        case Game.Battlefield4:
-                            output = Frostbite2013.Textures.DxTexture.ConvertToInternal(stream); break;
-                    }
-                    Settings.CurrentTextureExporter.Export(output, path);
-                }
-                else if (assetListItem.Type == "MeshSet")
-                {
-                    List<InternalMesh> output = new(); 
-                    switch (Settings.CurrentGame)
-                    {
-                        case Game.Battlefield3:
-                            output = Frostbite2.Meshes.MeshSet.ConvertToInternal(stream); break;
-                        case Game.Battlefield4:
-                            output = Frostbite2013.Meshes.MeshSet.ConvertToInternal(stream); break;
-                    }
-                    if (AssetListItem.LastSkeleton is null)
-                    {
-                        for (int i = 0; i < output.Count; i++)
+                    case "DxTexture":
                         {
-                            Settings.CurrentModelExporter.Export(output[i], path + $"_{output[i].Name}");
-                        } 
-                    }
-                    else
-                        Settings.CurrentModelExporter.Export(output, AssetListItem.LastSkeleton, path);
-                }
-                else if (assetListItem.Type == "AssetBank")
-                {
-                    List<InternalAnimation> s = Frostbite2.Misc.AntPackageAsset.ConvertToInternal(stream);
-                    for (int i = 0; i < s.Count; i++)
-                    {
-                        Settings.CurrentAnimationExporter.Export(s[i], AssetListItem.LastSkeleton, path);
-                    }
+                            InternalTexture output = new();
+                            switch (Settings.CurrentGame)
+                            {
+                                case Game.Battlefield3:
+                                    output = Frostbite2.Textures.DxTexture.ConvertToInternal(stream); break;
+                                case Game.Battlefield4:
+                                    output = Frostbite2013.Textures.DxTexture.ConvertToInternal(stream); break;
+                            }
+                            Settings.CurrentTextureExporter.Export(output, path);
+                        } break;
+                    case "MeshSet":
+                        {
+                            List<InternalMesh> output = new();
+                            switch (Settings.CurrentGame)
+                            {
+                                case Game.Battlefield3:
+                                    output = Frostbite2.Meshes.MeshSet.ConvertToInternal(stream); break;
+                                case Game.Battlefield4:
+                                    output = Frostbite2013.Meshes.MeshSet.ConvertToInternal(stream); break;
+                            }
+                            if (AssetListItem.LastSkeleton is null)
+                            {
+                                for (int i = 0; i < output.Count; i++)
+                                {
+                                    Settings.CurrentModelExporter.Export(output[i], path + $"_{output[i].Name}");
+                                }
+                            }
+                            else
+                                Settings.CurrentModelExporter.Export(output, AssetListItem.LastSkeleton, path);
+                        } break;
+                    case "AssetBank":
+                        {
+                            List<InternalAnimation> s = Frostbite2.Misc.AntPackageAsset.ConvertToInternal(stream);
+                            for (int i = 0; i < s.Count; i++)
+                            {
+                                Settings.CurrentAnimationExporter.Export(s[i], AssetListItem.LastSkeleton, path);
+                            }
+                        } break;
                 }
             }
         }

@@ -1,6 +1,5 @@
 ﻿using IceBlocLib.Frostbite2.Animations.Base;
 using IceBlocLib.InternalFormats;
-using IceBlocLib.Utility;
 
 namespace IceBlocLib.Frostbite2.Misc;
 
@@ -21,6 +20,7 @@ public class AntPackageAsset
     {
         List<InternalAnimation> result = new();
         GenericData gd = new(chunk);
+
         for (int i = 0; i < gd.Data.Count; i++)
         {
             using var stream = new MemoryStream(gd.Data[i].Bytes.ToArray());
@@ -31,10 +31,8 @@ public class AntPackageAsset
                 result.Add(rawAnim.ConvertToInternal());
             else if (entry is DctAnimation dctAnim)
                 result.Add(dctAnim.ConvertToInternal());
-            else if (entry is CurveAnimation curAnim)
-                result.Add(curAnim.ConvertToInternal());
-
-            Console.WriteLine($"Converted {i} / {gd.Data.Count}            \r");
+            //else if (entry is CurveAnimation curAnim)
+            //    result.Add(curAnim.ConvertToInternal());
         }
         return result;
     }

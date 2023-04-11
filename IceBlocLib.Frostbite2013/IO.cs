@@ -2,7 +2,7 @@
 using IceBlocLib.Frostbite2013.Database;
 using IceBlocLib.Utility;
 using System.Reflection;
-using System.Text.RegularExpressions;
+using System.Security.Cryptography;
 
 namespace IceBlocLib.Frostbite2013;
 
@@ -25,8 +25,8 @@ public class IO : IOInterface
     /// </summary>
     public static byte[] GetChunk(Guid streamingChunkId)
     {
-        var t = ChunkTranslations[streamingChunkId];
-        return ActiveCatalog.Extract(t.Entry.SHA, t.IsBundle, InternalAssetType.Chunk);
+        var (Entry, IsBundle, IsCas) = ChunkTranslations[streamingChunkId];
+        return ActiveCatalog.Extract(Entry.SHA, IsBundle, InternalAssetType.Chunk);
     }
 
     /// <summary>
@@ -79,64 +79,8 @@ public class IO : IOInterface
         return true;
     }
 
-    public static void LoadSbFile(string path, bool isToc)
-    {
-        try
-        {
-            ActiveDataBaseObject = DbObject.UnpackDbObject(path, out bool wasCached);
-            var adboData = ActiveDataBaseObject.Data as List<DbObject>;
-            if (adboData is not null)
-            {
-                bool isCas = false;
-                // Check for cas.
-                if (isToc)
-                {
-                    foreach (var element in adboData)
-                    {
-                        if (element.Name == "cas")
-                            isCas = (bool)element.Data;
-                    }
 
-                    DataBaseObjects.Add(Path.GetFileNameWithoutExtension(path), isCas);
-                }
-
-                isCas = DataBaseObjects[Path.GetFileNameWithoutExtension(path)];
-
-                foreach (var element in adboData)
-                {
-                    if (element.Name == "bundles")
-                    {
-                        foreach (DbObject asset in element.Data as List<DbObject>)
-                        {
-                            LoadDbObject(asset, false, isCas);
-                        }
-                    }
-                    // If we have pure chunks.
-                    else if (element.Name == "chunks")
-                    {
-                        LoadDbObject(element, true, isCas);
-                    }
-                }
-            }
-
-            if (wasCached)
-                Console.WriteLine($"Loaded file \"{path}\" from Cache.");
-            else
-                Console.WriteLine($"Loaded file \"{path}\".");
-
-        }
-        catch
-        {
-            Console.WriteLine($"Tried to load an unsupported file \"{path}\", skipping...");
-        }
-    }
-
-    public static void LoadNonCasFile(string path)
-    {
-        // TODO
-    }
-
-    public static void LoadDbObject(DbObject asset, bool isChunks, bool isCas)
+    public static void LoadDbObject(DbObject asset, bool isChunks, bool isCas, string path)
     {
         if (!isChunks)
         {
@@ -159,13 +103,13 @@ public class IO : IOInterface
             // If we have ChunkBundle information, use it.
             if (!(asset.GetField("chunks") is null || (asset.GetField("chunks").Data as List<DbObject>).Count == 0))
             {
-                HandleChunkData(asset.GetField("chunks"), isChunks, isCas);
+                HandleChunkData(asset.GetField("chunks"), isChunks, isCas, path);
             }
         }
 
         else
         {
-            HandleChunkData(asset, isChunks, isCas);
+            HandleChunkData(asset, isChunks, isCas, path);
         }
     }
 
@@ -220,7 +164,7 @@ public class IO : IOInterface
         }
     }
 
-    public static void HandleChunkData(DbObject asset, bool isChunk, bool isCas)
+    public static void HandleChunkData(DbObject asset, bool isChunk, bool isCas, string path)
     {
         var chunks = asset.Data as List<DbObject>;
         for (int i = 0; i < chunks.Count; i++)
@@ -237,10 +181,10 @@ public class IO : IOInterface
                         // Add the chunk to the database. If we fail, it means that we have a duplicate chunk.
                         // In this case, check if the new one is larger. If yes, replace it.
                         CatalogEntry e = new();
-                        e.SHA = chunkSha.Data as byte[];
+                        e.SHA = (byte[])chunkSha.Data;
                         if (!ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas)))
                         {
-                            if (ActiveCatalog.GetEntry(chunkSha.Data as byte[]).DataSize >
+                            if (ActiveCatalog.GetEntry((byte[])chunkSha.Data).DataSize >
                                 ChunkTranslations[chunkGuid].Entry.DataSize)
                             {
                                 ChunkTranslations[chunkGuid] = (e, isChunk, isCas);
@@ -248,7 +192,7 @@ public class IO : IOInterface
                         }
                         if ((chunkGuid.ToByteArray()[15] & 1) == 1)
                         {
-                            ActiveCatalog.Entries[Convert.ToBase64String(chunkSha.Data as byte[])].IsCompressed = true;
+                            ActiveCatalog.Entries[Convert.ToBase64String((byte[])chunkSha.Data)].IsCompressed = true;
                         }
                     }
                 }
@@ -263,6 +207,10 @@ public class IO : IOInterface
                         CatalogEntry e = new();
                         e.Offset = (uint)(long)chunkOffset.Data;
                         e.DataSize = (int)chunkSize.Data;
+                        e.CasFileIndex = -1; // Means it's noncas
+                        e.CasFile = path.Replace(".toc", ".sb");
+                        e.SHA = SHA1.Create().ComputeHash(chunkGuid.ToByteArray());
+                        ActiveCatalog.Entries.TryAdd(Convert.ToBase64String(e.SHA), e);
                         ChunkTranslations.TryAdd(chunkGuid, (e, isChunk, isCas));
                     }
                 }
@@ -323,12 +271,7 @@ public class IO : IOInterface
         // Clear existing DbObject selection.
         DataBaseObjects = new();
 
-        // Find the game name and set it.
-        if (Settings.GamePath.Contains("Battlefield 4"))
-            Settings.CurrentGame = Game.Battlefield4;
-        else if (Settings.GamePath.Contains("BFH"))
-            Settings.CurrentGame = Game.BattlefieldHardline;
-        else
+        if (Settings.CurrentGame != Game.Battlefield4 && Settings.CurrentGame != Game.BattlefieldHardline)
         {
             Console.WriteLine("Error: Tried to load an unsupported game!");
             return;
@@ -346,7 +289,7 @@ public class IO : IOInterface
         {
             if (toc.Contains(".toc"))
             {
-                LoadSbFile(toc, true);
+                LoadCas(toc, true);
                 i++;
                 Settings.Progress = i / (double)files.Length * 100.0;
             }
@@ -356,28 +299,64 @@ public class IO : IOInterface
         {
             if (sb.Contains(".sb"))
             {
-                // No noncas yet! If the toc says the sb is noncas then skip TODO
+                // No noncas yet! If the toc says the sb is noncas then skip, since we handle that in the .toc section.
                 if (DataBaseObjects[Path.GetFileNameWithoutExtension(sb)])
-                    LoadSbFile(sb, false);
-                else
-                    LoadNonCasFile(sb);
+                    LoadCas(sb, false);
                 i++;
                 Settings.Progress = i / (double)files.Length * 100.0;
             }
         }
-
     }
 
-    /// <summary>
-    /// Same as <see cref="string.Split(char[]?)"/>, but taking spaces into account when they're inside quotes.
-    /// </summary>
-    public static string[] SplitLiteral(string input)
+    public static void LoadCas(string path, bool isToc)
     {
-        return Regex.Matches(input, @"[\""].+?[\""]|[^ ]+").Cast<Match>().Select(m => m.Value).ToArray();
-    }
+        try
+        {
+            ActiveDataBaseObject = DbObject.UnpackDbObject(path, out bool wasCached);
+            var adboData = ActiveDataBaseObject.Data as List<DbObject>;
+            if (adboData is not null)
+            {
+                bool isCas = false;
+                // Check for cas.
+                if (isToc)
+                {
+                    foreach (var element in adboData)
+                    {
+                        if (element.Name == "cas")
+                            isCas = (bool)element.Data;
+                    }
 
-    public static int GetIndentCount(string input)
-    {
-        return input.Count(ch => ch == '\t');
+                    DataBaseObjects.Add(Path.GetFileNameWithoutExtension(path), isCas);
+                }
+
+                isCas = DataBaseObjects[Path.GetFileNameWithoutExtension(path)];
+
+                foreach (var element in adboData)
+                {
+                    if (element.Name == "bundles")
+                    {
+                        foreach (DbObject asset in element.Data as List<DbObject>)
+                        {
+                            LoadDbObject(asset, false, isCas, path);
+                        }
+                    }
+                    // If we have pure chunks.
+                    else if (element.Name == "chunks")
+                    {
+                        LoadDbObject(element, true, isCas, path);
+                    }
+                }
+            }
+
+            if (wasCached)
+                Console.WriteLine($"Loaded file \"{path}\" from Cache.");
+            else
+                Console.WriteLine($"Loaded file \"{path}\".");
+
+        }
+        catch
+        {
+            Console.WriteLine($"Tried to load an unsupported file \"{path}\", skipping...");
+        }
     }
 }

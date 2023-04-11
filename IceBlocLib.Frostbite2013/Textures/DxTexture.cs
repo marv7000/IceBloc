@@ -1,5 +1,7 @@
 ﻿using IceBlocLib.Frostbite;
+using IceBlocLib.Frostbite2013.Database;
 using IceBlocLib.InternalFormats;
+using System.Net;
 using System.Text;
 namespace IceBlocLib.Frostbite2013.Textures;
 
@@ -25,13 +27,12 @@ public class DxTexture
     {
         MipOffsets = r.ReadUInt32Array(2, false);
         TexType = (TextureType)r.ReadInt32();
-        TexFormat = (TextureFormat)r.ReadUInt32();
+        TexFormat = (TextureFormat)r.ReadUInt16();
         Flags = r.ReadUInt32();
         Width = r.ReadUInt16();
         Height = r.ReadUInt16();
         Depth = r.ReadUInt16();
         SliceCount = r.ReadUInt16();
-        r.ReadUInt16();
         MipmapCount = r.ReadByte();
         MipmapBaseIndex = r.ReadByte();
         StreamingChunkId = new Guid(r.ReadBytes(16));
@@ -50,10 +51,8 @@ public class DxTexture
         InternalTexture internalTex = new();
         var tex = new DxTexture(rr);
 
-        using var mem = new MemoryStream(IO.GetChunk(tex.StreamingChunkId));
-        using var cr = new BinaryReader(mem);
         // Load the chunk containing the image data.
-        byte[] data = cr.ReadBytes((int)cr.BaseStream.Length);
+        byte[] data = IO.GetChunk(tex.StreamingChunkId);
 
         // Start converting to InternalTexture.
         internalTex.Width = tex.Width;
@@ -75,6 +74,7 @@ public class DxTexture
             case TextureFormat.DXT3:
                 return InternalTextureFormat.DXT3;
             case TextureFormat.DXT5:
+            case TextureFormat.DXT5A:
                 return InternalTextureFormat.DXT5;
             case TextureFormat.RGB888:
                 return InternalTextureFormat.RGB0;

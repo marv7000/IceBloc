@@ -52,17 +52,21 @@ public class FrameAnimation : Animation
 
         int dataIndex = 0;
         // Get all names.
-        for (int i = 0; i < Channels.Length; i++)
+        foreach (var channel in Channels)
         {
-            
-            if (Channels[i].EndsWith(".q"))
+            if (channel.Value == BoneChannelType.Rotation)
+                rotChannels.Add(channel.Key.Replace(".q", ""));
+            else if (channel.Value == BoneChannelType.Position)
+                posChannels.Add(channel.Key.Replace(".t", ""));
+        }
+        foreach (var channel in Channels)
+        {
+            if (channel.Value == BoneChannelType.Rotation)
             {
-                rotChannels.Add(Channels[i].Replace(".q", ""));
                 rotations.Add(new Quaternion(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
             }
-            else if (Channels[i].EndsWith(".t"))
+            else if (channel.Value == BoneChannelType.Position)
             {
-                posChannels.Add(Channels[i].Replace(".t", ""));
                 positions.Add(new Vector3(Data[dataIndex++], Data[dataIndex++], Data[dataIndex++]));
                 dataIndex++;
             }

@@ -34,7 +34,9 @@ public class Catalog : IDisposable
     public CatalogEntry GetEntry(byte[] sha)
     {
         if (!Entries.TryGetValue(Convert.ToBase64String(sha), out var entry))
+        {
             throw new Exception($"SHA {Convert.ToBase64String(sha)} was not found in the Cas entry list.");
+        }
         return entry;
     }
 
@@ -47,46 +49,43 @@ public class Catalog : IDisposable
         {
             case Game.Battlefield4:
                 {
-                    BinaryReader r = CasStreams[entry.CasFileIndex];
-                    r.BaseStream.Position = entry.Offset;
-
-                    uint num1 = r.ReadUInt32(true);
-                    uint num2 = r.ReadUInt32(true);
-                    var dictFlag = num1 & 0xFF000000;
-                    var uncompressedSize = num1 & 0x00FFFFFF;
-                    var comType = (num2 & 0xFF000000) >> 24;
-                    var typeFlag = (num2 & 0x00F00000) >> 20;
-                    var compressedSize = num2 & 0x000FFFFF;
-
-                    switch (comType)
+                    BinaryReader r = null;
+                    if (entry.CasFileIndex != -1)
                     {
-                        case 0x00:
-                            return r.ReadBytes((int)compressedSize);
-                        case 0x02:
-                            return ZLibDecompress(r, (int)compressedSize);
-                        case 0x09:
-                            return LZ4Decompress(r, (int)compressedSize, (int)uncompressedSize);
-                        case 0x0F:
-                            return ZStdDecompress(r, (int)compressedSize, (int)uncompressedSize);
-                        case 0x15:
-                            return OodleDecompress(r, (int)compressedSize, (int)uncompressedSize);
+                        r = CasStreams[entry.CasFileIndex];
+                        r.BaseStream.Position = entry.Offset;
                     }
-                } break;
+                    else
+                    {
+                        r = new BinaryReader(File.OpenRead(entry.CasFile));
+
+                        r.BaseStream.Position = entry.Offset;
+                    }
+                    entry.Offset = (uint)r.BaseStream.Position;
+
+                    List<byte> data = new();
+                    while (data.Count < entry.DataSize)
+                    {
+                        data.AddRange(r.Decompress());
+                    }
+
+                    return data.ToArray();
+                }
         }
         return null;
     }
 
-    private byte[] OodleDecompress(BinaryReader r, int compressedSize, int uncompressedSize)
+    public static byte[] OodleDecompress(BinaryReader r, int compressedSize, int uncompressedSize)
     {
         throw new NotImplementedException();
     }
 
-    private byte[] ZStdDecompress(BinaryReader r, int compressedSize, int uncompressedSize)
+    public static byte[] ZStdDecompress(BinaryReader r, int compressedSize, int uncompressedSize)
     {
         throw new NotImplementedException();
     }
 
-    private unsafe byte[] LZ4Decompress(BinaryReader r, int compressedSize, int uncompressedSize)
+    public static unsafe byte[] LZ4Decompress(BinaryReader r, int compressedSize, int uncompressedSize)
     {
         Memory<byte> srcBuf = r.ReadBytes(compressedSize);
         Memory<byte> destBuf = new byte[uncompressedSize];
@@ -99,7 +98,7 @@ public class Catalog : IDisposable
         return destBuf.ToArray();
     }
 
-    private byte[] ZLibDecompress(BinaryReader r, int size)
+    public static byte[] ZLibDecompress(BinaryReader r, int size)
     {
         using var s = new MemoryStream();
 
@@ -149,5 +148,33 @@ public class Catalog : IDisposable
     {
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
+    }
+}
+public static class BinaryReaderExt
+{
+    public static byte[] Decompress(this BinaryReader r)
+    {
+        uint num1 = r.ReadUInt32(true);
+        uint num2 = r.ReadUInt32(true);
+        var dictFlag = num1 & 0xFF000000;
+        uint uncompressedSize = num1 & 0x00FFFFFF;
+        var comType = (num2 & 0xFF000000) >> 24;
+        var typeFlag = (num2 & 0x00F00000) >> 20;
+        var compressedSize = num2 & 0x000FFFFF;
+
+        switch (comType)
+        {
+            case 0x00:
+                return r.ReadBytes((int)compressedSize);
+            case 0x02:
+                return Catalog.ZLibDecompress(r, (int)compressedSize);
+            case 0x09:
+                return Catalog.LZ4Decompress(r, (int)compressedSize, (int)uncompressedSize);
+            case 0x0F:
+                return Catalog.ZStdDecompress(r, (int)compressedSize, (int)uncompressedSize);
+            case 0x15:
+                return Catalog.OodleDecompress(r, (int)compressedSize, (int)uncompressedSize);
+        }
+        return null;
     }
 }

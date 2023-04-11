@@ -14,7 +14,7 @@ public class Animation
     public bool Additive;
     public Guid ID;
     public Guid ChannelToDofAsset;
-    public string[] Channels;
+    public Dictionary<string, BoneChannelType> Channels;
     public float FPS;
 
     public StorageType StorageType;
@@ -57,7 +57,15 @@ public class Animation
         return null;
     }
 
-    public string[] GetChannels(Guid channelToDofAsset)
+    public enum BoneChannelType
+    {
+        None = 0,
+        Rotation = 14,
+        Position = 2049856663,
+        Scale = 2049856454,
+    }
+
+    public Dictionary<string, BoneChannelType> GetChannels(Guid channelToDofAsset)
     {
         // Get the ChannelToDofAsset referenced by the Animation.
         var dof = GetDofAsset(channelToDofAsset);
@@ -72,7 +80,7 @@ public class Animation
         // Get the LayoutAssets from the LayoutHierarchyAsset.
         var layoutAssets = BasicAssets[(Guid)guid]["LayoutAssets"];
 
-        List<string> channelNames = new();
+        Dictionary<string, BoneChannelType> channelNames = new();
 
         // Loop through all LayoutAssets and append them.
         if (layoutAssets is Guid[] assets)
@@ -88,18 +96,62 @@ public class Animation
 
                     for (int x = 0; x < entries.Length; x++)
                     {
-                        channelNames.Add((string)entries[x]["Name"]);
+                        channelNames.Add((string)entries[x]["Name"], (BoneChannelType)(int)entries[x]["Type"]);
+                    }
+                }
+                // Not sure what this does.
+                else if (typeName == "DeltaTrajLayoutAsset")
+                {
+                    for (int x = 0; x < 8; x++)
+                    {
+                        channelNames.Add($"DeltaTrajectory{x}.traj", BoneChannelType.None);
                     }
                 }
             }
         }
 
         byte[] data = (byte[])dof["IndexData"];
-        string[] output = new string[data.Length];
-
-        for (int i = 0; i < data.Length; i++)
+        List<string> channels = new();
+         
+        switch (StorageType)
         {
-            output[i] = channelNames[data[i]];
+            // If we overwrite the channels, then just remap the orders.
+            case StorageType.OVERWRITE:
+                {
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        channels.Add("");
+                    }
+
+                    for (int i = 0; i < data.Length; i++)
+                    {
+                        int channelId = data[i];
+                        channels[i] = channelNames.ElementAt(channelId).Key;
+                    }
+                } break;
+            // If we append the channels, the first byte indicates the taget, then second byte the value.
+            case StorageType.APPEND:
+                {
+                    Dictionary<int, int> offsets = new();
+                    int offset = 0;
+                    for (int i = 0; i < data.Length; i+=2)
+                    {
+                        int appendTo = data[i];
+                        int channelId = data[i+1];
+
+                        offsets[appendTo] = offset;
+                        offset++;
+
+                        channels.Insert(offsets[appendTo], channelNames.ElementAt(channelId).Key);
+                    }
+                } break;
+        }
+
+        // Reorder
+        Dictionary<string, BoneChannelType> output = new();
+        for (int i = 0; i < channels.Count; i++)
+        {
+            output.TryAdd(channels[i], channelNames[channels[i]]);
         }
 
         return output;

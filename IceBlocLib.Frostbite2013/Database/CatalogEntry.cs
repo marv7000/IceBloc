@@ -7,6 +7,7 @@ public class CatalogEntry
     public int DataSize;
     public int CasFileIndex;
     public bool IsCompressed;
+    public string CasFile = "";
 
     public CatalogEntry() { }
 

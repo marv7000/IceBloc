@@ -47,14 +47,14 @@ public partial class MainWindow : Window
             Instance.LoadedAssets.Content = "Linking all EBX...";
         });
 
-        var a = Task.Run(LinkAllEbx);
-        while (!a.IsCompleted)
-        {
-            Instance.Dispatcher.Invoke(() =>
-            {
-                Instance.ProgressBar.Value = Settings.Progress;
-            });
-        }
+        //var a = Task.Run(LinkAllEbx);
+        //while (!a.IsCompleted)
+        //{
+        //    Instance.Dispatcher.Invoke(() =>
+        //    {
+        //        Instance.ProgressBar.Value = Settings.Progress;
+        //    });
+        //}
 
         Instance.Dispatcher.Invoke(() =>
         {
@@ -118,6 +118,7 @@ public partial class MainWindow : Window
         {
             selected.Export();
         }
+
         string word = Instance.AssetGrid.SelectedItems.Count == 1 ? "Asset" : "Assets";
         MessageBox.Show($"Exported {Instance.AssetGrid.SelectedItems.Count} {word}.", "Success", MessageBoxButton.OK);
     }
