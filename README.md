@@ -1,17 +1,14 @@
 # IceBloc
-Asset extractor for Frostbite games.
+Asset extractor for Frostbite 2 games.
 
 Supported games:
 - Battlefield 3
-
-WIP:
-- Battlefield Hardline
-- Battlefield 4
+- NFS The Run
 
 Supported RES types:
 | Type | Formats |
 | --- | --- |
-| MeshSet | .obj .smd .semodel .atf |
+| MeshSet | .obj .smd .semodel |
 | DxTexture | .dds |
 | Metadata (EBX) | .txt (dump) |
 | AssetBank | .txt (dump) |
@@ -35,8 +32,12 @@ Supported AssetBank types:
 - Wait for all assets to load, then select the assets you wish to export and hit "Export Selection".
 - If you wish to extract unsupported asset types, go to the Settings tab and enable Raw Export.
 
+# Exporting Skinned Meshes/Animations
+- Select and export the SkeletonAsset you want to use
+- Export the Mesh/Animation you want to export
+
 # CLI
-IceBloc also comes with a console tool if you prefer to use that over the UI.
+IceBloc also comes with a (basic) console tool if you prefer to use that over the UI.
 
 These commands are available:
 - ``load game <path>`` Loads all game files.
@@ -46,14 +47,6 @@ These commands are available:
 - ``hash <string>`` Returns a FNV1 hash from any given string
 - ``select <name>`` Select an asset for export
 - ``export`` Export the selection
-
-# File format info
-Most of Frostbite's assets are spread all over the place and are referenced dynamically. 
-
-To combine e.g. a Mesh, Skeleton and an animation you need all those seperate files and combine them when loading in a 3D program.
-I've created a format (AssetTransferFormat / .atf) for these types of assets which can be imported together or seperately. 
-
-You can find importers for .atf files [here](https://github.com/marv7000/AssetTransferFormat).
 
 # Build dependencies
 - NET 7.0
