@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IceBlocLib.Frostbite2013\IceBlocLib.Frostbite2013.csproj" />
     <ProjectReference Include="..\IceBlocLib.Frostbite2\IceBlocLib.Frostbite2.csproj" />
     <ProjectReference Include="..\IceBlocLib.Utility\IceBlocLib.Utility.csproj" />
   </ItemGroup>

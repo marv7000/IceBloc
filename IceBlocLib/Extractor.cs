@@ -19,13 +19,6 @@ public static class Extractor
                         assetListItem.Type = dbx.PrimType;
                         Frostbite2.Ebx.LinkTargets.TryAdd(dbx.FileGuid, assetListItem.MetaData);
                     } break;
-                case Game.Battlefield4:
-                    {
-                        using var stream = new MemoryStream(Frostbite2013.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, InternalAssetType.EBX));
-                        var dbx = new Frostbite2013.Dbx(stream);
-                        assetListItem.Type = dbx.PrimType;
-                        Frostbite2013.Ebx.LinkTargets.TryAdd(dbx.FileGuid, assetListItem.MetaData);
-                    } break;
             }
         }
     }
@@ -37,24 +30,6 @@ public static class Extractor
             Settings.CurrentGame = Game.Battlefield3;
             Settings.IOClass = new Frostbite2.IO();
             Frostbite2.IO.LoadGame();
-        }
-        if (Settings.GamePath.Contains("Battlefield 4"))
-        {
-            Settings.CurrentGame = Game.Battlefield4;
-            Settings.IOClass = new Frostbite2013.IO();
-            Frostbite2013.IO.LoadGame();
-        }
-        if (Settings.GamePath.Contains("Battlefield 1"))
-        {
-            Settings.CurrentGame = Game.Battlefield1;
-            Settings.IOClass = new Frostbite2013.IO();
-            Frostbite2013.IO.LoadGame();
-        }
-        if (Settings.GamePath.Contains("BFH"))
-        {
-            Settings.CurrentGame = Game.BattlefieldHardline;
-            Settings.IOClass = new Frostbite2013.IO();
-            Frostbite2013.IO.LoadGame();
         }
     }
 
@@ -68,9 +43,6 @@ public static class Extractor
         {
             case Game.Battlefield3:
                 data = Frostbite2.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType); break;
-            case Game.Battlefield4:
-            case Game.BattlefieldHardline:
-                data = Frostbite2013.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType); break;
         }
 
         // If the user wants to export the raw RES.
@@ -99,8 +71,6 @@ public static class Extractor
                             {
                                 case Game.Battlefield3:
                                     output = Frostbite2.Textures.DxTexture.ConvertToInternal(stream); break;
-                                case Game.Battlefield4:
-                                    output = Frostbite2013.Textures.DxTexture.ConvertToInternal(stream); break;
                             }
                             Settings.CurrentTextureExporter.Export(output, path);
                         } break;
@@ -111,8 +81,6 @@ public static class Extractor
                             {
                                 case Game.Battlefield3:
                                     output = Frostbite2.Meshes.MeshSet.ConvertToInternal(stream); break;
-                                case Game.Battlefield4:
-                                    output = Frostbite2013.Meshes.MeshSet.ConvertToInternal(stream); break;
                             }
                             if (AssetListItem.LastSkeleton is null)
                             {

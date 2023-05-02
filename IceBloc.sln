@@ -7,13 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBloc", "IceBloc\IceBloc.
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBlocCLI", "IceBlocCLI\IceBlocCLI.csproj", "{EBCB01E7-BE1C-4DBC-9727-61061580EC87}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceBlocLib.Frostbite2", "IceBlocLib.Frostbite2\IceBlocLib.Frostbite2.csproj", "{46BCA599-4385-474D-891D-6BCA72A0C818}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBlocLib.Frostbite2", "IceBlocLib.Frostbite2\IceBlocLib.Frostbite2.csproj", "{46BCA599-4385-474D-891D-6BCA72A0C818}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceBlocLib.Utility", "IceBlocLib.Utility\IceBlocLib.Utility.csproj", "{11F75D2B-FB69-45C2-917B-9B939D423144}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBlocLib.Utility", "IceBlocLib.Utility\IceBlocLib.Utility.csproj", "{11F75D2B-FB69-45C2-917B-9B939D423144}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceBlocLib.Frostbite2013", "IceBlocLib.Frostbite2013\IceBlocLib.Frostbite2013.csproj", "{1BB5062F-9051-4067-A743-8DEB15D9B84F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IceBlocLib", "IceBlocLib\IceBlocLib.csproj", "{0CF64F2F-B063-495C-86A4-AB48C7D1467F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IceBlocLib", "IceBlocLib\IceBlocLib.csproj", "{0CF64F2F-B063-495C-86A4-AB48C7D1467F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -55,14 +53,6 @@ Global
 		{11F75D2B-FB69-45C2-917B-9B939D423144}.Release|Any CPU.Build.0 = Release|Any CPU
 		{11F75D2B-FB69-45C2-917B-9B939D423144}.Release|x64.ActiveCfg = Release|Any CPU
 		{11F75D2B-FB69-45C2-917B-9B939D423144}.Release|x64.Build.0 = Release|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Debug|x64.Build.0 = Debug|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Release|x64.ActiveCfg = Release|Any CPU
-		{1BB5062F-9051-4067-A743-8DEB15D9B84F}.Release|x64.Build.0 = Release|Any CPU
 		{0CF64F2F-B063-495C-86A4-AB48C7D1467F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0CF64F2F-B063-495C-86A4-AB48C7D1467F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0CF64F2F-B063-495C-86A4-AB48C7D1467F}.Debug|x64.ActiveCfg = Debug|Any CPU
