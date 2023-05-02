@@ -11,20 +11,20 @@ Supported RES types:
 | MeshSet | .obj .smd .semodel |
 | DxTexture | .dds |
 | Metadata (EBX) | .txt (dump) |
-| AssetBank | .txt (dump) |
+| AssetBank (Animations) | .txt (dump) |
 
 Supported EBX types:
 | Type | Formats |
 | --- | --- |
-| SoundWaveAsset | .wav  .flac |
+| SoundWaveAsset | .wav |
 | SkeletonAsset | .smd |
 
 Supported AssetBank types:
-| Type | Formats |
-| --- | --- |
-| FrameAnimation | .smd |
-| RawAnimation | .smd |
-| DctAnimation | .smd |
+| Type |
+| --- |
+| FrameAnimation |
+| RawAnimation | 
+| DctAnimation | 
 
 # Usage
 - Open the program and click the Load Game button on the bottom right.
@@ -35,6 +35,10 @@ Supported AssetBank types:
 # Exporting Skinned Meshes/Animations
 - Select and export the SkeletonAsset you want to use
 - Export the Mesh/Animation you want to export
+
+# Notes
+- Exporting animations is slow because the tool has to do a reverse lookup to find some assets needed to resolve channel names.
+- Loading a game can take some time because all asset types need to be resolved prior to export
 
 # CLI
 IceBloc also comes with a (basic) console tool if you prefer to use that over the UI.
@@ -47,6 +51,10 @@ These commands are available:
 - ``hash <string>`` Returns a FNV1 hash from any given string
 - ``select <name>`` Select an asset for export
 - ``export`` Export the selection
+
+# TODO
+
+- Support Patch/DLCs
 
 # Build dependencies
 - NET 7.0
