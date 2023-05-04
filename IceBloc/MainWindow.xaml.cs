@@ -47,14 +47,15 @@ public partial class MainWindow : Window
             Instance.LoadedAssets.Content = "Linking all EBX...";
         });
 
-        //var a = Task.Run(LinkAllEbx);
-        //while (!a.IsCompleted)
-        //{
-        //    Instance.Dispatcher.Invoke(() =>
-        //    {
-        //        Instance.ProgressBar.Value = Settings.Progress;
-        //    });
-        //}
+        // Link Ebx.
+        var a = Task.Run(LinkAllEbx);
+        while (!a.IsCompleted)
+        {
+            Instance.Dispatcher.Invoke(() =>
+            {
+                Instance.ProgressBar.Value = Settings.Progress;
+            });
+        }
 
         Instance.Dispatcher.Invoke(() =>
         {
