@@ -55,6 +55,7 @@ These commands are available:
 # TODO
 
 - Support Patch/DLCs
+- Support NonCas bundles (e.g. voice lines in BF3)
 
 # Build dependencies
 - NET 7.0
