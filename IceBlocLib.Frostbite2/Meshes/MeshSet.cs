@@ -118,10 +118,20 @@ public class MeshSet
                     var bIdx = sub.BoneIndices.Value as List<object>;
                     if (isSkinned)
                     {
-                        vert.BoneIndexA = (int)(short)bIdx[(int)boneIndex.X];
-                        vert.BoneIndexB = (int)(short)bIdx[(int)boneIndex.Y];
-                        vert.BoneIndexC = (int)(short)bIdx[(int)boneIndex.Z];
-                        vert.BoneIndexD = (int)(short)bIdx[(int)boneIndex.W];
+                        if ((int)boneIndex.X < bIdx.Count)
+                        {
+                            vert.BoneIndexA = Convert.ToInt32(bIdx[(int)boneIndex.X]);
+                            vert.BoneIndexB = Convert.ToInt32(bIdx[(int)boneIndex.Y]);
+                            vert.BoneIndexC = Convert.ToInt32(bIdx[(int)boneIndex.Z]);
+                            vert.BoneIndexD = Convert.ToInt32(bIdx[(int)boneIndex.W]);
+                        }
+                        else
+                        {
+                            vert.BoneIndexA = 0;
+                            vert.BoneIndexB = 0;
+                            vert.BoneIndexC = 0;
+                            vert.BoneIndexD = 0;
+                        }
                         vert.BoneWeightA = boneWeight.X;
                         vert.BoneWeightB = boneWeight.Y;
                         vert.BoneWeightC = boneWeight.Z;

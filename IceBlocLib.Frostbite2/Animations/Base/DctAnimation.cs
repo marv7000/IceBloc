@@ -123,19 +123,12 @@ public partial class DctAnimation : Animation
             // We need to differentiate between Scale and Position.
             for (int channelIdx = 0; channelIdx < NumVec3; channelIdx++)
             {
-                int pos = (int)(i * dofCount + NumQuats + channelIdx);
-                Vector4 element = DecompressedData[pos];
-
-                var a = posChannels.Exists(x => x != null);
-
-                var type = Channels[""];
-                if (type == BoneChannelType.Position)
+                if (Channels.ElementAt(NumQuats + channelIdx).Value == BoneChannelType.Position)
                 {
+                    int pos = (int)(i * dofCount + NumQuats + channelIdx);
+                    Vector4 element = DecompressedData[pos];
+
                     positions.Add(new Vector3(element.X, element.Y, element.Z));
-                }
-                else if (type == BoneChannelType.Scale)
-                {
-                    scales.Add(new Vector3(element.X, element.Y, element.Z));
                 }
             }
 

@@ -46,7 +46,7 @@ public static class Extractor
         }
 
         // If the user wants to export the raw RES.
-        if (true)
+        if (Settings.ExportRaw)
         {
             File.WriteAllBytes(path + ("_raw." + assetListItem.Type), data);
         }
