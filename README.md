@@ -3,7 +3,7 @@ Asset extractor for Frostbite 2 games.
 
 Supported games:
 - Battlefield 3
-- NFS The Run (WIP)
+- Medal of Honor: Warfighter (Some textures are broken)
 
 Supported RES types:
 | Type | Formats |
