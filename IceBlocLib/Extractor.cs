@@ -13,6 +13,7 @@ public static class Extractor
             switch (Settings.CurrentGame)
             {
                 case Game.Battlefield3:
+                case Game.Warfighter:
                     {
                         using var stream = new MemoryStream(Frostbite2.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, InternalAssetType.EBX));
                         var dbx = new Frostbite2.Dbx(stream);
@@ -31,6 +32,16 @@ public static class Extractor
             Settings.IOClass = new Frostbite2.IO();
             Frostbite2.IO.LoadGame();
         }
+        else if (Settings.GamePath.Contains("Warfighter"))
+        {
+            Settings.CurrentGame = Game.Warfighter;
+            Settings.IOClass = new Frostbite2.IO();
+            Frostbite2.IO.LoadGame();
+        }
+        else
+        {
+            throw new NotSupportedException("Game is not supported!");
+        }
     }
 
     public static void Export(this AssetListItem assetListItem)
@@ -42,6 +53,7 @@ public static class Extractor
         switch (Settings.CurrentGame)
         {
             case Game.Battlefield3:
+            case Game.Warfighter:
                 data = Frostbite2.IO.ActiveCatalog.Extract(assetListItem.MetaData, true, assetListItem.AssetType); break;
         }
 
@@ -70,6 +82,7 @@ public static class Extractor
                             switch (Settings.CurrentGame)
                             {
                                 case Game.Battlefield3:
+                                case Game.Warfighter:
                                     output = Frostbite2.Textures.DxTexture.ConvertToInternal(stream); break;
                             }
                             Settings.CurrentTextureExporter.Export(output, path);
@@ -80,6 +93,7 @@ public static class Extractor
                             switch (Settings.CurrentGame)
                             {
                                 case Game.Battlefield3:
+                                case Game.Warfighter:
                                     output = Frostbite2.Meshes.MeshSet.ConvertToInternal(stream); break;
                             }
                             if (AssetListItem.LastSkeleton is null)
@@ -111,7 +125,8 @@ public static class Extractor
         switch (Settings.CurrentGame)
         {
             case Game.Battlefield3:
-                {
+            case Game.Warfighter:
+            {
                     var dbx = new Frostbite2.Dbx(stream);
                     if (assetListItem.Type == "SkeletonAsset")
                     {

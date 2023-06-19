@@ -101,7 +101,10 @@ public static class BinaryReaderExtensions
     /// </summary>
     public static void Align(this BinaryReader r, int alignBy)
     {
-        r.BaseStream.Position += alignBy - (r.BaseStream.Position % alignBy);
+        if (r.BaseStream.Position % alignBy != 0)
+        {
+            r.BaseStream.Position += alignBy - (r.BaseStream.Position % alignBy);
+        }
     }
 
     #region Primitive Extensions

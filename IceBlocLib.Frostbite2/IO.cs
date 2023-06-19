@@ -319,23 +319,21 @@ public class IO : IOInterface
     public static async Task LoadGame()
     {
         // Clear existing DbObject selection.
-        DataBaseObjects = new();
-
-        // Find the game name and set it.
-        if (Settings.GamePath.Contains("Battlefield 3"))
-            Settings.CurrentGame = Game.Battlefield3;
-        else
-        {
-            Console.WriteLine("Error: Tried to load an unsupported game!");
-            return;
-        }
+        DataBaseObjects = new(); 
 
         // Load the cascat.
         ActiveCatalog = new(Settings.GamePath + "\\Data\\cas.cat");
         Assets = new();
 
         // Get all file names in the Data\Win32\ dir.
-        string[] files = Directory.GetFiles(Settings.GamePath + "\\Data\\Win32\\", "*", SearchOption.AllDirectories);
+        LoadFolder(Settings.GamePath + "\\Data\\");
+        LoadFolder(Settings.GamePath + "\\Update\\");
+
+    }
+
+    public static void LoadFolder(string path)
+    {
+        string[] files = Directory.GetFiles(path, "*", SearchOption.AllDirectories);
         int i = 0;
         // First load all .toc files.
         foreach (var toc in files)
@@ -361,7 +359,6 @@ public class IO : IOInterface
                 Settings.Progress = i / (double)files.Length * 100.0;
             }
         }
-
     }
 
     /// <summary>

@@ -28,7 +28,7 @@ public class Animation
         using var r = new BinaryReader(stream);
         r.ReadGdDataHeader(bigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
 
-        var baseData = gd.ReadValues(r, index, base_baseOffset, base_type, false);
+        var baseData = gd.ReadValues(r, index, base_baseOffset, base_type, bigEndian);
 
         Name = (string)baseData["__name"];
         ID = (Guid)baseData["__guid"];
@@ -43,18 +43,13 @@ public class Animation
 
     private Dictionary<string, object> GetDofAsset(Guid channelToDofAsset)
     {
-        if (Settings.CurrentGame == Game.Battlefield3)
+        if (BasicAssets == null)
         {
-            if (BasicAssets == null)
-            {
-                var data = IO.ActiveCatalog.Extract(IO.Assets[("animations/antanimations/s_basicassets", InternalAssetType.RES)].MetaData, true, InternalAssetType.RES);
-                using var stream = new MemoryStream(data);
-                BasicAssets = new GenericData(stream);
-            }
-            return BasicAssets[channelToDofAsset];
+            var data = IO.ActiveCatalog.Extract(IO.Assets[("animations/antanimations/s_basicassets", InternalAssetType.RES)].MetaData, true, InternalAssetType.RES);
+            using var stream = new MemoryStream(data);
+            BasicAssets = new GenericData(stream);
         }
-
-        return null;
+        return BasicAssets[channelToDofAsset];
     }
 
     public enum BoneChannelType

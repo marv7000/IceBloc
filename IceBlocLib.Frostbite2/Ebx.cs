@@ -321,6 +321,7 @@ public class Dbx
     public Dbx(Stream s)
     {
         using BinaryReader r = new BinaryReader(s);
+
         // metadata
         var magic = r.ReadBytes(4);
         if (magic.SequenceEqual(new byte[] { 0xCE, 0xD1, 0xB2, 0x0F })) BigEndian = false;
@@ -419,9 +420,6 @@ public class Dbx
                 Instances.Add(instanceGuid, inst);
             }
         }
-
-        if (TrueFileName == "")
-            TrueFileName = Path.GetRelativePath((r.BaseStream as FileStream).Name, "").Replace("\\", "/");
 
         PrimType = Ebx.StringTable[Prim.Desc.Name];
     }

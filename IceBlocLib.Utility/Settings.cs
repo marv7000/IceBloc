@@ -34,11 +34,7 @@ public enum Game
 {
     UnknownGame = -1,
     Battlefield3,
-    Battlefield4,
-    BattlefieldHardline,
-    Battlefield1,
-    Battlefield5,
-    Battlefield2042
+    Warfighter
 }
 
 public enum InternalAssetType

@@ -13,6 +13,7 @@ public class TextureExporterDDS : ITextureExporter
         switch
         {
             InternalTextureFormat.DXT1 => DirectXTexUtility.DXGIFormat.BC1UNORM,
+            InternalTextureFormat.DXT1Normal => DirectXTexUtility.DXGIFormat.BC2UNORM,
             InternalTextureFormat.DXT3 => DirectXTexUtility.DXGIFormat.BC2UNORM,
             InternalTextureFormat.DXT5 => DirectXTexUtility.DXGIFormat.BC3UNORM,
             InternalTextureFormat.RGBA => DirectXTexUtility.DXGIFormat.R8G8B8A8UNORM,

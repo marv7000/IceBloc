@@ -16,7 +16,7 @@ public class FrameAnimation : Animation
         using var r = new BinaryReader(stream);
         r.ReadGdDataHeader(bigEndian, out uint hash, out uint type, out uint baseOffset);
 
-        var data = gd.ReadValues(r, index, baseOffset, type, false);
+        var data = gd.ReadValues(r, index, baseOffset, type, bigEndian);
 
         Name = (string)data["__name"];
         ID = (Guid)data["__guid"];
@@ -29,7 +29,7 @@ public class FrameAnimation : Animation
         r.BaseStream.Position = (long)data["__base"];
         r.ReadGdDataHeader(bigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
 
-        var baseData = gd.ReadValues(r, index, (uint)((long)data["__base"] + base_baseOffset), base_type, false);
+        var baseData = gd.ReadValues(r, index, (uint)((long)data["__base"] + base_baseOffset), base_type, bigEndian);
 
         CodecType = (int)baseData["CodecType"];
         AnimId = (int)baseData["AnimId"];

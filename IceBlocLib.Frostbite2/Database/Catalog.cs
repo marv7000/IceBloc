@@ -19,7 +19,7 @@ public class Catalog : IDisposable
         switch (Settings.CurrentGame)
         {
             case Game.Battlefield3:
-            case Game.Battlefield4:
+            case Game.Warfighter:
                 {
                     r.BaseStream.Position += 16;
                     while (r.BaseStream.Position < r.BaseStream.Length)
@@ -63,6 +63,23 @@ public class Catalog : IDisposable
                         compressed = true;
                     else if (type == InternalAssetType.EBX)
                         compressed = false;
+                    else if (type == InternalAssetType.Chunk)
+                        compressed = entry.IsCompressed;
+
+                    BinaryReader r = CasStreams[entry.CasFileIndex];
+                    r.BaseStream.Position = entry.Offset;
+
+                    if (compressed)
+                        return ZLibDecompress(r, entry.DataSize);
+                    else
+                        return r.ReadBytes(entry.DataSize);
+                }
+            case Game.Warfighter:
+                {
+                    if (type == InternalAssetType.RES)
+                        compressed = true;
+                    else if (type == InternalAssetType.EBX)
+                        compressed = true;
                     else if (type == InternalAssetType.Chunk)
                         compressed = entry.IsCompressed;
 

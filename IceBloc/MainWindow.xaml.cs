@@ -141,10 +141,6 @@ public partial class MainWindow : Window
         var output = new Dictionary<(string, InternalAssetType), AssetListItem>();
         if (SearchBox.Text != "")
         {
-            switch (Settings.CurrentGame)
-            {
-
-            }
             foreach (var item in Settings.IOClass.GetAssets())
             {
                 if (item.Key.Item1.Contains(SearchBox.Text))

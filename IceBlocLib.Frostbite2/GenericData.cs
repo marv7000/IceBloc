@@ -116,44 +116,49 @@ public class GenericData
         // Set this to true if you want to dump the data that's being read next. (debug)
         bool exportData = false;
 
-        // Dump the data to disk.
         while (r.BaseStream.Position < r.BaseStream.Length)
         {
             long basePos = r.BaseStream.Position;
 
-            // Could possibly be "GD.DATAb" for big endian, according to PDB. Not really used in BF3.
             string header = Encoding.ASCII.GetString(r.ReadBytes(7));
-            bool bigEndian = r.ReadByte() == 98 ? true : false;
-
-            int dataBlockSize = r.ReadInt32(bigEndian);
-            int dataBlockIndexOffset = r.ReadInt32(bigEndian);
-
-            int dataBlockSizeDifference = dataBlockSize - dataBlockIndexOffset;
-
-            r.ReadBytes(16); // Pad
-
-            uint dataBlockClassType = (uint)r.ReadUInt64(bigEndian);
-
-            // Get the data
-            r.BaseStream.Position = basePos + 16;
-            Memory<byte> data = r.ReadBytes(dataBlockIndexOffset - 16);
-            r.ReadBytes(dataBlockSizeDifference); // Pad the indices.
-
-            // Get the name of the file.
-            r.BaseStream.Position = basePos + 16 + 32 + Classes[dataBlockClassType].Size;
-            string fileName = r.ReadNullTerminatedString();
-
-            Data.Add((data, bigEndian));
-
-            if (exportData)
+            if (header == "GD.DATA")
             {
-                // Save all bytes except for the header and the indices at the end.
-                string path = $"Output\\{Settings.CurrentGame}\\";
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
-                File.WriteAllBytes(path + $"{fileName}.{Classes[dataBlockClassType].Name}", data.ToArray());
+                bool bigEndian = r.ReadByte() == 98 ? true : false;
+
+                int dataBlockSize = r.ReadInt32(bigEndian);
+                int dataBlockIndexOffset = r.ReadInt32(bigEndian);
+
+                int dataBlockSizeDifference = dataBlockSize - dataBlockIndexOffset;
+
+                r.ReadBytes(16); // Pad
+
+                uint dataBlockClassType = (uint)r.ReadUInt64(bigEndian);
+
+                // Get the data
+                r.BaseStream.Position = basePos + 16;
+                Memory<byte> data = r.ReadBytes(dataBlockIndexOffset - 16);
+                r.ReadBytes(dataBlockSizeDifference); // Pad the indices.
+
+                // Get the name of the file.
+                r.BaseStream.Position = basePos + 16 + 32 + Classes[dataBlockClassType].Size;
+                string fileName = r.ReadNullTerminatedString();
+
+                Data.Add((data, bigEndian));
+
+                if (exportData)
+                {
+                    // Save all bytes except for the header and the indices at the end.
+                    string path = $"Output\\{Settings.CurrentGame}\\";
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    File.WriteAllBytes(path + $"{fileName}.{Classes[dataBlockClassType].Name}", data.ToArray());
+                }
+                // Set the position to the end of the block.
+                r.BaseStream.Position = basePos + dataBlockSize;
             }
-            // Set the position to the end of the block.
-            r.BaseStream.Position = basePos + dataBlockSize;
+            else
+            {
+                break;
+            }
         }
     }
 
@@ -428,7 +433,7 @@ public class GenericData
                 using var s = new MemoryStream(Data[i].Bytes.ToArray());
                 using var r = new BinaryReader(s);
                 r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
-                var values = ReadValues(r, i, base_baseOffset, base_type, false);
+                var values = ReadValues(r, i, base_baseOffset, base_type, Data[i].BigEndian);
 
                 if ((Guid)values["__guid"] == guid)
                 {
@@ -447,7 +452,7 @@ public class GenericData
                 using var s = new MemoryStream(Data[i].Bytes.ToArray());
                 using var r = new BinaryReader(s);
                 r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
-                var values = ReadValues(r, i, base_baseOffset, base_type, false);
+                var values = ReadValues(r, i, base_baseOffset, base_type, Data[i].BigEndian);
 
                 if ((string)values["__name"] == name)
                 {
@@ -465,7 +470,7 @@ public class GenericData
             using var s = new MemoryStream(Data[i].Bytes.ToArray());
             using var r = new BinaryReader(s);
             r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
-            var values = ReadValues(r, i, base_baseOffset, base_type, false);
+            var values = ReadValues(r, i, base_baseOffset, base_type, Data[i].BigEndian);
 
             if ((Guid)values["__guid"] == guid)
             {
@@ -487,7 +492,7 @@ public class GenericData
                 using var s = new MemoryStream(Data[i].Bytes.ToArray());
                 using var r = new BinaryReader(s);
                 r.ReadGdDataHeader(Data[i].BigEndian, out uint base_hash, out uint base_type, out uint base_baseOffset);
-                var values = ReadValues(r, i, base_baseOffset, base_type, false);
+                var values = ReadValues(r, i, base_baseOffset, base_type, Data[i].BigEndian);
 
                 for (int x = 0; x < values.Count; x++)
                 {

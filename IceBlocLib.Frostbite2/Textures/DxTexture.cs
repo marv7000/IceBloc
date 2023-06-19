@@ -83,7 +83,7 @@ public class DxTexture
             case TextureFormat.NormalDXN:
                 return InternalTextureFormat.DXN;
             case TextureFormat.NormalDXT1:
-                return InternalTextureFormat.DXT1;
+                return InternalTextureFormat.DXT1Normal;
             case TextureFormat.NormalDXT5:
                 return InternalTextureFormat.DXT5;
         }
