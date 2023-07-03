@@ -5,6 +5,8 @@ Supported games:
 - Battlefield 3
 - Medal of Honor: Warfighter (Some textures are broken)
 
+## Help, improvements and PRs are welcome!
+
 Supported RES types:
 | Type | Formats |
 | --- | --- |
@@ -53,7 +55,6 @@ These commands are available:
 - ``export`` Export the selection
 
 # TODO
-
 - Support Patch/DLCs
 - Support NonCas bundles (e.g. voice lines in BF3)
 
